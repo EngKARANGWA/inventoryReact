@@ -1,0 +1,13 @@
+.app {
+  display: flex;
+  min-height: 100vh;
+  padding-top: 40px; /* Match the height of the TopBar */
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  margin-left: 250px; /* Adjust based on your toolbar width */
+}
+
+/* Add any additional styles you need */

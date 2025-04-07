@@ -1,0 +1,124 @@
+.top-bar {
+    height: 40px; /* Reduced from percentage to fixed height */
+    background-color: #7CCD65;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+  
+  .top-bar-left {
+    width: 200px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .top-bar-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  .app-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    margin-bottom: 2px;
+  }
+  
+  .search-container {
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 0 0.5rem;
+    height: 24px;
+    width: 100%;
+  }
+  
+  .search-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: white;
+    margin-right: 0.5rem;
+  }
+  
+  .search-input {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 0.75rem;
+    width: 100%;
+    outline: none;
+  }
+  
+  .search-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .top-bar-right {
+    width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1.5rem;
+  }
+  
+  .notification-icon {
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .bell-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: white;
+  }
+  
+  .notification-badge {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    background-color: #ef4444;
+    color: white;
+    font-size: 0.75rem;
+    border-radius: 9999px;
+    width: 1rem;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .user-avatar {
+    width: 1.75rem;
+    height: 1.75rem;
+    background-color: #d1d5db;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .user-avatar:hover {
+    background-color: #9ca3af;
+  }
+  
+  .user-icon {
+    width: 1rem;
+    height: 1rem;
+    color: #6b7280;
+  }
