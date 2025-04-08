@@ -1,4 +1,3 @@
-import React from 'react';
 import LandingPage from './app/Landingpage/Landingpage';
 import './App.css';
 
