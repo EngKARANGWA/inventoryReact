@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent } from '../../components/ui/card';
@@ -19,6 +20,7 @@ const users: User[] = [
 ];
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -38,16 +40,16 @@ export default function LandingPage() {
     const user = users.find(u => u.email === formData.email && u.password === formData.password);
     
     if (user) {
-      // Set cookie for authentication
-      document.cookie = `user=${JSON.stringify({ email: user.email, role: user.role })}; path=/`;
+      // Store user info in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify({ email: user.email, role: user.role }));
       
       toast.success(`Welcome ${user.email}!`);
       
-      // Redirect based on role
+      // Navigate based on role using React Router
       if (user.role === 'cashier') {
-        window.location.href = '/dashboard-cashier';
+        navigate('/dashboard-cashier');
       } else {
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       }
     } else {
       toast.error('Invalid email or password');
@@ -55,9 +57,9 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
+    <div className=" w-full overflow-hidden">
       {/* Background Image */}
-      <div className="absolute inset-0">
+      <div className="fixed inset-0">
         <img
           src={headerImage}
           alt="Digital inventory system"
@@ -81,7 +83,7 @@ export default function LandingPage() {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 flex items-center justify-center p-6">
+        <main className="flex-1 flex items-center justify-center p-6 bg-black/30">
           <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-12 items-center">
             {/* Left Side - Welcome Text */}
             <div className="text-white space-y-6">
@@ -113,9 +115,9 @@ export default function LandingPage() {
 
             {/* Right Side - Login Form */}
             <div className="w-full max-w-md mx-auto">
-              <Card className="backdrop-blur-sm bg-white/90">
+              <Card className="bg-white shadow-lg">
                 <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold text-center mb-6">System Login</h3>
+                  <h3 className="text-2xl font-bold text-center mb-6 text-black">System Login</h3>
                   <form onSubmit={handleLogin} className="space-y-6">
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -128,7 +130,7 @@ export default function LandingPage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
-                        className="w-full"
+                        className="w-full text-white-100"
                       />
                     </div>
                     <div>
@@ -142,17 +144,17 @@ export default function LandingPage() {
                         value={formData.password}
                         onChange={handleInputChange}
                         required
-                        className="w-full"
+                        className="w-full text-white-100"
                       />
                     </div>
                     <Button
                       type="submit"
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
                     >
                       Sign In
                     </Button>
                   </form>
-                  <div className="mt-6 text-center text-sm text-gray-500">
+                  <div className="mt-6 text-center text-sm text-gray-600">
                     <p className="font-medium">Demo Accounts:</p>
                     <p>Admin: admin@example.com / admin123</p>
                     <p>Cashier: cashier@example.com / cashier123</p>
