@@ -57,7 +57,6 @@ const UserManagement: React.FC = () => {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({
@@ -134,7 +133,7 @@ const UserManagement: React.FC = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = !filters.role || user.role === filters.role;
     const matchesStatus = !filters.status || user.status === filters.status;
@@ -345,9 +344,9 @@ const UserManagement: React.FC = () => {
                         <React.Fragment key={user.id}>
                           <tr className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.id}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.role}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.phoneNumber || 'N/A'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.username}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.roles?.[0]?.name || 'N/A'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.profile?.phoneNumber || 'N/A'}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -513,7 +512,7 @@ const UserManagement: React.FC = () => {
         <UserDetailsModal
           user={{
             id: String(editingUser.id),
-            name: editingUser.name || '',
+            name: editingUser.username || '',
             role: editingUser.role || '',
             status: editingUser.status || '',
             roleSpecificData: editingUser.roleSpecificData || {}

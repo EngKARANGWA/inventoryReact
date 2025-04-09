@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { X } from 'lucide-react';
-import axios from 'axios';
-import { userService, Cashier } from '../../services/userService';
+
+import {  Cashier } from '../../services/userService';
 
 interface CashierFormProps {
   onSubmit: (data: any) => void;
@@ -52,9 +52,12 @@ const CashierForm: React.FC<CashierFormProps> = ({
       const [parent, child] = name.split('.');
       setFormData(prev => ({
         ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
+        user: {
+          ...prev.user,
+          [parent]: {
+            ...prev.user[parent as keyof typeof prev.user] as any,
+            [child]: value
+          }
         }
       }));
     } else if (name.includes('profile.')) {

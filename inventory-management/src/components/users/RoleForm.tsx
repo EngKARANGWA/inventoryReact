@@ -19,7 +19,7 @@ interface FormData {
   stockKeeperId?: string;
   clientId?: string;
   names: string;
-  userNames: string;
+  username: string;
   email: string;
   phoneNumber: string;
   address: string;
@@ -32,7 +32,7 @@ interface FormData {
 
 const defaultFormData: FormData = {
   names: '',
-  userNames:'',
+  username:'',
   email: '',
   phoneNumber: '',
   address: '',
@@ -82,8 +82,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.userNames || ''}
-                onChange={(e) => handleChange('userNames', e.target.value)}
+                value={formData.username|| ''}
+                onChange={(e) => handleChange('username', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
               />
@@ -835,8 +835,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.userNames || ''}
-                onChange={(e) => handleChange('userNames', e.target.value)}
+                value={formData.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="User Name"
               />

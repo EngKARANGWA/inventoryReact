@@ -3,12 +3,27 @@ import axios from 'axios';
 const API_BASE_URL = 'https://test.gvibyequ.a2hosted.com/api';
 
 export interface User {
+  profile: any;
   id: string | number;
   username: string;
   name?: string; // For frontend display
   email: string;
   password?: string; // For user creation/update
   role?: string;
+  roles?: Array<{
+    id: number;
+    name: string;
+    description: string;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+    user_roles: {
+      createdAt: string;
+      updatedAt: string;
+      role_id: number;
+      user_id: number;
+    };
+  }>;
   status?: 'active' | 'inactive'; // For frontend display
   accountStatus: 'active' | 'inactive';
   phoneNumber?: string;
@@ -86,7 +101,7 @@ const extractData = (response: any): any => {
 const mapUserData = (user: any) => {
   return {
     ...user,
-    name: user.username, // Map username to name for frontend display
+    username: user.username, // Map username to name for frontend display
     status: user.accountStatus, // Map accountStatus to status for frontend display
     role: user.role || 'admin' // Default role if not provided
   };
@@ -134,7 +149,7 @@ export const userService = {
       if (role === 'cashier') {
         endpoint = '/cashier';
       } else if (role === 'blocker') {
-        endpoint = '/blocker';
+        endpoint = '/blockers';
       } else if (role === 'driver') {
         endpoint = '/driver';
       } else if (role === 'admin') {
@@ -162,7 +177,7 @@ export const userService = {
     try {
       const dataToSend = {
         ...userData,
-        username: userData.name || userData.username,
+        username: userData.username || userData.username,
         accountStatus: userData.status || userData.accountStatus
       };
       

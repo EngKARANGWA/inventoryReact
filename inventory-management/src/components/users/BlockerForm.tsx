@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import axios from 'axios';
 import { Input } from '../ui/input';
@@ -62,6 +62,7 @@ export const BlockerForm: React.FC<BlockerFormProps> = ({
       if (initialData?.blockerId) {
         await axios.put(`${API_BASE_URL}/blockers/${initialData.blockerId}`, formData);
       } else {
+        console.log("Sending blocker payload:", formData);
         await axios.post(`${API_BASE_URL}/blockers`, formData);
       }
       
