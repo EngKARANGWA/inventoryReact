@@ -11,7 +11,9 @@ import {
   FileText,
   BarChart3,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  Building,
+  Target
 } from 'lucide-react';
 
 interface NavItem {
@@ -25,6 +27,8 @@ const navigation: NavItem[] = [
   { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
   { name: 'Users', href: '/dashboard/users', icon: Users },
+  { name: 'Warehouses', href: '/dashboard/warehouses', icon: Building },
+  { name: 'Production(Baches)', href: '/dashboard/productions', icon: Target },
   { name: 'Blockers', href: '/dashboard/blockers', icon: AlertTriangle },
   { name: 'Sales', href: '/dashboard/sales', icon: ShoppingCart },
   { name: 'Reports', href: '/dashboard/reports', icon: FileText },

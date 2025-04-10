@@ -1,13 +1,19 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LandingPage from './app/Landingpage/Landingpage';
-import Dashboard from './pages/Dashboard';
-import UserManagement from './pages/users/UserManagement';
-import ProductManagement from './pages/products/ProductManagement';
-import './App.css';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import LandingPage from "./app/Landingpage/Landingpage";
+import Dashboard from "./pages/Dashboard";
+import UserManagement from "./pages/users/UserManagement";
+import ProductManagement from "./pages/products/ProductManagement";
+import "./App.css";
+import WarehouseManagement from "./pages/warehouses/WarehouseManagement";
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const user = localStorage.getItem('user');
+  const user = localStorage.getItem("user");
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -20,37 +26,64 @@ function App() {
       <div className="min-h-screen">
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/dashboard/users" 
+          <Route
+            path="/dashboard/users"
             element={
               <ProtectedRoute>
                 <UserManagement />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/dashboard/products" 
+          <Route
+            path="/dashboard/products"
             element={
               <ProtectedRoute>
                 <ProductManagement />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/dashboard-cashier" 
+
+          <Route
+            path="/dashboard/warehouses"
+            element={
+              <ProtectedRoute>
+                <WarehouseManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/productions"
+            element={
+              <ProtectedRoute>
+                <ProductManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/productions"
+            element={
+              <ProtectedRoute>
+                <ProductManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard-cashier"
             element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
-            } 
+            }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
