@@ -163,20 +163,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Scale Monitor ID
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.scaleMonitorId || ''}
-                onChange={(e) => handleChange('scaleMonitorId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter scale monitor ID"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
+                full Name
               </label>
               <input
                 type="text"
@@ -184,7 +171,20 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 value={formData.names || ''}
                 onChange={(e) => handleChange('names', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter full name"
+                placeholder="Enter full Name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter user name"
               />
             </div>
             <div>
@@ -198,6 +198,19 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 onChange={(e) => handleChange('phoneNumber', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="scale@example.com"
               />
             </div>
             <div>
@@ -249,20 +262,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Saler ID
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.salerId || ''}
-                onChange={(e) => handleChange('salerId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter saler ID"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
+                Names
               </label>
               <input
                 type="text"
@@ -271,6 +271,19 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 onChange={(e) => handleChange('names', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter user name"
               />
             </div>
             <div>
@@ -284,6 +297,19 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 onChange={(e) => handleChange('phoneNumber', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="sale@example.com"
               />
             </div>
             <div>
@@ -335,20 +361,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Stock Keeper ID
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.stockKeeperId || ''}
-                onChange={(e) => handleChange('stockKeeperId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter stock keeper ID"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
+                full name
               </label>
               <input
                 type="text"
@@ -357,6 +370,19 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 onChange={(e) => handleChange('names', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter user name"
               />
             </div>
             <div>
@@ -371,7 +397,20 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
-            </div>
+            </div> 
+            <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="stock@example.com"
+              />
+              </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Address
@@ -421,19 +460,6 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Client ID
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.clientId || ''}
-                onChange={(e) => handleChange('clientId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter client ID"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name
               </label>
               <input
@@ -442,7 +468,20 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 value={formData.names || ''}
                 onChange={(e) => handleChange('names', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter full name"
+                placeholder="Enter full Name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter user name"
               />
             </div>
             <div>
@@ -456,6 +495,19 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 onChange={(e) => handleChange('phoneNumber', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="client@example.com"
               />
             </div>
             <div>
@@ -507,20 +559,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Driver ID
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.driverId || ''}
-                onChange={(e) => handleChange('driverId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter driver ID"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
+                full Name
               </label>
               <input
                 type="text"
@@ -529,6 +568,19 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 onChange={(e) => handleChange('names', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter user name"
               />
             </div>
             <div>
@@ -542,6 +594,32 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 onChange={(e) => handleChange('phoneNumber', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="driver@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                driving licence
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.licenseNumber || ''}
+                onChange={(e) => handleChange('licenseNumber', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter license number"
               />
             </div>
             <div>
@@ -606,19 +684,6 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Supplier ID
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.supplierId || ''}
-                onChange={(e) => handleChange('supplierId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter supplier ID"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name
               </label>
               <input
@@ -627,7 +692,20 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
                 value={formData.names || ''}
                 onChange={(e) => handleChange('names', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter full name"
+                placeholder="Enter full names"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter user name"
               />
             </div>
             <div>
@@ -918,10 +996,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Add New {getRoleLabel(role)}</h2>
+          <h2 className="text-xl font-semibold">
+            {initialData ? 'Edit User' : 'Add New User'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -935,19 +1015,5 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
   );
 };
 
-const getRoleLabel = (role: string) => {
-  const labels: { [key: string]: string } = {
-    blocker: 'Blocker',
-    scaleMonitor: 'Scale Monitor',
-    saler: 'Saler',
-    stockKeeper: 'Stock Keeper',
-    client: 'Client',
-    driver: 'Driver',
-    supplier: 'Supplier',
-    productionManager: 'Production Manager',
-    cashier: 'Cashier'
-  };
-  return labels[role] || role;
-};
 
 export default RoleForm; 

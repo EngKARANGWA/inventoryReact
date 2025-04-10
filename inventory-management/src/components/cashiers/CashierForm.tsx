@@ -189,9 +189,9 @@ const CashierForm: React.FC<CashierFormProps> = ({
         onClick={onClose} 
       />
       
-      <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
+      <div className="fixed inset-0 flex items-center justify-center z-50 px-4 overflow-y-auto">
         <div 
-          className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700" 
+          className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700 my-4" 
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-between items-center mb-6 border-b pb-3 dark:border-gray-700">

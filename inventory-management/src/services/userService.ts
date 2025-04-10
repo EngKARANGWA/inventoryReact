@@ -144,16 +144,26 @@ export const userService = {
     try {
       // Determine the correct endpoint based on role
       const role = userData.role?.toLowerCase();
-      let endpoint = '/users'; // default endpoint
+      let endpoint = '/auth/register'; // default endpoint for user registration
 
       if (role === 'cashier') {
         endpoint = '/cashier';
       } else if (role === 'blocker') {
         endpoint = '/blockers';
+      } else if (role === 'saler'){
+        endpoint = '/saler';
       } else if (role === 'driver') {
-        endpoint = '/driver';
+        endpoint = '/drivers';
+      } else if (role === 'client') {
+        endpoint = '/clients';
+      } else if (role === 'scalemonitor') {
+        endpoint = '/sm';
+      } else if (role === 'stockkeeper') {
+        endpoint = '/stockkeeper';
+      } else if (role === 'supplier') {
+        endpoint = '/supplier';
       } else if (role === 'admin') {
-        endpoint = '/admin';
+        endpoint = '/admins';
       }
 
       console.log('Creating user with role:', role);
@@ -202,13 +212,13 @@ export const userService = {
             endpoint = `${API_BASE_URL}/clients/${userId}`;
             break;
           case 'saler':
-            endpoint = `${API_BASE_URL}/salers/${userId}`;
+            endpoint = `${API_BASE_URL}/saler/${userId}`;
             break;
           case 'stockkeeper':
-            endpoint = `${API_BASE_URL}/stockkeepers/${userId}`;
+            endpoint = `${API_BASE_URL}/stockkeeper/${userId}`;
             break;
           case 'scalemonitor':
-            endpoint = `${API_BASE_URL}/scalemonitors/${userId}`;
+            endpoint = `${API_BASE_URL}/sm/${userId}`;
             break;
           case 'productionmanager':
             endpoint = `${API_BASE_URL}/productionmanagers/${userId}`;
