@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LandingPage from './app/Landingpage/Landingpage';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/users/UserManagement';
+import ProductManagement from './pages/products/ProductManagement';
 import './App.css';
 
 // Protected Route component
@@ -32,6 +33,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <UserManagement />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard/products" 
+            element={
+              <ProtectedRoute>
+                <ProductManagement />
               </ProtectedRoute>
             } 
           />

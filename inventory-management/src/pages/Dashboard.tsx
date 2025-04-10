@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sidebar } from '../components/ui/sidebar';
 import { Header } from '../components/ui/header';
+import { useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, 
   Package, 
@@ -208,12 +209,14 @@ const SummaryCard: React.FC<{
 };
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
         <Header />
-        <main className="flex-1 p-6">
+        <main className="flex-1">
           <div className="max-w-7xl mx-auto h-full">
             {/* Enhanced Header */}
             <div className="mb-6">
@@ -301,14 +304,15 @@ const Dashboard: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { title: 'New Sale', icon: ShoppingCart, color: 'bg-green-500' },
-                    { title: 'Add Product', icon: Package, color: 'bg-green-500' },
-                    { title: 'Generate Report', icon: Tag, color: 'bg-amber-500' },
-                    { title: 'View Inventory', icon: Wallet, color: 'bg-purple-500' }
+                    { title: 'New Sale', icon: ShoppingCart, color: 'bg-green-500', onClick: () => {} },
+                    { title: 'Add Product', icon: Package, color: 'bg-green-500', onClick: () => navigate('/dashboard/products') },
+                    { title: 'Generate Report', icon: Tag, color: 'bg-amber-500', onClick: () => {} },
+                    { title: 'View Inventory', icon: Wallet, color: 'bg-purple-500', onClick: () => {} }
                   ].map((action, i) => (
                     <button
                       key={i}
                       className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      onClick={action.onClick}
                     >
                       <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center mr-3`}>
                         <action.icon className="w-5 h-5 text-white" />

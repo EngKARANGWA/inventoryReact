@@ -22,6 +22,7 @@ interface NavItem {
 
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
   { name: 'Users', href: '/dashboard/users', icon: Users },
   { name: 'Blockers', href: '/dashboard/blockers', icon: AlertTriangle },
@@ -61,7 +62,7 @@ export const Sidebar: React.FC = () => {
         <div className="h-full flex flex-col">
           {/* Logo */}
           <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-green-500"> IHIRWE TRADING CO. LTD</h1>
+            <h1 className="text-xl font-bold text-green-500"> IHIRWE TRADING CO. LTD</h1>
           </div>
 
           {/* Navigation */}
