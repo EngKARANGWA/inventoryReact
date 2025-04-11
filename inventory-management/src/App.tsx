@@ -15,6 +15,13 @@ import ReturnsManagement from "./pages/returns/ReturnsManagement";
 import TransferManagement from "./pages/transfer/TransferManagement";
 import SaleManagement from "./pages/sales/SalesManagement";
 import DisposalManagement from "./pages/Disposal/DisposalManagement";
+// import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// import LandingPage from './app/Landingpage/Landingpage';
+// import Dashboard from './pages/Dashboard';
+// import UserManagement from './pages/users/UserManagement';
+// import ProductManagement from './pages/products/ProductManagement';
+import PriceManagement from './pages/prices/PriceManagement';
+import './App.css';
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -93,25 +100,15 @@ function App() {
           />
 
           <Route
-            path="/dashboard/sales"
+            path='/dashboard/prices'
             element={
               <ProtectedRoute>
-                <SaleManagement />
+                <PriceManagement />
               </ProtectedRoute>
             }
           />
-
-          <Route
-            path="/dashboard/disposals"
-            element={
-              <ProtectedRoute>
-                <DisposalManagement />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/dashboard-cashier"
+          <Route 
+            path="/dashboard-cashier" 
             element={
               <ProtectedRoute>
                 <Dashboard />
