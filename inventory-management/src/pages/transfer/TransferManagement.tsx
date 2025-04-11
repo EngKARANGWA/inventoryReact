@@ -466,7 +466,7 @@ const TransferManagement: React.FC = () => {
                       Total Quantity
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {totalQuantity} units
+                      {totalQuantity} Kg
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -708,7 +708,7 @@ const TransferManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {transfer.quantity.toLocaleString()} units
+                              {transfer.quantity.toLocaleString()} Kg
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">

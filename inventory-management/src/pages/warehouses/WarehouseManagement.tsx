@@ -843,7 +843,7 @@ const WarehouseManagement: React.FC = () => {
                     htmlFor="capacity"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Capacity (units) <span className="text-red-500">*</span>
+                    Capacity (Kg) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
