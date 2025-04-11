@@ -24,7 +24,6 @@ import {
   Production,
   Product,
   Warehouse,
-  User,
   ProductionCost,
 } from "../../services/productionServices";
 import { ToastContainer, toast } from "react-toastify";

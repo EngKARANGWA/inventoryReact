@@ -374,9 +374,9 @@ const TransferManagement: React.FC = () => {
   const completedTransfers = transfers.filter(
     (t) => t.status === "completed"
   ).length;
-  const cancelledTransfers = transfers.filter(
-    (t) => t.status === "cancelled"
-  ).length;
+  // const cancelledTransfers = transfers.filter(
+  //   (t) => t.status === "cancelled"
+  // ).length;
   const totalQuantity = transfers.reduce(
     (sum, t) => sum + (t.quantity || 0),
     0

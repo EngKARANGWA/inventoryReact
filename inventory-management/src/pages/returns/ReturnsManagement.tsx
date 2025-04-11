@@ -30,32 +30,32 @@ interface Sale {
   };
 }
 
-interface StockMovement {
-  id: number;
-  referenceNumber: string;
-  productId: number;
-  quantity: string;
-  direction: "in" | "out";
-  warehouseId: number;
-  sourceType: string;
-  movementDate: string;
-  notes: string | null;
-  warehouse: {
-    id: number;
-    name: string;
-  };
-  // Other properties from the API response
-  deliveryId: number | null;
-  productionId: number | null;
-  transferId: number | null;
-  saleId: number | null;
-  returnsId: number | null;
-  disposalId: number | null;
-  userId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
+// interface StockMovement {
+//   id: number;
+//   referenceNumber: string;
+//   productId: number;
+//   quantity: string;
+//   direction: "in" | "out";
+//   warehouseId: number;
+//   sourceType: string;
+//   movementDate: string;
+//   notes: string | null;
+//   warehouse: {
+//     id: number;
+//     name: string;
+//   };
+//   // Other properties from the API response
+//   deliveryId: number | null;
+//   productionId: number | null;
+//   transferId: number | null;
+//   saleId: number | null;
+//   returnsId: number | null;
+//   disposalId: number | null;
+//   userId: number;
+//   createdAt: string;
+//   updatedAt: string;
+//   deletedAt: string | null;
+// }
 
 interface SortConfig {
   key: keyof Return;
@@ -68,7 +68,7 @@ const ReturnsManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  // const [showFilters, setShowFilters] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pagination, setPagination] = useState({
@@ -77,7 +77,7 @@ const ReturnsManagement: React.FC = () => {
     total: 0,
     totalPages: 1,
   });
-  const [selectedSaleId, setSelectedSaleId] = useState<string>("");
+  const [selectedSaleId] = useState<string>("");
   const [sales, setSales] = useState<Sale[]>([]);
   const [salesLoading, setSalesLoading] = useState(false);
   const [salesSearch, setSalesSearch] = useState("");

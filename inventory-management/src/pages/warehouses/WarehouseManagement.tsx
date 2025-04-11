@@ -41,7 +41,7 @@ const WarehouseManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  // const [showFilters, setShowFilters] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showManagerForm, setShowManagerForm] = useState(false);
   const [editingWarehouse, setEditingWarehouse] =

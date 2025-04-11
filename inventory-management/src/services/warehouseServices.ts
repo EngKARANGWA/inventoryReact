@@ -53,9 +53,9 @@ interface UpdateWarehouseData {
   status?: "active" | "inactive";
 }
 
-interface ChangeManagerData {
-  managerId: number | null;
-}
+// interface ChangeManagerData {
+//   managerId: number | null;
+// }
 
 // Helper function to handle API responses
 const handleResponse = (response: any) => {
