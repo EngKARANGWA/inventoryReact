@@ -7,14 +7,16 @@ import {
   // Settings, 
   Menu, 
   X,
-  // ShoppingCart,
+  ShoppingCart,
   // FileText,
   // BarChart3,
   // Bell,
   Building,
   Target,
   RefreshCcw,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Truck,
+  Trash2Icon
 } from 'lucide-react';
 
 interface NavItem {
@@ -31,7 +33,9 @@ const navigation: NavItem[] = [
   { name: 'Production(Batches)', href: '/dashboard/productions', icon: Target },
   { name: 'Returns', href: '/dashboard/returns', icon: RefreshCcw },
   { name: 'Transfers', href: '/dashboard/transfers', icon: ArrowLeftRight },
-  // { name: 'Sales', href: '/dashboard/sales', icon: ShoppingCart },
+  { name: 'Sales', href: '/dashboard/sales', icon: ShoppingCart },
+  { name: 'Deliveries', href: '/dashboard/deliveries', icon: Truck },
+  { name: 'Disposals', href: '/dashboard/disposals', icon: Trash2Icon },
   // { name: 'Reports', href: '/dashboard/reports', icon: FileText },
   // { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   // { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },

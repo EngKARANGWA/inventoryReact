@@ -13,6 +13,8 @@ import WarehouseManagement from "./pages/warehouses/WarehouseManagement";
 import ProductionManagement from "./pages/production/ProductionManagement";
 import ReturnsManagement from "./pages/returns/ReturnsManagement";
 import TransferManagement from "./pages/transfer/TransferManagement";
+import SaleManagement from "./pages/sales/SalesManagement";
+import DisposalManagement from "./pages/Disposal/DisposalManagement";
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -86,6 +88,24 @@ function App() {
             element={
               <ProtectedRoute>
                 <TransferManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/sales"
+            element={
+              <ProtectedRoute>
+                <SaleManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/disposals"
+            element={
+              <ProtectedRoute>
+                <DisposalManagement />
               </ProtectedRoute>
             }
           />
