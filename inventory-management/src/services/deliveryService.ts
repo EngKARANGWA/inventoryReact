@@ -47,12 +47,21 @@ export interface Delivery {
   };
 }
 
-interface CreateDeliveryData {
+export interface PaginationInfo {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface CreateDeliveryData {
   purchaseId: number;
   driverId: number;
   weight: number;
   notes?: string;
   warehouseId?: number;
+  status: "pending" | "completed" | "cancelled" | "in_transit";
+  deliveredAt?: string;
 }
 
 interface UpdateDeliveryData {
@@ -75,18 +84,18 @@ export interface DeliveryFilterOptions {
 interface DeliveryResponse {
   success: boolean;
   data: Delivery[];
-  pagination: {
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo ;
 }
 
 export const deliveryService = {
-  createDelivery: async (deliveryData: CreateDeliveryData): Promise<Delivery> => {
+  createDelivery: async (
+    deliveryData: CreateDeliveryData
+  ): Promise<Delivery> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/deliveries`, deliveryData);
+      const response = await axios.post(
+        `${API_BASE_URL}/deliveries`,
+        deliveryData
+      );
       return response.data.data;
     } catch (error) {
       console.error("Error creating delivery:", error);
@@ -108,7 +117,9 @@ export const deliveryService = {
         purchaseId: options.purchaseId,
       };
 
-      const response = await axios.get(`${API_BASE_URL}/deliveries`, { params });
+      const response = await axios.get(`${API_BASE_URL}/deliveries`, {
+        params,
+      });
       return response.data;
     } catch (error) {
       console.error("Error fetching deliveries:", error);

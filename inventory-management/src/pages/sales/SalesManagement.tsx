@@ -12,214 +12,37 @@ import {
   ShoppingCart,
   DollarSign,
   Package,
-  User,
   Calendar,
+  RefreshCw,
   Check,
   Clock,
-  RefreshCw,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { saleService, Sale } from "../../services/saleService";
 
 const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
-// Services
-const productService = {
-  getAllProducts: async (): Promise<Product[]> => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/products`);
-      return response.data || [];
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      return [];
-    }
-  },
-};
-
-const salerService = {
-  getAllSalers: async (): Promise<Saler[]> => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/saler`);
-      return response.data || [];
-    } catch (error) {
-      console.error("Error fetching salers:", error);
-      return [];
-    }
-  },
-};
-
-const dailyPriceService = {
-  getAllPrices: async (): Promise<DailyPrice[]> => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/daily-price`);
-      return response.data || [];
-    } catch (error) {
-      console.error("Error fetching daily prices:", error);
-      return [];
-    }
-  },
-};
-
-const saleService = {
-  getAllSales: async (filters: any = {}): Promise<SaleResponse> => {
-    try {
-      const params = {
-        page: filters.page || 1,
-        pageSize: filters.pageSize || 10,
-        search: filters.search,
-        status: filters.status,
-        productId: filters.productId,
-        salerId: filters.salerId,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-      };
-
-      const response = await axios.get(`${API_BASE_URL}/sales`, { params });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching sales:", error);
-      return {
-        success: false,
-        data: [],
-        pagination: {
-          totalItems: 0,
-          currentPage: 1,
-          pageSize: 10,
-          totalPages: 1,
-        },
-      };
-    }
-  },
-
-  createSale: async (saleData: CreateSaleData): Promise<Sale> => {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/sales`, saleData);
-      return response.data.data;
-    } catch (error) {
-      console.error("Error creating sale:", error);
-      throw error;
-    }
-  },
-
-  updateSale: async (id: number, saleData: UpdateSaleData): Promise<Sale> => {
-    try {
-      const response = await axios.put(`${API_BASE_URL}/sales/${id}`, saleData);
-      return response.data.data;
-    } catch (error) {
-      console.error("Error updating sale:", error);
-      throw error;
-    }
-  },
-
-  deleteSale: async (id: number): Promise<boolean> => {
-    try {
-      await axios.delete(`${API_BASE_URL}/sales/${id}`);
-      return true;
-    } catch (error) {
-      console.error("Error deleting sale:", error);
-      return false;
-    }
-  },
-};
-
-// Interfaces
 interface Product {
   id: number;
   name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
-
-interface UserProfile {
-  id: number;
-  names: string;
-  phoneNumber: string;
-  address: string;
-  status: string;
-  userId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  profile: UserProfile;
 }
 
 interface Saler {
   id: number;
-  salerId: string;
-  tinNumber: string | null;
-  userId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  user: User;
+  name: string;
 }
 
 interface DailyPrice {
   id: number;
-  unitPrice: string;
-  date: string;
+  price: string;
   productId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  product: Product;
 }
 
-interface Sale {
-  id: number;
-  quantity: string;
-  date: string;
-  totalPaid: string;
-  totalDelivered: string;
-  note: string | null;
-  referenceNumber: string;
-  salerId: number;
-  priceId: number;
-  clientId: number | null;
-  productId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  product: Product;
-  saler: Saler;
-  price: DailyPrice;
-  client: any | null;
-}
-
-interface CreateSaleData {
-  productId: number;
-  quantity: number;
-  salerId: number;
-  priceId: number;
-  clientId?: number;
-  note?: string;
-  date?: string;
-}
-
-interface UpdateSaleData {
-  quantity?: number;
-  note?: string;
-  status?: "pending" | "completed" | "cancelled";
-}
-
-interface SaleResponse {
-  success: boolean;
-  data: Sale[];
-  pagination: {
-    totalItems: number;
-    currentPage: number;
-    pageSize: number;
-    totalPages: number;
-  };
+interface SortConfig {
+  key: keyof Sale;
+  direction: "ascending" | "descending";
 }
 
 const SaleManagement: React.FC = () => {
@@ -235,15 +58,11 @@ const SaleManagement: React.FC = () => {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingSalers, setLoadingSalers] = useState(false);
   const [loadingPrices, setLoadingPrices] = useState(false);
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof Sale;
-    direction: "ascending" | "descending";
-  } | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
   const [filters, setFilters] = useState({
     page: 1,
     pageSize: 10,
-    status: "",
     productId: "",
     salerId: "",
     startDate: "",
@@ -257,12 +76,12 @@ const SaleManagement: React.FC = () => {
     clientId: "",
     quantity: "",
     note: "",
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split("T")[0],
   });
 
-  const [products, setProducts] = useState<{ id: number; name: string }[]>([]);
-  const [salers, setSalers] = useState<{ id: number; name: string }[]>([]);
-  const [prices, setPrices] = useState<{ id: number; price: string; productId: number }[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [salers, setSalers] = useState<Saler[]>([]);
+  const [prices, setPrices] = useState<DailyPrice[]>([]);
 
   useEffect(() => {
     fetchSales();
@@ -286,31 +105,22 @@ const SaleManagement: React.FC = () => {
       setLoadingSalers(true);
       setLoadingPrices(true);
 
-      const [products, salers, prices] = await Promise.all([
-        productService.getAllProducts(),
-        salerService.getAllSalers(),
-        dailyPriceService.getAllPrices(),
+      const [productsRes, salersRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/products`),
+        axios.get(`${API_BASE_URL}/saler`),
       ]);
 
       setProducts(
-        products.map((product) => ({
+        productsRes.data.map((product: any) => ({
           id: product.id,
           name: product.name,
         }))
       );
 
       setSalers(
-        salers.map((saler) => ({
+        salersRes.data.map((saler: any) => ({
           id: saler.id,
           name: saler.user?.profile?.names || "Unknown Saler",
-        }))
-      );
-
-      setPrices(
-        prices.map((price) => ({
-          id: price.id,
-          price: price.unitPrice,
-          productId: price.productId,
         }))
       );
     } catch (error) {
@@ -319,28 +129,26 @@ const SaleManagement: React.FC = () => {
     } finally {
       setLoadingProducts(false);
       setLoadingSalers(false);
-      setLoadingPrices(false);
     }
   };
 
   const updatePriceOptions = async () => {
     try {
       setLoadingPrices(true);
-      const prices = await dailyPriceService.getAllPrices();
-      const filteredPrices = prices
-        .filter(price => price.productId === Number(formData.productId))
-        .map((price) => ({
+      const response = await axios.get(`${API_BASE_URL}/daily-price`);
+      const filteredPrices = response.data
+        .filter((price: any) => price.productId === Number(formData.productId))
+        .map((price: any) => ({
           id: price.id,
           price: price.unitPrice,
           productId: price.productId,
         }));
       setPrices(filteredPrices);
-      
-      // Auto-select the most recent price if available
+
       if (filteredPrices.length > 0) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          priceId: String(filteredPrices[0].id)
+          priceId: String(filteredPrices[0].id),
         }));
       }
     } catch (error) {
@@ -366,66 +174,58 @@ const SaleManagement: React.FC = () => {
       console.error("Error fetching sales:", err);
       setError("Failed to fetch sales. Please try again later.");
       toast.error("Failed to load sales");
-      setSales([]);
-      setTotalSales(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRefresh = () => {
-    fetchSales();
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    fetchSales();
-  };
+    setIsSubmitting(true);
 
-  const handleAddClick = () => {
-    setFormData({
-      productId: "",
-      salerId: "",
-      priceId: "",
-      clientId: "",
-      quantity: "",
-      note: "",
-      date: new Date().toISOString().split('T')[0],
-    });
-    setEditingSale(null);
-    setShowAddForm(true);
-  };
+    try {
+      const saleData = {
+        productId: Number(formData.productId),
+        salerId: Number(formData.salerId),
+        priceId: Number(formData.priceId),
+        quantity: parseFloat(formData.quantity),
+        note: formData.note,
+        date: formData.date,
+        ...(formData.clientId && { clientId: Number(formData.clientId) }),
+      };
 
-  const handleEditClick = (sale: Sale) => {
-    setFormData({
-      productId: String(sale.productId),
-      salerId: String(sale.salerId),
-      priceId: String(sale.priceId),
-      clientId: sale.clientId ? String(sale.clientId) : "",
-      quantity: String(sale.quantity),
-      note: sale.note || "",
-      date: sale.date.split('T')[0],
-    });
-    setEditingSale(sale);
-    setShowAddForm(true);
-  };
-
-  const handleDeleteSale = async (saleId: number) => {
-    if (window.confirm("Are you sure you want to delete this sale?")) {
-      try {
-        await saleService.deleteSale(saleId);
-        setSales(sales.filter((s) => s.id !== saleId));
-        setTotalSales(totalSales - 1);
-        toast.success("Sale deleted successfully");
-      } catch (err: any) {
-        console.error("Error deleting sale:", err);
-        toast.error(err.message || "Failed to delete sale");
+      if (editingSale) {
+        const updatedSale = await saleService.updateSale(editingSale.id, {
+          quantity: parseFloat(formData.quantity),
+          note: formData.note,
+        });
+        setSales(sales.map((s) => (s.id === editingSale.id ? updatedSale : s)));
+        toast.success("Sale updated successfully");
+      } else {
+        const newSale = await saleService.createSale(saleData);
+        setSales([newSale, ...sales]);
+        setTotalSales(totalSales + 1);
+        toast.success("Sale created successfully");
       }
+
+      setShowAddForm(false);
+    } catch (err: any) {
+      console.error("Error saving sale:", err);
+      toast.error(err.response?.data?.message || "Failed to save sale");
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+      page: 1,
+    }));
   };
 
   const handleFormChange = (
@@ -440,58 +240,59 @@ const SaleManagement: React.FC = () => {
     }));
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const saleData: CreateSaleData = {
-        productId: Number(formData.productId),
-        salerId: Number(formData.salerId),
-        priceId: Number(formData.priceId),
-        quantity: parseFloat(formData.quantity),
-        note: formData.note,
-        date: formData.date,
-      };
-
-      if (formData.clientId) {
-        saleData.clientId = Number(formData.clientId);
-      }
-
-      if (editingSale) {
-        const updatedSale = await saleService.updateSale(editingSale.id, {
-          quantity: parseFloat(formData.quantity),
-          note: formData.note,
-        });
-        setSales(
-          sales.map((s) =>
-            s.id === editingSale.id ? updatedSale : s
-          )
-        );
-        toast.success("Sale updated successfully");
-      } else {
-        const newSale = await saleService.createSale(saleData);
-        setSales([newSale, ...sales]);
-        setTotalSales(totalSales + 1);
-        toast.success("Sale created successfully");
-      }
-
-      setShowAddForm(false);
-    } catch (err: any) {
-      console.error("Error saving sale:", err);
-      toast.error(err.message || "Failed to save sale");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-      page: 1,
-    }));
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchSales();
+  };
+
+  const handleRefresh = () => {
+    fetchSales();
+  };
+
+  const handleAddClick = () => {
+    setEditingSale(null);
+    setFormData({
+      productId: "",
+      salerId: "",
+      priceId: "",
+      clientId: "",
+      quantity: "",
+      note: "",
+      date: new Date().toISOString().split("T")[0],
+    });
+    setShowAddForm(true);
+  };
+
+  const handleEditClick = (sale: Sale) => {
+    setEditingSale(sale);
+    setFormData({
+      productId: String(sale.productId),
+      salerId: String(sale.salerId),
+      priceId: String(sale.priceId),
+      clientId: sale.clientId ? String(sale.clientId) : "",
+      quantity: sale.quantity,
+      note: sale.note || "",
+      date: sale.date.split("T")[0],
+    });
+    setShowAddForm(true);
+  };
+
+  const handleDeleteSale = async (id: number) => {
+    if (window.confirm("Are you sure you want to delete this sale?")) {
+      try {
+        await saleService.deleteSale(id);
+        setSales(sales.filter((s) => s.id !== id));
+        setTotalSales(totalSales - 1);
+        toast.success("Sale deleted successfully");
+      } catch (error) {
+        console.error("Error deleting sale:", error);
+        toast.error("Failed to delete sale");
+      }
+    }
   };
 
   const handlePageChange = (newPage: number) => {
@@ -531,24 +332,26 @@ const SaleManagement: React.FC = () => {
   }, [sales, sortConfig]);
 
   const pendingSales = sales.filter(
-    (s) => parseFloat(s.totalPaid) < parseFloat(s.price.unitPrice) * parseFloat(s.quantity)
+    (s) =>
+      parseFloat(s.totalPaid) <
+      parseFloat(s.price.unitPrice) * parseFloat(s.quantity)
   ).length;
-  const completedSales = sales.filter(
-    (s) => parseFloat(s.totalPaid) >= parseFloat(s.price.unitPrice) * parseFloat(s.quantity)
-  ).length;
+  // const completedSales = sales.filter(
+  //   (s) =>
+  //     parseFloat(s.totalPaid) >=
+  //     parseFloat(s.price.unitPrice) * parseFloat(s.quantity)
+  // ).length;
   const totalRevenue = sales.reduce(
-    (sum, s) => sum + (parseFloat(s.price.unitPrice) * parseFloat(s.quantity)),
+    (sum, s) => sum + parseFloat(s.price.unitPrice) * parseFloat(s.quantity),
     0
   );
-  const totalPaid = sales.reduce(
-    (sum, s) => sum + parseFloat(s.totalPaid),
-    0
-  );
+  const totalPaid = sales.reduce((sum, s) => sum + parseFloat(s.totalPaid), 0);
 
   const getStatusBadge = (sale: Sale) => {
-    const totalAmount = parseFloat(sale.price.unitPrice) * parseFloat(sale.quantity);
+    const totalAmount =
+      parseFloat(sale.price.unitPrice) * parseFloat(sale.quantity);
     const paidAmount = parseFloat(sale.totalPaid);
-    
+
     if (paidAmount >= totalAmount) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -631,7 +434,11 @@ const SaleManagement: React.FC = () => {
                       Total Revenue
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Rwf
+                      {totalRevenue.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                      Rwf
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -646,7 +453,11 @@ const SaleManagement: React.FC = () => {
                       Total Paid
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Rwf
+                      {totalPaid.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                      Rwf
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -911,7 +722,8 @@ const SaleManagement: React.FC = () => {
                                 {sale.quantity} Kg
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
-                                @ {parseFloat(sale.price.unitPrice).toFixed(2)}Rwf/Kg
+                                @ {parseFloat(sale.price.unitPrice).toFixed(2)}
+                                Rwf/Kg
                               </div>
                             </div>
                           </td>
@@ -922,7 +734,11 @@ const SaleManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {(parseFloat(sale.price.unitPrice) * parseFloat(sale.quantity)).toFixed(2)}Rwf
+                              {(
+                                parseFloat(sale.price.unitPrice) *
+                                parseFloat(sale.quantity)
+                              ).toFixed(2)}
+                              Rwf
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1159,9 +975,7 @@ const SaleManagement: React.FC = () => {
                     disabled={isSubmitting || loadingSalers}
                   >
                     <option value="">
-                      {loadingSalers
-                        ? "Loading salers..."
-                        : "Select a saler"}
+                      {loadingSalers ? "Loading salers..." : "Select a saler"}
                     </option>
                     {salers.map((saler) => (
                       <option key={saler.id} value={saler.id}>
@@ -1191,7 +1005,9 @@ const SaleManagement: React.FC = () => {
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
-                    disabled={isSubmitting || loadingPrices || !formData.productId}
+                    disabled={
+                      isSubmitting || loadingPrices || !formData.productId
+                    }
                   >
                     <option value="">
                       {loadingPrices
@@ -1206,11 +1022,13 @@ const SaleManagement: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                  {!loadingPrices && prices.length === 0 && formData.productId && (
-                    <p className="mt-1 text-sm text-red-600">
-                      No prices available for selected product
-                    </p>
-                  )}
+                  {!loadingPrices &&
+                    prices.length === 0 &&
+                    formData.productId && (
+                      <p className="mt-1 text-sm text-red-600">
+                        No prices available for selected product
+                      </p>
+                    )}
                 </div>
 
                 {/* Quantity Input */}

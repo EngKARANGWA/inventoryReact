@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { deliveryService, Delivery, CreateDeliveryDTO } from '../../services/deliveryService';
+import { deliveryService, Delivery, CreateDeliveryData } from '../../services/deliveryService';
 
 interface DeliveryFormProps {
   isOpen: boolean;
@@ -29,8 +29,8 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
       setFormData({
         status: delivery.status,
         weight: delivery.weight.toString(),
-        purchaseId: delivery.purchase.id,
-        driverId: delivery.driver.id,
+        purchaseId: delivery.purchase?.id?.toString() || '',
+        driverId: delivery.driver?.id?.toString() || '',
         notes: delivery.notes || '',
         deliveredAt: delivery.deliveredAt || '',
       });
@@ -82,15 +82,15 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
     }
 
     try {
-      const deliveryData: CreateDeliveryDTO = {
+      const deliveryData: CreateDeliveryData = {
         status: formData.status,
         weight: Number(formData.weight),
         purchaseId: Number(formData.purchaseId),
         driverId: Number(formData.driverId),
         deliveredAt: formData.deliveredAt 
-          ? formData.deliveredAt.split('T')[0] // Extract just the YYYY-MM-DD part
-          : '', // Use empty string as fallback instead of null
-        notes: formData.notes
+          ? formData.deliveredAt.split('T')[0]
+          : '',
+        notes: formData.notes || undefined
       };
 
       if (delivery) {

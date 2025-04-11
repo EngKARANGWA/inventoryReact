@@ -20,9 +20,9 @@ import DisposalManagement from "./pages/Disposal/DisposalManagement";
 // import Dashboard from './pages/Dashboard';
 // import UserManagement from './pages/users/UserManagement';
 // import ProductManagement from './pages/products/ProductManagement';
-import PriceManagement from './pages/prices/PriceManagement';
-import DeliveriesManagement from './pages/deliveries/DeliveriesManagement';
-import './App.css';
+import DeliveriesManagement from "./pages/deliveries/DeliveriesManagement";
+import "./App.css";
+import StockMovementManagement from "./pages/stockMovement/StockMovementManagement";
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -100,26 +100,53 @@ function App() {
             }
           />
 
-          <Route
-            path='/dashboard/prices'
+          {/* <Route
+            path="/dashboard/prices"
             element={
               <ProtectedRoute>
                 <PriceManagement />
               </ProtectedRoute>
             }
-          />
-          
+          /> */}
+
           <Route
-            path='/dashboard/deliveries'
+            path="/dashboard/sales"
+            element={
+              <ProtectedRoute>
+                <SaleManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/disposals"
+            element={
+              <ProtectedRoute>
+                <DisposalManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/stock"
+            element={
+              <ProtectedRoute>
+                <StockMovementManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/deliveries"
             element={
               <ProtectedRoute>
                 <DeliveriesManagement />
               </ProtectedRoute>
             }
           />
-          
-          <Route 
-            path="/dashboard-cashier" 
+
+          <Route
+            path="/dashboard-cashier"
             element={
               <ProtectedRoute>
                 <Dashboard />

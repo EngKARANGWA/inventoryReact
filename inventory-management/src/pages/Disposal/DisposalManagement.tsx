@@ -12,15 +12,11 @@ import {
   Package,
   Warehouse,
   Calendar,
-  Check,
-  X,
-  Clock,
   RefreshCw,
   AlertTriangle,
   Gift,
   Recycle,
   Truck,
-  RotateCcw,
   Skull,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
@@ -48,7 +44,7 @@ const DisposalManagement: React.FC = () => {
   const [loadingWarehouses, setLoadingWarehouses] = useState(false);
   const [loadingPrices, setLoadingPrices] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
-  const [availableStock, setAvailableStock] = useState<number>(0);
+  // const [availableStock, setAvailableStock] = useState<number>(0);
 
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Disposal;

@@ -4,19 +4,16 @@ import {
   LayoutDashboard, 
   Package, 
   Users, 
-  // Settings, 
   Menu, 
   X,
   ShoppingCart,
-  // FileText,
-  // BarChart3,
-  // Bell,
-  Building,
   Target,
   RefreshCcw,
   ArrowLeftRight,
   Truck,
-  Trash2Icon
+  Trash2Icon,
+  Warehouse,
+  Boxes
 } from 'lucide-react';
 
 interface NavItem {
@@ -27,20 +24,16 @@ interface NavItem {
 
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Products', href: '/dashboard/products', icon: Package },
-  // { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
-  { name: 'Warehouses', href: '/dashboard/warehouses', icon: Building },
+  { name: 'Stock', href: '/dashboard/stock', icon: Boxes },
+  { name: 'Deliveries', href: '/dashboard/deliveries', icon: Truck },
   { name: 'Production(Batches)', href: '/dashboard/productions', icon: Target },
+  { name: 'Sales', href: '/dashboard/sales', icon: ShoppingCart },
+  { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Returns', href: '/dashboard/returns', icon: RefreshCcw },
   { name: 'Transfers', href: '/dashboard/transfers', icon: ArrowLeftRight },
-  { name: 'Sales', href: '/dashboard/sales', icon: ShoppingCart },
-  { name: 'Deliveries', href: '/dashboard/deliveries', icon: Truck },
   { name: 'Disposals', href: '/dashboard/disposals', icon: Trash2Icon },
-  // { name: 'Reports', href: '/dashboard/reports', icon: FileText },
-  // { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-  // { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
-  { name: 'Price', href: '/dashboard/prices', icon: Package }, // Assuming Package icon is used as a placeholder for MoneyBill
-  { name: 'Deliveries', href: '/dashboard/deliveries', icon: Truck },
+  { name: 'Warehouses', href: '/dashboard/warehouses', icon: Warehouse },
+  // { name: 'Price', href: '/dashboard/prices', icon: Package },
   { name: 'Users', href: '/dashboard/users', icon: Users },
   // { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
@@ -51,7 +44,6 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile menu button */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}

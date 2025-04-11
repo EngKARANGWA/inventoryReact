@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, RefreshCw, Calendar } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 import { Price } from '../../services/priceService';
 import { Product } from '../../services/productService';
 import { toast } from 'react-toastify';
@@ -228,7 +228,7 @@ const PriceForm: React.FC<PriceFormProps> = ({
             )}
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Date
             </label>
@@ -249,7 +249,7 @@ const PriceForm: React.FC<PriceFormProps> = ({
             {errors.date && (
               <p className="mt-1 text-sm text-red-600">{errors.date}</p>
             )}
-          </div>
+          </div> */}
 
           <div className="flex justify-end space-x-3 pt-4">
             <button
