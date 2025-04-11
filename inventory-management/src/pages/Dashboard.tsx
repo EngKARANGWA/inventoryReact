@@ -307,7 +307,7 @@ const Dashboard: React.FC = () => {
                     { title: 'New Sale', icon: ShoppingCart, color: 'bg-green-500', onClick: () => {} },
                     { title: 'Add Product', icon: Package, color: 'bg-green-500', onClick: () => navigate('/dashboard/products') },
                     { title: 'Generate Report', icon: Tag, color: 'bg-amber-500', onClick: () => {} },
-                    { title: 'View Inventory', icon: Wallet, color: 'bg-purple-500', onClick: () => {} }
+                    { title: 'View Deliveries', icon: Wallet, color: 'bg-purple-500', onClick: () => navigate('/dashboard/deliveries') }
                   ].map((action, i) => (
                     <button
                       key={i}

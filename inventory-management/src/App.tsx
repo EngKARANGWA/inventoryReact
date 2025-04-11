@@ -21,6 +21,7 @@ import DisposalManagement from "./pages/Disposal/DisposalManagement";
 // import UserManagement from './pages/users/UserManagement';
 // import ProductManagement from './pages/products/ProductManagement';
 import PriceManagement from './pages/prices/PriceManagement';
+import DeliveriesManagement from './pages/deliveries/DeliveriesManagement';
 import './App.css';
 
 // Protected Route component
@@ -107,6 +108,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
+          <Route
+            path='/dashboard/deliveries'
+            element={
+              <ProtectedRoute>
+                <DeliveriesManagement />
+              </ProtectedRoute>
+            }
+          />
+          
           <Route 
             path="/dashboard-cashier" 
             element={

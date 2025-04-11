@@ -40,7 +40,7 @@ const navigation: NavItem[] = [
   // { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   // { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
   { name: 'Price', href: '/dashboard/prices', icon: Package }, // Assuming Package icon is used as a placeholder for MoneyBill
-  { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
+  { name: 'Deliveries', href: '/dashboard/deliveries', icon: Truck },
   { name: 'Users', href: '/dashboard/users', icon: Users },
   // { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
