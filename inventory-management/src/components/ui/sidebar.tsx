@@ -11,9 +11,10 @@ import {
   FileText,
   BarChart3,
   Bell,
-  AlertTriangle,
   Building,
-  Target
+  Target,
+  RefreshCcw,
+  ArrowLeftRight
 } from 'lucide-react';
 
 interface NavItem {
@@ -26,14 +27,15 @@ const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
-  { name: 'Users', href: '/dashboard/users', icon: Users },
   { name: 'Warehouses', href: '/dashboard/warehouses', icon: Building },
-  { name: 'Production(Baches)', href: '/dashboard/productions', icon: Target },
-  { name: 'Blockers', href: '/dashboard/blockers', icon: AlertTriangle },
+  { name: 'Production(Batches)', href: '/dashboard/productions', icon: Target },
+  { name: 'Returns', href: '/dashboard/returns', icon: RefreshCcw },
+  { name: 'Transfers', href: '/dashboard/transfers', icon: ArrowLeftRight },
   { name: 'Sales', href: '/dashboard/sales', icon: ShoppingCart },
   { name: 'Reports', href: '/dashboard/reports', icon: FileText },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  { name: 'Users', href: '/dashboard/users', icon: Users },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

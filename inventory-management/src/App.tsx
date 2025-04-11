@@ -10,6 +10,9 @@ import UserManagement from "./pages/users/UserManagement";
 import ProductManagement from "./pages/products/ProductManagement";
 import "./App.css";
 import WarehouseManagement from "./pages/warehouses/WarehouseManagement";
+import ProductionManagement from "./pages/production/ProductionManagement";
+import ReturnsManagement from "./pages/returns/ReturnsManagement";
+import TransferManagement from "./pages/transfer/TransferManagement";
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -64,19 +67,29 @@ function App() {
             path="/dashboard/productions"
             element={
               <ProtectedRoute>
-                <ProductManagement />
+                <ProductionManagement />
               </ProtectedRoute>
             }
           />
 
           <Route
-            path="/dashboard/productions"
+            path="/dashboard/returns"
             element={
               <ProtectedRoute>
-                <ProductManagement />
+                <ReturnsManagement />
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/dashboard/transfers"
+            element={
+              <ProtectedRoute>
+                <TransferManagement />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/dashboard-cashier"
             element={

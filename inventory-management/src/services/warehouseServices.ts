@@ -1,6 +1,26 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = 'https://test.gvibyequ.a2hosted.com/api';
+const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+
+export interface WarehouseManager {
+  id: number;
+  warehouseAccessLevel: string;
+  warehouseId: number;
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  user_id: number;
+  warehouse_id: number;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    profile?: {
+      names: string;
+    };
+  };
+}
 
 export interface Warehouse {
   id: number;
@@ -8,22 +28,14 @@ export interface Warehouse {
   location: string;
   capacity: number;
   currentOccupancy: number;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   managerId: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
   description?: string;
-  manager?: {
-    id: number;
-    username: string;
-    email: string;
-  } | null;
-  scaleMonitor?: {
-    id: number;
-    username: string;
-    email: string;
-  } | null;
+  manager: WarehouseManager | null;
+  scaleMonitor: any | null;
 }
 
 interface CreateWarehouseData {
@@ -38,11 +50,11 @@ interface UpdateWarehouseData {
   location?: string;
   capacity?: number;
   description?: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
 }
 
 interface ChangeManagerData {
-  managerId: number;
+  managerId: number | null;
 }
 
 // Helper function to handle API responses
@@ -59,18 +71,23 @@ const handleResponse = (response: any) => {
 // Helper function to handle errors
 const handleError = (error: any) => {
   if (axios.isAxiosError(error)) {
-    console.error('API Error:', error.response?.data?.message || error.message);
-    throw new Error(error.response?.data?.message || 'An error occurred');
+    console.error("API Error:", error.response?.data?.message || error.message);
+    throw new Error(error.response?.data?.message || "An error occurred");
   }
-  console.error('Error:', error);
+  console.error("Error:", error);
   throw error;
 };
 
 export const warehouseService = {
   // Create a new warehouse
-  createWarehouse: async (warehouseData: CreateWarehouseData): Promise<Warehouse> => {
+  createWarehouse: async (
+    warehouseData: CreateWarehouseData
+  ): Promise<Warehouse> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/warehouse`, warehouseData);
+      const response = await axios.post(
+        `${API_BASE_URL}/warehouse`,
+        warehouseData
+      );
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -101,9 +118,15 @@ export const warehouseService = {
   },
 
   // Update a warehouse
-  updateWarehouse: async (id: number, warehouseData: UpdateWarehouseData): Promise<Warehouse> => {
+  updateWarehouse: async (
+    id: number,
+    warehouseData: UpdateWarehouseData
+  ): Promise<Warehouse> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/warehouse/${id}`, warehouseData);
+      const response = await axios.put(
+        `${API_BASE_URL}/warehouse/${id}`,
+        warehouseData
+      );
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -112,13 +135,24 @@ export const warehouseService = {
   },
 
   // Change warehouse manager
-  changeManager: async (id: number, managerData: ChangeManagerData): Promise<Warehouse> => {
+  changeManager: async (
+    warehouseId: number,
+    data: { newManagerId: number }
+  ): Promise<void> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/warehouse/${id}/change-manager`, managerData);
-      return handleResponse(response);
+      await axios.post(
+        `${API_BASE_URL}/warehouse/${warehouseId}/change-manager`,
+        {
+          newManagerId: data.newManagerId,
+        }
+      );
     } catch (error) {
-      handleError(error);
-      throw error;
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message || "Failed to change manager"
+        );
+      }
+      throw new Error("Failed to change manager");
     }
   },
 
@@ -136,11 +170,13 @@ export const warehouseService = {
   // Restore a warehouse
   restoreWarehouse: async (id: number): Promise<Warehouse> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/warehouse/${id}/restore`);
+      const response = await axios.post(
+        `${API_BASE_URL}/warehouse/${id}/restore`
+      );
       return handleResponse(response);
     } catch (error) {
       handleError(error);
       throw error;
     }
-  }
+  },
 };

@@ -5,15 +5,15 @@ import {
   Search,
   Edit2,
   Trash2,
-  Filter,
-  ChevronDown,
-  ChevronUp,
   Plus,
   Warehouse,
   MapPin,
   Box,
   Package,
   User,
+  ArrowLeft,
+  ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 import {
   warehouseService,
@@ -29,7 +29,8 @@ interface StockKeeper {
   user: {
     id: number;
     username: string;
-    profile: {
+    email: string;
+    profile?: {
       names: string;
     };
   };
@@ -54,9 +55,14 @@ const WarehouseManagement: React.FC = () => {
     null
   );
   const [newManagerId, setNewManagerId] = useState<string>("");
-
+  const [isSubmittingManager, setIsSubmittingManager] = useState(false);
   const [stockKeepers, setStockKeepers] = useState<StockKeeper[]>([]);
   const [loadingStockKeepers, setLoadingStockKeepers] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    totalPages: 1,
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -99,7 +105,11 @@ const WarehouseManagement: React.FC = () => {
     try {
       const warehousesData = await warehouseService.getAllWarehouses();
       setWarehouses(warehousesData);
-      // toast.success("Warehouses loaded successfully");
+      // Calculate total pages
+      setPagination((prev) => ({
+        ...prev,
+        totalPages: Math.ceil(warehousesData.length / prev.pageSize),
+      }));
     } catch (err) {
       console.error("Error fetching warehouses:", err);
       setError("Failed to fetch warehouses. Please try again later.");
@@ -110,8 +120,15 @@ const WarehouseManagement: React.FC = () => {
     }
   };
 
+  const handleRefresh = () => {
+    fetchWarehouses();
+    toast.info("Refreshing warehouse data...");
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    // Reset to first page when searching
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleAddClick = () => {
@@ -157,22 +174,30 @@ const WarehouseManagement: React.FC = () => {
 
   const handleChangeManagerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedWarehouseId) {
-      toast.error("Please select a warehouse");
+    if (!selectedWarehouseId || isSubmittingManager) {
       return;
     }
 
+    if (!newManagerId) {
+      toast.error("Please select a manager");
+      return;
+    }
+
+    setIsSubmittingManager(true);
+
     try {
-      // Fix: Send the correct payload format { newManagerId: number }
       await warehouseService.changeManager(selectedWarehouseId, {
-        newManagerId: newManagerId ? Number(newManagerId) : null,
+        newManagerId: Number(newManagerId),
       });
       toast.success("Manager changed successfully");
-      fetchWarehouses(); // Refresh the list
+      fetchWarehouses();
       setShowManagerForm(false);
+      setNewManagerId("");
     } catch (err: any) {
       console.error("Error changing manager:", err);
       toast.error(err.message || "Failed to change manager");
+    } finally {
+      setIsSubmittingManager(false);
     }
   };
 
@@ -225,12 +250,21 @@ const WarehouseManagement: React.FC = () => {
     }
   };
 
-  const filteredWarehouses = warehouses.filter((warehouse) => {
-    const matchesSearch =
-      warehouse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      warehouse.location.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  // Enhanced search functionality that searches all columns
+  const filteredWarehouses = React.useMemo(() => {
+    if (!searchTerm) return warehouses;
+
+    const searchLower = searchTerm.toLowerCase();
+    return warehouses.filter(
+      (warehouse) =>
+        warehouse.name.toLowerCase().includes(searchLower) ||
+        warehouse.location.toLowerCase().includes(searchLower) ||
+        warehouse.capacity.toString().includes(searchTerm) ||
+        warehouse.currentOccupancy.toString().includes(searchTerm) ||
+        warehouse.status.toLowerCase().includes(searchLower) ||
+        (warehouse.manager?.user?.username || "").toLowerCase().includes(searchLower)
+    );
+  }, [warehouses, searchTerm]);
 
   // Sorting functionality with null checks
   const requestSort = (key: keyof WarehouseType) => {
@@ -246,22 +280,62 @@ const WarehouseManagement: React.FC = () => {
   };
 
   const sortedWarehouses = React.useMemo(() => {
-    if (!sortConfig) return filteredWarehouses;
+    let result = [...filteredWarehouses];
 
-    return [...filteredWarehouses].sort((a, b) => {
-      // Handle null or undefined values
-      const aValue = a[sortConfig.key] ?? "";
-      const bValue = b[sortConfig.key] ?? "";
+    if (sortConfig) {
+      result.sort((a, b) => {
+        const aValue = a[sortConfig.key] ?? "";
+        const bValue = b[sortConfig.key] ?? "";
 
-      if (aValue < bValue) {
-        return sortConfig.direction === "ascending" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === "ascending" ? 1 : -1;
-      }
-      return 0;
-    });
+        if (aValue < bValue) {
+          return sortConfig.direction === "ascending" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "ascending" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return result;
   }, [filteredWarehouses, sortConfig]);
+
+  // Pagination functions
+  const handlePageChange = (newPage: number) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newSize = Number(e.target.value);
+    setPagination({
+      page: 1,
+      pageSize: newSize,
+      totalPages: Math.ceil(filteredWarehouses.length / newSize),
+    });
+  };
+
+  // Calculate paginated data
+  const paginatedWarehouses = React.useMemo(() => {
+    return sortedWarehouses.slice(
+      (pagination.page - 1) * pagination.pageSize,
+      pagination.page * pagination.pageSize
+    );
+  }, [sortedWarehouses, pagination.page, pagination.pageSize]);
+
+  // Update total pages when filtered results change
+  React.useEffect(() => {
+    const totalPages = Math.ceil(
+      filteredWarehouses.length / pagination.pageSize
+    );
+    if (totalPages !== pagination.totalPages) {
+      setPagination((prev) => ({
+        ...prev,
+        totalPages,
+        // Reset to first page if current page would be beyond new total pages
+        page: prev.page > totalPages ? 1 : prev.page,
+      }));
+    }
+  }, [filteredWarehouses.length, pagination.pageSize]);
 
   // Calculate summary data
   const totalWarehouses = warehouses.length;
@@ -335,7 +409,7 @@ const WarehouseManagement: React.FC = () => {
                       Total Capacity
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {totalCapacity} units
+                      {totalCapacity} KGs
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
@@ -383,7 +457,7 @@ const WarehouseManagement: React.FC = () => {
                   />
                   <input
                     type="text"
-                    placeholder="Search warehouses..."
+                    placeholder="Search warehouses by name, location, capacity, etc..."
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={searchTerm}
                     onChange={handleSearch}
@@ -391,16 +465,11 @@ const WarehouseManagement: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setShowFilters(!showFilters)}
+                    onClick={handleRefresh}
                     className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    title="Refresh data"
                   >
-                    <Filter size={18} className="mr-2" />
-                    Filters
-                    {showFilters ? (
-                      <ChevronUp size={18} className="ml-2" />
-                    ) : (
-                      <ChevronDown size={18} className="ml-2" />
-                    )}
+                    <RefreshCw size={18} />
                   </button>
                   <button
                     onClick={handleAddClick}
@@ -411,43 +480,6 @@ const WarehouseManagement: React.FC = () => {
                   </button>
                 </div>
               </div>
-
-              {/* Filters Panel - Now visible when showFilters is true */}
-              {showFilters && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">
-                    Filters
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
-                      </label>
-                      <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Has Manager
-                      </label>
-                      <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">All</option>
-                        <option value="yes">With Manager</option>
-                        <option value="no">Without Manager</option>
-                      </select>
-                    </div>
-                    <div className="flex items-end">
-                      <button className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        Apply Filters
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Warehouses Table */}
@@ -547,7 +579,7 @@ const WarehouseManagement: React.FC = () => {
                           {error}
                         </td>
                       </tr>
-                    ) : sortedWarehouses.length === 0 ? (
+                    ) : paginatedWarehouses.length === 0 ? (
                       <tr>
                         <td
                           colSpan={7}
@@ -558,7 +590,7 @@ const WarehouseManagement: React.FC = () => {
                         </td>
                       </tr>
                     ) : (
-                      sortedWarehouses.map((warehouse) => (
+                      paginatedWarehouses.map((warehouse) => (
                         <tr key={warehouse.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
@@ -575,7 +607,7 @@ const WarehouseManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {warehouse.capacity.toLocaleString()} units
+                              {warehouse.capacity.toLocaleString()} Kg
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -608,9 +640,22 @@ const WarehouseManagement: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {warehouse.manager?.user?.username || "No manager"}
-                            </div>
+                            {warehouse.manager ? (
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-gray-500" />
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {warehouse.manager.user?.username}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-500 italic">
+                                No manager assigned
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
@@ -646,6 +691,77 @@ const WarehouseManagement: React.FC = () => {
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="bg-gray-50 px-6 py-3 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200">
+                <div className="flex items-center mb-2 sm:mb-0">
+                  <span className="text-sm text-gray-700 mr-2">
+                    Showing {(pagination.page - 1) * pagination.pageSize + 1}-
+                    {Math.min(
+                      pagination.page * pagination.pageSize,
+                      filteredWarehouses.length
+                    )}{" "}
+                    of {filteredWarehouses.length}
+                  </span>
+                  <select
+                    value={pagination.pageSize}
+                    onChange={handlePageSizeChange}
+                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                  >
+                    {[5, 10, 20, 50].map((size) => (
+                      <option key={size} value={size}>
+                        Show {size}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handlePageChange(1)}
+                    disabled={pagination.page === 1}
+                    className={`px-3 py-1 rounded ${
+                      pagination.page === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    First
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className={`px-3 py-1 rounded ${
+                      pagination.page === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ArrowLeft size={16} />
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className={`px-3 py-1 rounded ${
+                      pagination.page >= pagination.totalPages
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ArrowRight size={16} />
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.totalPages)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className={`px-3 py-1 rounded ${
+                      pagination.page >= pagination.totalPages
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Last
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -867,7 +983,9 @@ const WarehouseManagement: React.FC = () => {
                       <option value="">Select a manager</option>
                       {stockKeepers.map((sk) => (
                         <option key={sk.id} value={sk.id}>
-                          {sk.user.profile.names}
+                          {" "}
+                          {/* Use sk.id instead of sk.user.id */}
+                          {sk.user.profile?.names || sk.user.username}
                         </option>
                       ))}
                     </select>
@@ -888,10 +1006,38 @@ const WarehouseManagement: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={loadingStockKeepers || !newManagerId}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isSubmittingManager ? "opacity-75 cursor-not-allowed" : ""
+                  }`}
+                  disabled={isSubmittingManager || !newManagerId}
                 >
-                  Change Manager
+                  {isSubmittingManager ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Changing...
+                    </>
+                  ) : (
+                    "Change Manager"
+                  )}
                 </button>
               </div>
             </form>
