@@ -15,7 +15,8 @@ import {
   Target,
   RefreshCcw,
   ArrowLeftRight,
-  Truck
+  Truck,
+  CreditCard
 } from 'lucide-react';
 
 interface NavItem {
@@ -32,6 +33,7 @@ const navigation: NavItem[] = [
   { name: 'Production(Batches)', href: '/dashboard/productions', icon: Target },
   { name: 'Returns', href: '/dashboard/returns', icon: RefreshCcw },
   { name: 'Transfers', href: '/dashboard/transfers', icon: ArrowLeftRight },
+  { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
   // { name: 'Sales', href: '/dashboard/sales', icon: ShoppingCart },
   // { name: 'Reports', href: '/dashboard/reports', icon: FileText },
   // { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },

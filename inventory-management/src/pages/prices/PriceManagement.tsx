@@ -253,13 +253,6 @@ const PriceManagement: React.FC = () => {
                     {showFilters ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
                   </button>
                   <button
-                    onClick={handleAdd}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    <Plus size={18} className="mr-2" />
-                    Add Price
-                  </button>
-                  <button
                     onClick={handleRefresh}
                     className={`flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 ${
                       isRefreshing ? 'animate-spin' : ''
@@ -268,6 +261,13 @@ const PriceManagement: React.FC = () => {
                     disabled={isRefreshing}
                   >
                     <RefreshCw size={18} />
+                  </button>
+                  <button
+                    onClick={handleAdd}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    <Plus size={18} className="mr-2" />
+                    Add Price
                   </button>
                 </div>
               </div>

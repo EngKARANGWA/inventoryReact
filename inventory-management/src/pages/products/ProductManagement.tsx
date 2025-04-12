@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../../components/ui/sidebar';
 import { Header } from '../../components/ui/header';
-import { Search, Edit2, Trash2} from 'lucide-react';
+import { Search, Edit2, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { productService, Product } from '../../services/productService';
 import ProductForm from '../../components/products/ProductForm';
 import { useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const ProductManagement: React.FC = () => {
   const location = useLocation();
@@ -12,12 +13,16 @@ const ProductManagement: React.FC = () => {
   const skipForm = queryParams.get('skipForm') === 'true';
   
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showProductForm, setShowProductForm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [expandedProduct] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Fetch products on component mount
   useEffect(() => {
@@ -25,29 +30,38 @@ const ProductManagement: React.FC = () => {
   }, []);
 
   const fetchProducts = async () => {
-    setLoading(true);
-    setError('');
     try {
-      const response = await productService.getAllProducts();
-      // Check if response is an array or has a data property
-      const productsData = Array.isArray(response) ? response : (response as { data: Product[] })?.data || [];
-      if (!Array.isArray(productsData)) {
-        console.warn('Unexpected response format:', response);
-        setProducts([]);
-      } else {
-        setProducts(productsData);
-      }
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError('Failed to fetch products. Please try again later.');
-      setProducts([]);
+      setLoading(true);
+      const data = await productService.getAllProducts() as Product[];
+      setProducts(data);
+      setFilteredProducts(data);
+      setTotalPages(Math.ceil(data.length / itemsPerPage));
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Failed to fetch products');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    const filtered = products.filter(product =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredProducts(filtered);
+    setCurrentPage(1);
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+  }, [searchTerm, products]);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchProducts();
+    setIsRefreshing(false);
   };
 
   const handleAddProduct = () => {
@@ -75,10 +89,11 @@ const ProductManagement: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
         await productService.deleteProduct(productId);
-        setProducts(products.filter(product => String(product.id) !== productId));
-      } catch (err) {
-        setError('Failed to delete product');
-        console.error('Error deleting product:', err);
+        toast.success('Product deleted successfully');
+        fetchProducts();
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        toast.error('Failed to delete product');
       }
     }
   };
@@ -87,29 +102,28 @@ const ProductManagement: React.FC = () => {
     try {
       if (selectedProduct && selectedProduct.id) {
         await productService.updateProduct(String(selectedProduct.id), formData);
+        toast.success('Product updated successfully');
         setProducts(products.map(product => 
           String(product.id) === String(selectedProduct.id) ? { ...product, ...formData } : product
         ));
       } else {
         const newProduct = await productService.createProduct(formData) as Product;
         setProducts([...products, newProduct]);
+        toast.success('Product created successfully');
       }
       setShowProductForm(false);
       setSelectedProduct(null);
-    } catch (err) {
-      setError('Failed to save product');
-      console.error('Error saving product:', err);
+      fetchProducts();
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error('Failed to save product');
     }
   };
 
-  // Filter products based on search term
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
-
-  // Calculate summary data
-  const totalProducts = products.length;
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -130,7 +144,7 @@ const ProductManagement: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">Total Products</p>
-                    <p className="text-2xl font-bold text-gray-800">{totalProducts}</p>
+                    <p className="text-2xl font-bold text-gray-800">{products.length}</p>
                   </div>
                 </div>
               </div>
@@ -151,10 +165,19 @@ const ProductManagement: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={handleAddProduct}
-                    className="x-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onClick={handleRefresh}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    disabled={isRefreshing}
                   >
-                    + Add Product
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                  <button
+                    onClick={handleAddProduct}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Product
                   </button>
                 </div>
               </div>
@@ -178,16 +201,12 @@ const ProductManagement: React.FC = () => {
                       <tr>
                         <td colSpan={5} className="px-6 py-4 text-center">Loading...</td>
                       </tr>
-                    ) : error ? (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-4 text-center text-red-600">{error}</td>
-                      </tr>
-                    ) : filteredProducts.length === 0 ? (
+                    ) : paginatedProducts.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-4 text-center">No products found</td>
                       </tr>
                     ) : (
-                      filteredProducts.map((product) => (
+                      paginatedProducts.map((product) => (
                         <React.Fragment key={product.id}>
                           <tr className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.id}</td>
@@ -235,6 +254,26 @@ const ProductManagement: React.FC = () => {
                 </table>
               </div>
             </div>
+
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t">
+                <div className="flex justify-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1 rounded ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>

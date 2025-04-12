@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { X, Plus, Check } from 'lucide-react';
 
 interface UserDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
   user: {
-    id: string;
+    id: number;
     name: string;
+    email: string;
     role: string;
     status: string;
-    roleSpecificData: any;
+    createdAt: string;
+    updatedAt: string;
   };
-  onClose: () => void;
   onUpdateRoles: (userId: string, newRoles: string[]) => void;
 }
 
@@ -22,8 +25,9 @@ const availableRoles = [
 ];
 
 const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
-  user,
+  isOpen,
   onClose,
+  user,
   onUpdateRoles
 }) => {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([user.role]);
@@ -38,7 +42,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   };
 
   const handleSaveRoles = () => {
-    onUpdateRoles(user.id, selectedRoles);
+    onUpdateRoles(user.id.toString(), selectedRoles);
     setShowRoleSelector(false);
   };
 

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { deliveryService, Delivery, CreateDeliveryDTO } from '../../services/deliveryService';
+import { deliveryService, Delivery, CreateDeliveryDTO, Driver, Purchase } from '../../services/deliveryService';
+//import { productService, Product } from '../../services/productService';
+import axios from 'axios';
+import Select from 'react-select';
 
 interface DeliveryFormProps {
   isOpen: boolean;
@@ -14,8 +17,8 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
   const [formData, setFormData] = useState({
     status: delivery?.status || 'pending',
     weight: delivery?.weight?.toString() || '',
-    purchaseId: delivery?.purchase?.id || '',
-    driverId: delivery?.driver?.id || '',
+    purchaseId: delivery?.purchase?.id?.toString() || '',
+    driverId: delivery?.driver?.id?.toString() || '',
     notes: delivery?.notes || '',
     deliveredAt: delivery?.deliveredAt || '',
   });
@@ -24,13 +27,18 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [purchaseSearch, setPurchaseSearch] = useState('');
+  const [driverSearch, setDriverSearch] = useState('');
+  
   useEffect(() => {
     if (delivery) {
       setFormData({
         status: delivery.status,
         weight: delivery.weight.toString(),
-        purchaseId: delivery.purchase.id,
-        driverId: delivery.driver.id,
+        purchaseId: delivery.purchase.id.toString(),
+        driverId: delivery.driver.id.toString(),
         notes: delivery.notes || '',
         deliveredAt: delivery.deliveredAt || '',
       });
@@ -45,6 +53,23 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
       });
     }
   }, [delivery]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [purchasesData, driversData] = await Promise.all([
+          axios.get<Purchase[]>('https://test.gvibyequ.a2hosted.com/api/purchases').then(res => res.data),
+          axios.get<Driver[]>('https://test.gvibyequ.a2hosted.com/api/drivers').then(res => res.data)
+        ]);
+        setPurchases(purchasesData);
+        setDrivers(driversData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load form data');
+      }
+    };
+    fetchData();
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -88,8 +113,8 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
         purchaseId: Number(formData.purchaseId),
         driverId: Number(formData.driverId),
         deliveredAt: formData.deliveredAt 
-          ? formData.deliveredAt.split('T')[0] // Extract just the YYYY-MM-DD part
-          : '', // Use empty string as fallback instead of null
+          ? formData.deliveredAt.split('T')[0]
+          : '',
         notes: formData.notes
       };
 
@@ -101,6 +126,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
         toast.success('Delivery created successfully');
       }
       onSuccess();
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       toast.error('Failed to save delivery');
@@ -117,6 +143,26 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
     }
   };
 
+  const filteredPurchases = purchases.filter(purchase =>
+    purchase.purchaseReference.toLowerCase().includes(purchaseSearch.toLowerCase()) ||
+    purchase.id.toString().includes(purchaseSearch)
+  );
+
+  const filteredDrivers = drivers.filter(driver =>
+    driver.user.profile.names.toLowerCase().includes(driverSearch.toLowerCase()) ||
+    driver.driverId.toLowerCase().includes(driverSearch.toLowerCase())
+  );
+
+  const purchaseOptions = filteredPurchases.map(purchase => ({
+    value: purchase.id,
+    label: `${purchase.purchaseReference} - ${purchase.description} (${purchase.weight} KG)`,
+  }));
+
+  const driverOptions = filteredDrivers.map(driver => ({
+    value: driver.id,
+    label: `${driver.driverId} - ${driver.user.profile.names}`,
+  }));
+
   if (!isOpen) return null;
 
   return (
@@ -124,13 +170,14 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">
-            {delivery ? 'Edit Delivery' : 'Create Delivery'}
+            {delivery ? 'Edit Delivery' : 'Record New Delivery'}
           </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
+            disabled={isSubmitting}
           >
-            <X size={20} />
+            <X size={24} />
           </button>
         </div>
 
@@ -165,6 +212,64 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Purchase <span className="text-red-500">*</span>
+            </label>
+            <Select
+              id="purchaseId"
+              name="purchaseId"
+              options={purchaseOptions}
+              value={purchaseOptions.find(option => option.value.toString() === formData.purchaseId)}
+              onChange={(selectedOption) => {
+                if (selectedOption) {
+                  setFormData(prev => ({
+                    ...prev,
+                    purchaseId: selectedOption.value.toString()
+                  }));
+                }
+              }}
+              onInputChange={(value) => setPurchaseSearch(value)}
+              placeholder="Search and select purchase..."
+              className="basic-single"
+              classNamePrefix="select"
+              isClearable
+              required
+            />
+            {errors.purchaseId && (
+              <p className="text-red-500 text-sm mt-1">{errors.purchaseId}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Driver <span className="text-red-500">*</span>
+            </label>
+            <Select
+              id="driverId"
+              name="driverId"
+              options={driverOptions}
+              value={driverOptions.find(option => option.value.toString() === formData.driverId)}
+              onChange={(selectedOption) => {
+                if (selectedOption) {
+                  setFormData(prev => ({
+                    ...prev,
+                    driverId: selectedOption.value.toString()
+                  }));
+                }
+              }}
+              onInputChange={(value) => setDriverSearch(value)}
+              placeholder="Search and select driver..."
+              className="basic-single"
+              classNamePrefix="select"
+              isClearable
+              required
+            />
+            {errors.driverId && (
+              <p className="text-red-500 text-sm mt-1">{errors.driverId}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Weight (kg)
             </label>
             <input
@@ -175,6 +280,9 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
               className={`w-full px-3 py-2 border rounded-md ${
                 errors.weight ? 'border-red-500' : 'border-gray-300'
               }`}
+              min="0.01"
+              step="0.01"
+              required
             />
             {errors.weight && (
               <p className="text-red-500 text-sm mt-1">{errors.weight}</p>
@@ -183,38 +291,15 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Purchase ID
+              Delivery Date
             </label>
             <input
-              type="text"
-              name="purchaseId"
-              value={formData.purchaseId}
+              type="datetime-local"
+              name="deliveredAt"
+              value={formData.deliveredAt}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.purchaseId ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {errors.purchaseId && (
-              <p className="text-red-500 text-sm mt-1">{errors.purchaseId}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Driver ID
-            </label>
-            <input
-              type="text"
-              name="driverId"
-              value={formData.driverId}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.driverId ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.driverId && (
-              <p className="text-red-500 text-sm mt-1">{errors.driverId}</p>
-            )}
           </div>
 
           <div>
@@ -225,38 +310,52 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({ isOpen, onClose, onSuccess,
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Delivered At
-            </label>
-            <input
-              type="datetime-local"
-              name="deliveredAt"
-              value={formData.deliveredAt ? new Date(formData.deliveredAt).toISOString().slice(0, 16) : ''}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div className="flex justify-end space-x-3 mt-6">
+          <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Saving...' : (delivery ? 'Update' : 'Create')}
+              {isSubmitting ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                delivery ? 'Update Delivery' : 'Record Delivery'
+              )}
             </button>
           </div>
         </form>

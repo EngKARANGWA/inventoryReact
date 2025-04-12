@@ -29,6 +29,7 @@ export interface User {
   phoneNumber?: string;
   address?: string;
   createdAt?: string;
+  updatedAt?: string;
   lastLogin?: string;
   roleSpecificData?: any;
   district?: string;

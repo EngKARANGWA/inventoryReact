@@ -13,6 +13,7 @@ import WarehouseManagement from "./pages/warehouses/WarehouseManagement";
 import ProductionManagement from "./pages/production/ProductionManagement";
 import ReturnsManagement from "./pages/returns/ReturnsManagement";
 import TransferManagement from "./pages/transfer/TransferManagement";
+import PaymentsManagement from "./pages/payments/PaymentManagement";
 // import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 // import LandingPage from './app/Landingpage/Landingpage';
 // import Dashboard from './pages/Dashboard';
@@ -97,7 +98,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path='/dashboard/payments'
+            element={
+              <ProtectedRoute>
+                <PaymentsManagement />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path='/dashboard/prices'
             element={

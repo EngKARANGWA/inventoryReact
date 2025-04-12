@@ -1,11 +1,14 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { User } from '../../services/userService';
 
 interface RoleFormProps {
-  role: string;
+  isOpen: boolean;
+  role?: string;
   onClose: () => void;
-  onSubmit: (formData: FormData) => void;
+  onSuccess: (formData: FormData) => void;
   initialData?: Partial<FormData>;
+  user?: User | null;
 }
 
 interface FormData {
@@ -39,15 +42,17 @@ const defaultFormData: FormData = {
   status: 'active'
 };
 
-const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialData = {} }) => {
+const RoleForm: React.FC<RoleFormProps> = ({ isOpen, role, onClose, onSuccess, initialData = {}, user }) => {
   const [formData, setFormData] = React.useState<FormData>({
     ...defaultFormData,
     ...initialData
   });
 
+  if (!isOpen) return null;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSuccess(formData);
   };
 
   const handleChange = (field: keyof FormData, value: string) => {

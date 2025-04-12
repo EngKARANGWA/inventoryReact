@@ -214,14 +214,14 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:ml-64">
         <Header />
-        <main className="flex-1">
-          <div className="max-w-7xl mx-auto h-full">
+        <main className="flex-1 ">
+          <div className="max-w-7xl mx-auto">
             {/* Enhanced Header */}
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Overview</h1>
-              <p className="text-gray-600">Welcome back! Here's what's happening in Maize Factory</p>
+              <p className="text-gray-600">Welcome back! Here's what's happening in IHIRWE TRADING CO. LTD</p>
             </div>
 
             {/* Summary Cards with Improved Layout */}
@@ -307,7 +307,7 @@ const Dashboard: React.FC = () => {
                     { title: 'New Sale', icon: ShoppingCart, color: 'bg-green-500', onClick: () => {} },
                     { title: 'Add Product', icon: Package, color: 'bg-green-500', onClick: () => navigate('/dashboard/products') },
                     { title: 'Generate Report', icon: Tag, color: 'bg-amber-500', onClick: () => {} },
-                    { title: 'View Deliveries', icon: Wallet, color: 'bg-purple-500', onClick: () => navigate('/dashboard/deliveries') }
+                    { title: 'View Inventory', icon: Wallet, color: 'bg-purple-500', onClick: () => {} }
                   ].map((action, i) => (
                     <button
                       key={i}

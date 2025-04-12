@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { deliveryService, Delivery, PaginationInfo } from '../../services/deliveryService';
+import { paymentService, Payment, PaginationInfo } from '../../services/paymentService';
 import { Sidebar } from '../../components/ui/sidebar';
 import { Header } from '../../components/ui/header';
-import DeliveryForm from '../../components/deliveries/DeliveryForm';
+import PaymentForm from '../../components/payments/PaymentForm';
 import { 
   Plus, 
   Pencil, 
   Trash2, 
   Search, 
   RefreshCw,
-  Truck,
+  CreditCard,
   Filter,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 
-const DeliveriesManagement: React.FC = () => {
+
+const PaymentManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
     page: 1,
@@ -30,29 +31,30 @@ const DeliveriesManagement: React.FC = () => {
   const [pageSize] = useState(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [selectedDelivery, setSelectedDelivery] = useState<Delivery | undefined>(undefined);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
-    dateRange: ''
+    payableType: '',
+    paymentMethod: ''
   });
 
-  const fetchDeliveries = async (page: number, itemsPerPage: number) => {
+  const fetchPayments = async (page: number, itemsPerPage: number) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await deliveryService.getAllDeliveries(page, itemsPerPage);
-      setDeliveries(response.data);
+      const response = await paymentService.getAllPayments(page, itemsPerPage);
+      setPayments(response.data);
       setPagination(response.pagination);
       if (response.data && response.data.length > 0 && isRefreshing) {
-        toast.success('Deliveries refreshed successfully');
+        toast.success('Payments refreshed successfully');
       }
     } catch (err: any) {
       console.error('Error details:', err.response?.data || err.message);
-      if (!deliveries || deliveries.length === 0) {
-        setError('Failed to fetch deliveries');
-        toast.error('Failed to fetch deliveries');
+      if (!payments || payments.length === 0) {
+        setError('Failed to fetch payments');
+        toast.error('Failed to fetch payments');
       }
     } finally {
       setLoading(false);
@@ -61,33 +63,33 @@ const DeliveriesManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDeliveries(currentPage, pageSize);
+    fetchPayments(currentPage, pageSize);
   }, [currentPage, pageSize, isRefreshing]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchDeliveries(currentPage, pageSize);
+    fetchPayments(currentPage, pageSize);
   };
 
   const handleAdd = () => {
-    setSelectedDelivery(undefined);
+    setSelectedPayment(undefined);
     setShowForm(true);
   };
 
-  const handleEdit = (delivery: Delivery) => {
-    setSelectedDelivery(delivery);
+  const handleEdit = (payment: Payment) => {
+    setSelectedPayment(payment);
     setShowForm(true);
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this delivery?')) {
+    if (window.confirm('Are you sure you want to delete this payment?')) {
       try {
-        await deliveryService.deleteDelivery(id.toString());
-        toast.success('Delivery deleted successfully');
-        fetchDeliveries(currentPage, pageSize);
+        await paymentService.deletePayment(id.toString());
+        toast.success('Payment deleted successfully');
+        fetchPayments(currentPage, pageSize);
       } catch (err) {
-        console.error('Error deleting delivery:', err);
-        toast.error('Failed to delete delivery');
+        console.error('Error deleting payment:', err);
+        toast.error('Failed to delete payment');
       }
     }
   };
@@ -107,39 +109,41 @@ const DeliveriesManagement: React.FC = () => {
   const clearFilters = () => {
     setFilters({
       status: '',
-      dateRange: ''
+      payableType: '',
+      paymentMethod: ''
     });
   };
 
-  const filteredDeliveries = deliveries?.filter(delivery => {
+  const filteredPayments = payments?.filter(payment => {
     const matchesSearch = 
-      (delivery?.deliveryReference || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (delivery?.purchase?.purchaseReference || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (delivery?.driver?.user?.profile?.names || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (payment?.paymentReference || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (payment?.transactionReference || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = !filters.status || delivery?.status === filters.status;
+    const matchesStatus = !filters.status || payment?.status === filters.status;
+    const matchesPayableType = !filters.payableType || payment?.payableType === filters.payableType;
+    const matchesPaymentMethod = !filters.paymentMethod || payment?.paymentMethod === filters.paymentMethod;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesPayableType && matchesPaymentMethod;
   }) || [];
 
   // Calculate summary data
-  const totalDeliveries = deliveries?.length || 0;
-  const completedDeliveries = deliveries?.filter(d => d?.status === 'completed').length || 0;
-  const pendingDeliveries = deliveries?.filter(d => d?.status === 'pending').length || 0;
-  const totalWeight = deliveries?.reduce((sum, d) => sum + (Number(d?.weight) || 0), 0) || 0;
+  const totalPayments = payments?.length || 0;
+  const completedPayments = payments?.filter(p => p?.status === 'completed').length || 0;
+  const pendingPayments = payments?.filter(p => p?.status === 'pending').length || 0;
+  const totalAmount = payments?.reduce((sum, p) => sum + Number(p?.amount || 0), 0) || 0;
 
   const formatStatus = (status: string) => {
     const statusClasses = {
       pending: 'bg-yellow-100 text-yellow-800',
-      'in_transit': 'bg-blue-100 text-blue-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
+      completed: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+      cancelled: 'bg-gray-100 text-gray-800'
     };
     
     const statusLabels = {
       pending: 'Pending',
-      'in_transit': 'In Transit',
-      delivered: 'Delivered',
+      completed: 'Completed',
+      failed: 'Failed',
       cancelled: 'Cancelled'
     };
     
@@ -153,6 +157,21 @@ const DeliveriesManagement: React.FC = () => {
     );
   };
 
+  const formatPayableType = (type: string) => {
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
+  const formatPaymentMethod = (method: string) => {
+    const methodLabels: Record<string, string> = {
+      mobile_money: 'Mobile Money',
+      bank_transfer: 'Bank Transfer',
+      cash: 'Cash',
+      credit_card: 'Credit Card'
+    };
+    
+    return methodLabels[method] || method;
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -162,8 +181,8 @@ const DeliveriesManagement: React.FC = () => {
           <div className="max-w-7xl mx-auto">
             {/* Enhanced Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Delivery Management</h1>
-              <p className="text-gray-600">Manage your delivery information</p>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Payment Management</h1>
+              <p className="text-gray-600">Manage your payment information</p>
             </div>
 
             {/* Summary Cards */}
@@ -171,44 +190,44 @@ const DeliveriesManagement: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Total Deliveries</p>
-                    <p className="text-2xl font-bold text-gray-800">{totalDeliveries}</p>
+                    <p className="text-sm font-medium text-gray-500">Total Payments</p>
+                    <p className="text-2xl font-bold text-gray-800">{totalPayments}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Truck className="w-6 h-6 text-blue-600" />
+                    <CreditCard className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Completed Deliveries</p>
-                    <p className="text-2xl font-bold text-gray-800">{completedDeliveries}</p>
+                    <p className="text-sm font-medium text-gray-500">Completed Payments</p>
+                    <p className="text-2xl font-bold text-gray-800">{completedPayments}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <Truck className="w-6 h-6 text-green-600" />
+                    <CreditCard className="w-6 h-6 text-green-600" />
                   </div>
                 </div>
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Pending Deliveries</p>
-                    <p className="text-2xl font-bold text-gray-800">{pendingDeliveries}</p>
+                    <p className="text-sm font-medium text-gray-500">Pending Payments</p>
+                    <p className="text-2xl font-bold text-gray-800">{pendingPayments}</p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <Truck className="w-6 h-6 text-yellow-600" />
+                    <CreditCard className="w-6 h-6 text-yellow-600" />
                   </div>
                 </div>
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Total Weight (kg)</p>
-                    <p className="text-2xl font-bold text-gray-800">{totalWeight.toFixed(2)}</p>
+                    <p className="text-sm font-medium text-gray-500">Total Amount</p>
+                    <p className="text-2xl font-bold text-gray-800">RWF{totalAmount.toFixed(2)}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Truck className="w-6 h-6 text-purple-600" />
+                    <CreditCard className="w-6 h-6 text-purple-600" />
                   </div>
                 </div>
               </div>
@@ -221,13 +240,13 @@ const DeliveriesManagement: React.FC = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                   <input
                     type="text"
-                    placeholder="Search deliveries..."
+                    placeholder="Search payments..."
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={searchTerm}
                     onChange={handleSearch}
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
                     className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -238,10 +257,10 @@ const DeliveriesManagement: React.FC = () => {
                   </button>
                   <button
                     onClick={handleRefresh}
-                    className={`flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 ${
+                    className={`flex items-center justify-center w-10 h-10 border border-gray-300 rounded-lg hover:bg-gray-50 ${
                       isRefreshing ? 'animate-spin' : ''
                     }`}
-                    title="Refresh Deliveries"
+                    title="Refresh Payments"
                     disabled={isRefreshing}
                   >
                     <RefreshCw size={18} />
@@ -251,7 +270,7 @@ const DeliveriesManagement: React.FC = () => {
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     <Plus size={18} className="mr-2" />
-                    Add Delivery
+                    Add Payment
                   </button>
                 </div>
               </div>
@@ -259,8 +278,8 @@ const DeliveriesManagement: React.FC = () => {
               {/* Filters Panel */}
               {showFilters && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h3 className="text-lg font-medium mb-3">Filter Deliveries</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <h3 className="text-lg font-medium mb-3">Filter Payments</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                       <select
@@ -271,23 +290,37 @@ const DeliveriesManagement: React.FC = () => {
                       >
                         <option value="">All Statuses</option>
                         <option value="pending">Pending</option>
-                        <option value="in_transit">In Transit</option>
-                        <option value="delivered">Delivered</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
                         <option value="cancelled">Cancelled</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Payable Type</label>
                       <select
-                        name="dateRange"
-                        value={filters.dateRange}
+                        name="payableType"
+                        value={filters.payableType}
                         onChange={handleFilterChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">All Dates</option>
-                        <option value="today">Today</option>
-                        <option value="week">This Week</option>
-                        <option value="month">This Month</option>
+                        <option value="">All Types</option>
+                        <option value="purchase">Purchase</option>
+                        <option value="sale">Sale</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                      <select
+                        name="paymentMethod"
+                        value={filters.paymentMethod}
+                        onChange={handleFilterChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">All Methods</option>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="cash">Cash</option>
+                        <option value="credit_card">Credit Card</option>
                       </select>
                     </div>
                   </div>
@@ -303,69 +336,80 @@ const DeliveriesManagement: React.FC = () => {
               )}
             </div>
 
-            {/* Deliveries Table */}
+            {/* Payments Table */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivered Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-4 text-center">Loading deliveries...</td>
+                        <td colSpan={7} className="px-6 py-4 text-center">Loading payments...</td>
                       </tr>
                     ) : error ? (
                       <tr>
                         <td colSpan={7} className="px-6 py-4 text-center text-red-600">{error}</td>
                       </tr>
-                    ) : filteredDeliveries.length === 0 ? (
+                    ) : filteredPayments.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-4 text-center">No deliveries found matching your criteria</td>
+                        <td colSpan={7} className="px-6 py-4 text-center">No payments found matching your criteria</td>
                       </tr>
                     ) : (
-                      filteredDeliveries.map((delivery) => (
-                        <tr key={delivery.id} className="hover:bg-gray-50">
+                      filteredPayments.map((payment) => (
+                        <tr key={payment.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{delivery.deliveryReference}</div>
+                            <div className="text-sm font-medium text-gray-900">{payment.paymentReference}</div>
+                            {payment.transactionReference && (
+                              <div className="text-xs text-gray-500">TRX: {payment.transactionReference}</div>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{delivery.purchase?.purchaseReference || 'N/A'}</div>
+                            <div className="text-sm text-gray-900">{formatPayableType(payment.payableType)}</div>
+                            <div className="text-xs text-gray-500">
+                              ID: {payment.payableType === 'purchase' ? payment.purchaseId : payment.saleId}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{delivery.driver?.user?.profile?.names || 'N/A'}</div>
+                            <div className="text-sm font-medium text-gray-900">RWF{payment.amount}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {formatStatus(delivery.status)}
+                            <div className="text-sm text-gray-900">{formatPaymentMethod(payment.paymentMethod)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{delivery.weight || 'N/A'} kg</div>
+                            {formatStatus(payment.status)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {delivery.deliveredAt ? new Date(delivery.deliveredAt).toLocaleDateString() : 'N/A'}
+                              {new Date(payment.createdAt).toLocaleDateString()}
                             </div>
+                            {payment.paidAt && (
+                              <div className="text-xs text-gray-500">
+                                Paid: {new Date(payment.paidAt).toLocaleDateString()}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
-                              onClick={() => handleEdit(delivery)}
+                              onClick={() => handleEdit(payment)}
                               className="text-blue-600 hover:text-blue-900 mr-4"
-                              title="Edit Delivery"
+                              title="Edit Payment"
                             >
                               <Pencil size={18} />
                             </button>
                             <button
-                              onClick={() => handleDelete(delivery.id)}
+                              onClick={() => handleDelete(payment.id)}
                               className="text-red-600 hover:text-red-900"
-                              title="Delete Delivery"
+                              title="Delete Payment"
                             >
                               <Trash2 size={18} />
                             </button>
@@ -410,24 +454,24 @@ const DeliveriesManagement: React.FC = () => {
         </main>
       </div>
 
-      {/* Delivery Form Modal */}
+      {/* Payment Form Modal */}
       {showForm && (
-        <DeliveryForm
+        <PaymentForm
           isOpen={showForm}
           onClose={() => {
             setShowForm(false);
-            setSelectedDelivery(undefined);
+            setSelectedPayment(undefined);
           }}
           onSuccess={() => {
             setShowForm(false);
-            setSelectedDelivery(undefined);
-            fetchDeliveries(currentPage, pageSize);
+            setSelectedPayment(undefined);
+            fetchPayments(currentPage, pageSize);
           }}
-          delivery={selectedDelivery}
+          payment={selectedPayment}
         />
       )}
     </div>
   );
 };
 
-export default DeliveriesManagement; 
+export default PaymentManagement; 
