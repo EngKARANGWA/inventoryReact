@@ -80,6 +80,10 @@ export interface Purchase {
   deliveries: Delivery[];
   dailyPrice?: {
     id: number;
+    product?:{
+      name: string;
+      description: string;
+    };
     buyingUnitPrice: string;
     sellingUnitPrice: string;
     date: string;
@@ -115,16 +119,6 @@ export interface PurchaseFilterOptions {
   search?: string;
 }
 
-interface PurchaseResponse {
-  success: boolean;
-  data: Purchase[];
-  pagination: {
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-  };
-}
 
 export const purchaseService = {
   getAllSuppliers: async (): Promise<Supplier[]> => {

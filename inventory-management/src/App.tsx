@@ -24,6 +24,7 @@ import DeliveriesManagement from "./pages/deliveries/DeliveriesManagement";
 import "./App.css";
 import StockMovementManagement from "./pages/stockMovement/StockMovementManagement";
 import PurchaseManagement from "./pages/purchase/PurchaseManagement";
+import PaymentManagement from "./pages/payments/PaymentManagement";
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -79,6 +80,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <PurchaseManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/payments"
+            element={
+              <ProtectedRoute>
+                <PaymentManagement />
               </ProtectedRoute>
             }
           />

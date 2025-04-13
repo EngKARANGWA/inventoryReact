@@ -1,4 +1,3 @@
-// src/components/purchase/PurchaseManagement.tsx
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
@@ -202,21 +201,34 @@ const PurchaseManagement: React.FC = () => {
       };
 
       if (editingPurchase) {
+        // Only send updatable fields to backend
+        const updateData = {
+          description: purchaseData.description,
+          expectedDeliveryDate: purchaseData.expectedDeliveryDate,
+          weight: purchaseData.weight, // Only if weight is updatable
+        };
+
         const updatedPurchase = await purchaseService.updatePurchase(
           editingPurchase.id,
-          {
-            ...purchaseData, // Include weight in updates
-            description: purchaseData.description,
-            expectedDeliveryDate: purchaseData.expectedDeliveryDate,
-          }
+          updateData
         );
+
+        // Manually merge the non-updatable fields for frontend display
+        const fullUpdatedPurchase = {
+          ...updatedPurchase,
+          supplierId: editingPurchase.supplierId, // Keep original
+          productId: editingPurchase.productId, // Keep original
+          product: editingPurchase.product, // Keep original
+        };
+
         setPurchases(
           purchases.map((p) =>
-            p.id === editingPurchase.id ? updatedPurchase : p
+            p.id === editingPurchase.id ? fullUpdatedPurchase : p
           )
         );
-        toast.success("Purchase updated successfully");
+        toast.success("Purchase updated successfully!");
       } else {
+        // Create new purchase logic remains the same
         const response = await purchaseService.createPurchase(purchaseData);
         const newPurchase = await purchaseService.getPurchaseById(response.id);
         if (newPurchase) {
@@ -687,10 +699,14 @@ const PurchaseManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {purchase.product?.name || "No product"}
+                              {purchase.product?.name ||
+                                purchase.dailyPrice?.product?.name ||
+                                "No product"}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {purchase.product?.description || "N/A"}
+                              {purchase.product?.description ||
+                                purchase.dailyPrice?.product?.description ||
+                                "N/A"}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -749,20 +765,26 @@ const PurchaseManagement: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => handleEditClick(purchase)}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                              title="Edit Purchase"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleDeletePurchase(purchase.id)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete Purchase"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            {purchase.status !== "all_completed" && (
+                              <>
+                                <button
+                                  onClick={() => handleEditClick(purchase)}
+                                  className="text-blue-600 hover:text-blue-900 mr-4"
+                                  title="Edit Purchase"
+                                >
+                                  <Edit2 size={18} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDeletePurchase(purchase.id)
+                                  }
+                                  className="text-red-600 hover:text-red-900"
+                                  title="Delete Purchase"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -933,9 +955,13 @@ const PurchaseManagement: React.FC = () => {
                     name="supplierId"
                     value={formData.supplierId}
                     onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      editingPurchase ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     required
-                    disabled={isSubmitting || loadingSuppliers}
+                    disabled={
+                      isSubmitting || loadingSuppliers || !!editingPurchase
+                    }
                   >
                     <option value="">
                       {loadingSuppliers
@@ -957,6 +983,7 @@ const PurchaseManagement: React.FC = () => {
                 </div>
 
                 {/* Product Select */}
+                {/* Product Select */}
                 <div className="col-span-1">
                   <label
                     htmlFor="productId"
@@ -969,9 +996,13 @@ const PurchaseManagement: React.FC = () => {
                     name="productId"
                     value={formData.productId}
                     onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      editingPurchase ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     required
-                    disabled={isSubmitting || loadingProducts}
+                    disabled={
+                      isSubmitting || loadingProducts || !!editingPurchase
+                    }
                   >
                     <option value="">
                       {loadingProducts
