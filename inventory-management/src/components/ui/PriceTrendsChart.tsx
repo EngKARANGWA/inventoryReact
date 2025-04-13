@@ -23,7 +23,8 @@ ChartJS.register(
 
 interface PriceData {
   id: number;
-  unitPrice: string;
+  buyingUnitPrice: string;
+  sellingUnitPrice: string;
   date: string;
   productId: number;
   product: {
@@ -86,13 +87,27 @@ const PriceTrendsChart: React.FC<PriceTrendsChartProps> = ({ filterProductId }) 
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
       return {
-        label: product.name,
-        data: productPrices.map(item => parseFloat(item.unitPrice)),
+        label: `${product.name} (Buying)`,
+        data: productPrices.map(item => parseFloat(item.buyingUnitPrice)),
         borderColor: `hsl(${product.id * 60}, 70%, 50%)`,
         backgroundColor: `hsla(${product.id * 60}, 70%, 50%, 0.5)`,
         tension: 0.1
       };
-    })
+    }).concat(
+      products.map(product => {
+        const productPrices = priceData.filter(item => item.productId === product.id)
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        return {
+          label: `${product.name} (Selling)`,
+          data: productPrices.map(item => parseFloat(item.sellingUnitPrice)),
+          borderColor: `hsl(${product.id * 60 + 30}, 70%, 50%)`,
+          backgroundColor: `hsla(${product.id * 60 + 30}, 70%, 50%, 0.5)`,
+          borderDash: [5, 5],
+          tension: 0.1
+        };
+      })
+    )
   };
 
   const options = {
@@ -108,7 +123,8 @@ const PriceTrendsChart: React.FC<PriceTrendsChartProps> = ({ filterProductId }) 
       tooltip: {
         callbacks: {
           label: function(context: any) {
-            return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} RWF`;
+            const type = context.dataset.label.includes('Buying)') ? 'Buying' : 'Selling';
+            return `${context.dataset.label.replace(` (${type})`, '')} (${type}): ${context.parsed.y.toLocaleString()} RWF`;
           }
         }
       }

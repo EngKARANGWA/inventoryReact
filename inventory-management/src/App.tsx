@@ -23,6 +23,7 @@ import DisposalManagement from "./pages/Disposal/DisposalManagement";
 import DeliveriesManagement from "./pages/deliveries/DeliveriesManagement";
 import "./App.css";
 import StockMovementManagement from "./pages/stockMovement/StockMovementManagement";
+import PurchaseManagement from "./pages/purchase/PurchaseManagement";
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -69,6 +70,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <WarehouseManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/purchases"
+            element={
+              <ProtectedRoute>
+                <PurchaseManagement />
               </ProtectedRoute>
             }
           />

@@ -13,7 +13,8 @@ import {
   Truck,
   Trash2Icon,
   Warehouse,
-  Boxes
+  Boxes,
+  HandCoins
 } from 'lucide-react';
 
 interface NavItem {
@@ -24,6 +25,7 @@ interface NavItem {
 
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Purchases', href: '/dashboard/purchases', icon: HandCoins },
   { name: 'Stock', href: '/dashboard/stock', icon: Boxes },
   { name: 'Deliveries', href: '/dashboard/deliveries', icon: Truck },
   { name: 'Production(Batches)', href: '/dashboard/productions', icon: Target },
@@ -33,7 +35,6 @@ const navigation: NavItem[] = [
   { name: 'Transfers', href: '/dashboard/transfers', icon: ArrowLeftRight },
   { name: 'Disposals', href: '/dashboard/disposals', icon: Trash2Icon },
   { name: 'Warehouses', href: '/dashboard/warehouses', icon: Warehouse },
-  // { name: 'Price', href: '/dashboard/prices', icon: Package },
   { name: 'Users', href: '/dashboard/users', icon: Users },
   // { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];

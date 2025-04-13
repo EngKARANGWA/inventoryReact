@@ -131,7 +131,7 @@ const Dashboard: React.FC = () => {
   >("");
   const [products, setProducts] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
-
+  const [refreshKey, setRefreshKey] = useState(0);
   // Fetch products and warehouses for filters
   React.useEffect(() => {
     const fetchData = async () => {
@@ -168,6 +168,7 @@ const Dashboard: React.FC = () => {
       draggable: true,
       progress: undefined,
     });
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -230,12 +231,12 @@ const Dashboard: React.FC = () => {
               {/* Latest Prices Table */}
               <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center">
-                  <Coins className="w-6 h-6 text-blue-600 mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Latest Prices
-                  </h2>
-                </div>
+                  <div className="flex items-center">
+                    <Coins className="w-6 h-6 text-blue-600 mr-2" />
+                    <h2 className="text-xl font-semibold text-gray-800">
+                      Latest Prices
+                    </h2>
+                  </div>
                   <button
                     onClick={() => setIsAddPriceModalOpen(true)}
                     className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -244,18 +245,18 @@ const Dashboard: React.FC = () => {
                     Change Prices
                   </button>
                 </div>
-                <LatestPricesTable />
+                <LatestPricesTable key={refreshKey} />
               </div>
 
               {/* Price Trends Chart */}
               <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center">
-                  <BanknoteArrowUp className="w-6 h-6 text-blue-600 mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Price Trend
-                  </h2>
-                </div>
+                  <div className="flex items-center">
+                    <BanknoteArrowUp className="w-6 h-6 text-blue-600 mr-2" />
+                    <h2 className="text-xl font-semibold text-gray-800">
+                      Price Trend
+                    </h2>
+                  </div>
                   <div className="w-64">
                     <select
                       value={priceTrendFilter}
