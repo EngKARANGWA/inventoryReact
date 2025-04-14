@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../../components/ui/sidebar';
 import { Header } from '../../components/ui/header';
-import { Search, Edit2, Trash2, Filter, ChevronDown, ChevronUp, Eye, Users, UserCheck, UserX, Phone, MapPin, Clock } from 'lucide-react';
+import { Search, Edit2, Trash2, Filter, ChevronDown, ChevronUp, Eye, Users, UserCheck, UserX, Phone, MapPin, Clock, RefreshCw } from 'lucide-react';
 import { userService, User } from '../../services/userService';
 import RoleForm from '../../components/users/RoleForm';
 import UserDetailsModal from '../../components/users/UserDetailsModal';
 import { useLocation } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const UserManagement: React.FC = () => {
   const location = useLocation();
@@ -26,6 +28,8 @@ const UserManagement: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [expandedUser] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10);
 
   // Fetch users on component mount
   useEffect(() => {
@@ -54,15 +58,28 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    try {
+      await fetchUsers();
+      toast.success('Users data refreshed successfully');
+    } catch (error) {
+      toast.error('Failed to refresh users data');
+      console.error('Error refreshing users:', error);
+    }
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
+
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({
       ...prev,
       [name]: value
     }));
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const clearFilters = () => {
@@ -70,6 +87,7 @@ const UserManagement: React.FC = () => {
       role: '',
       status: ''
     });
+    setCurrentPage(1); // Reset to first page when clearing filters
   };
 
   const handleAddUser = (role: string) => {
@@ -99,8 +117,14 @@ const UserManagement: React.FC = () => {
       try {
         await userService.deleteUser(userId);
         setUsers(users.filter(user => user.id !== userId));
+        toast.success('User deleted successfully');
+        // Reset to first page if the last user on the current page was deleted
+        if (currentUsers.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
       } catch (err) {
         setError('Failed to delete user');
+        toast.error('Failed to delete user');
         console.error('Error deleting user:', err);
       }
     }
@@ -113,6 +137,7 @@ const UserManagement: React.FC = () => {
         setUsers(users.map(user => 
           user.id === editingUser.id ? { ...user, ...formData } : user
         ));
+        toast.success('User updated successfully');
       } else {
         // Add the role to the formData when creating a new user
         const userDataWithRole = {
@@ -122,12 +147,17 @@ const UserManagement: React.FC = () => {
         console.log('Creating user with role:', userDataWithRole.role);
         const newUser = await userService.createUser(userDataWithRole);
         setUsers([...users, newUser]);
+        toast.success('User created successfully');
+        // Go to the last page to show the newly added user
+        const newTotalPages = Math.ceil((filteredUsers.length + 1) / usersPerPage);
+        setCurrentPage(newTotalPages);
       }
       setShowRoleForm(false);
       setEditingUser(null);
       setSelectedRole('');
     } catch (err) {
       setError('Failed to save user');
+      toast.error('Failed to save user');
       console.error('Error saving user:', err);
     }
   };
@@ -139,6 +169,12 @@ const UserManagement: React.FC = () => {
     const matchesStatus = !filters.status || user.status === filters.status;
     return matchesSearch && matchesRole && matchesStatus;
   });
+
+  // Pagination calculations
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
   const handleUpdateRoles = (userId: string, newRoles: string[]) => {
     // In a real application, this would make an API call to update the user's roles
@@ -171,8 +207,61 @@ const UserManagement: React.FC = () => {
   const totalUsers = users.length;
   const recentLogins = users.filter(user => user.role !== 'Driver').length;
 
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+        <div className="text-sm text-gray-700">
+          Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{' '}
+          <span className="font-medium">
+            {Math.min(indexOfLastUser, filteredUsers.length)}
+          </span>{' '}
+          of <span className="font-medium">{filteredUsers.length}</span> results
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 border rounded-md ${currentPage === 1 ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+          >
+            Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+            <button
+              key={number}
+              onClick={() => setCurrentPage(number)}
+              className={`px-4 py-2 border rounded-md ${currentPage === number ? 'bg-blue-50 text-blue-600 border-blue-500' : 'hover:bg-gray-50'}`}
+            >
+              {number}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-4 py-2 border rounded-md ${currentPage === totalPages ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
       <Sidebar />
       <div className="flex-1 flex flex-col lg:ml-64">
         <Header />
@@ -254,12 +343,19 @@ const UserManagement: React.FC = () => {
                     Filters
                     {showFilters ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
                   </button>
+                  <button
+                    onClick={handleRefresh}
+                    className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    title="Refresh data"
+                  >
+                    <RefreshCw size={18} />
+                  </button>
                   <select
                     value={selectedRole}
                     onChange={(e) => handleAddUser(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-2 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Add User</option>
+                    <option value="" className='flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'>Add User</option>
                     {availableRoles.map(role => (
                       <option key={role.id} value={role.id}>{role.label}</option>
                     ))}
@@ -335,12 +431,12 @@ const UserManagement: React.FC = () => {
                       <tr>
                         <td colSpan={6} className="px-6 py-4 text-center text-red-600">{error}</td>
                       </tr>
-                    ) : filteredUsers.length === 0 ? (
+                    ) : currentUsers.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-6 py-4 text-center">No users found</td>
                       </tr>
                     ) : (
-                      filteredUsers.map((user) => (
+                      currentUsers.map((user) => (
                         <React.Fragment key={user.id}>
                           <tr className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.id}</td>
@@ -466,6 +562,7 @@ const UserManagement: React.FC = () => {
                     )}
                   </tbody>
                 </table>
+                {renderPagination()}
               </div>
             </div>
           </div>

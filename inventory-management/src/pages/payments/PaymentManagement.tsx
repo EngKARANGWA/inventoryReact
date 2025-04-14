@@ -32,6 +32,16 @@ interface PaymentFilters {
 }
 const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
+// Utility function to format numbers with comma as thousand separator
+const formatNumber = (num: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    useGrouping: true
+  }).format(num);
+};
+
 const PaymentManagement: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalPayments, setTotalPayments] = useState(0);
@@ -278,7 +288,9 @@ const PaymentManagement: React.FC = () => {
 
     try {
       const formDataObj = new FormData();
-      formDataObj.append("amount", formData.amount);
+      // Remove commas before converting to float
+      const amountValue = parseFloat(formData.amount.replace(/,/g, ''));
+      formDataObj.append("amount", amountValue.toString());
       formDataObj.append("payableType", formData.payableType);
       formDataObj.append("paymentMethod", formData.paymentMethod);
 
@@ -298,7 +310,7 @@ const PaymentManagement: React.FC = () => {
         const updatedPayment = await paymentService.updatePayment(
           editingPayment.id,
           {
-            amount: parseFloat(formData.amount),
+            amount: amountValue,
             paymentMethod: formData.paymentMethod as
               | "bank_transfer"
               | "cheque"
@@ -314,7 +326,7 @@ const PaymentManagement: React.FC = () => {
       } else {
         const newPayment = await paymentService.createPayment(
           {
-            amount: parseFloat(formData.amount),
+            amount: amountValue,
             payableType: formData.payableType as "purchase" | "sale",
             paymentMethod: formData.paymentMethod as
               | "bank_transfer"
@@ -394,7 +406,6 @@ const PaymentManagement: React.FC = () => {
     (p) => p.status === "completed"
   ).length;
   const pendingPayments = payments.filter((p) => p.status === "pending").length;
-  //   const failedPayments = payments.filter((p) => p.status === "failed").length;
   const totalAmount = payments.reduce((sum, p) => sum + p.amount || 0, 0);
 
   const getStatusIcon = (status: string) => {
@@ -453,7 +464,7 @@ const PaymentManagement: React.FC = () => {
                       Total Payments
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {totalPayments}
+                     ${formatNumber(totalPayments)}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -468,7 +479,7 @@ const PaymentManagement: React.FC = () => {
                       Completed Payments
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {completedPayments}
+                      {formatNumber(completedPayments)}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -483,7 +494,7 @@ const PaymentManagement: React.FC = () => {
                       Pending Payments
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {pendingPayments}
+                      {formatNumber(pendingPayments)}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
@@ -498,7 +509,7 @@ const PaymentManagement: React.FC = () => {
                       Total Amount
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {totalAmount.toLocaleString()} RWF
+                      {formatNumber(totalAmount)} RWF
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -729,7 +740,7 @@ const PaymentManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {payment.amount.toLocaleString()} RWF
+                              {formatNumber(payment.amount)} RWF
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -867,13 +878,13 @@ const PaymentManagement: React.FC = () => {
                       <p className="text-sm text-gray-700">
                         Showing{" "}
                         <span className="font-medium">
-                          {(currentPage - 1) * pageSize + 1}
+                          {formatNumber((currentPage - 1) * pageSize + 1)}
                         </span>{" "}
                         to{" "}
                         <span className="font-medium">
-                          {Math.min(currentPage * pageSize, totalPayments)}
+                          {formatNumber(Math.min(currentPage * pageSize, totalPayments))}
                         </span>{" "}
-                        of <span className="font-medium">{totalPayments}</span>{" "}
+                        of <span className="font-medium">{formatNumber(totalPayments)}</span>{" "}
                         results
                       </p>
                     </div>
@@ -975,7 +986,7 @@ const PaymentManagement: React.FC = () => {
                     <div>
                       <p className="text-sm text-gray-500">Amount</p>
                       <p className="text-sm font-medium">
-                        {selectedPayment.amount.toLocaleString()} RWF
+                        {formatNumber(selectedPayment.amount)} RWF
                       </p>
                     </div>
                     <div>
@@ -1286,14 +1297,19 @@ const PaymentManagement: React.FC = () => {
                     Amount (RWF) <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     name="amount"
-                    value={formData.amount}
-                    onChange={handleFormChange}
+                    value={formData.amount.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/,/g, '');
+                      if (!isNaN(Number(rawValue))) {
+                        setFormData({
+                          ...formData,
+                          amount: rawValue
+                        });
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
-                    min="0.01"
-                    step="0.01"
                     disabled={isSubmitting}
                   />
                 </div>
