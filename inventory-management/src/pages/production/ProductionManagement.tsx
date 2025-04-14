@@ -380,9 +380,13 @@ const ProductionManagement: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar isOpen={false} onClose={function (): void {
+        throw new Error("Function not implemented.");
+      } } />
       <div className="flex-1 flex flex-col lg:ml-64">
-        <Header />
+        <Header onMenuClick={function (): void {
+          throw new Error("Function not implemented.");
+        } } />
         <main className="flex-1 w-full p-6">
           <div className="max-w-7xl mx-auto">
             {/* Header */}

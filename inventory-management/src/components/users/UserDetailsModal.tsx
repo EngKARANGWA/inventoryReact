@@ -12,6 +12,7 @@ interface UserDetailsModalProps {
     status: string;
     createdAt: string;
     updatedAt: string;
+    roleSpecificData?: Record<string, string>;
   };
   onUpdateRoles: (userId: string, newRoles: string[]) => void;
 }
@@ -45,6 +46,8 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     onUpdateRoles(user.id.toString(), selectedRoles);
     setShowRoleSelector(false);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -141,7 +144,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           <div className="col-span-2 space-y-4">
             <h3 className="text-lg font-medium text-gray-700">Role-Specific Information</h3>
             <div className="grid grid-cols-2 gap-4">
-              {Object.entries(user.roleSpecificData).map(([key, value]) => (
+              {Object.entries(user.roleSpecificData || {}).map(([key, value]) => (
                 <div key={key}>
                   <label className="block text-sm font-medium text-gray-500">
                     {key.replace(/([A-Z])/g, ' $1').trim()}

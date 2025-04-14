@@ -37,6 +37,7 @@ const DeliveriesManagement: React.FC = () => {
     status: '',
     dateRange: ''
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const fetchDeliveries = async (page: number, itemsPerPage: number) => {
     try {
@@ -153,11 +154,15 @@ const DeliveriesManagement: React.FC = () => {
     );
   };
 
+  const handleMenuClick = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex-1 flex flex-col lg:ml-64">
-        <Header />
+        <Header onMenuClick={handleMenuClick} />
         <main className="flex-1 w-full">
           <div className="max-w-7xl mx-auto">
             {/* Enhanced Header */}

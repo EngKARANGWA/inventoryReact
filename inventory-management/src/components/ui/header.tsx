@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Bell, User, LogOut } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [notifications, setNotifications] = useState([
     { id: 1, message: 'New order received', time: '2 min ago' },
     { id: 2, message: 'Inventory updated', time: '1 hour ago' },
@@ -19,13 +23,24 @@ export const Header: React.FC = () => {
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-end items-center h-16">
-          {/* Right Side Icons */}
-          <div className="flex items-center space-x-4">
+        <div className="flex justify-between items-center h-16">
+          {/* Left side menu button (if needed) */}
+          <button
+            onClick={onMenuClick}
+            className="md:hidden p-2 rounded-md text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none"
+          >
+            {/* Menu icon would go here */}
+          </button>
+
+          {/* Right Side Icons - positioned at the far right */}
+          <div className="ml-auto flex items-center space-x-4">
             {/* Notifications */}
             <div className="relative">
               <button
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  setShowProfile(false);
+                }}
                 className="p-2 rounded-full text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <Bell className="h-6 w-6" />
@@ -42,15 +57,17 @@ export const Header: React.FC = () => {
                       <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
                     </div>
                     {notifications.length > 0 ? (
-                      notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer"
-                        >
-                          <p className="text-sm text-gray-900">{notification.message}</p>
-                          <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                        </div>
-                      ))
+                      <div className="max-h-60 overflow-y-auto">
+                        {notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                          >
+                            <p className="text-sm text-gray-900">{notification.message}</p>
+                            <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                          </div>
+                        ))}
+                      </div>
                     ) : (
                       <div className="px-4 py-3 text-sm text-gray-500">
                         No new notifications
@@ -72,7 +89,10 @@ export const Header: React.FC = () => {
             {/* Profile */}
             <div className="relative">
               <button
-                onClick={() => setShowProfile(!showProfile)}
+                onClick={() => {
+                  setShowProfile(!showProfile);
+                  setShowNotifications(false);
+                }}
                 className="flex items-center space-x-2 p-2 rounded-full text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
@@ -123,4 +143,4 @@ export const Header: React.FC = () => {
       </div>
     </header>
   );
-}; 
+};
