@@ -54,9 +54,9 @@ const CashierForm: React.FC<CashierFormProps> = ({
         ...prev,
         user: {
           ...prev.user,
-          [parent]: {
-            ...prev.user[parent as keyof typeof prev.user] as any,
-            [child]: value
+          [parent as keyof typeof prev.user]: {
+            ...(prev.user[parent as keyof typeof prev.user] as Record<string, any>),
+            [child as string]: value
           }
         }
       }));
@@ -68,14 +68,14 @@ const CashierForm: React.FC<CashierFormProps> = ({
           ...prev.user,
           profile: {
             ...prev.user.profile,
-            [field]: value
+            [field as keyof typeof prev.user.profile]: value
           }
         }
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: value
+        [name as keyof typeof prev]: value
       }));
     }
     

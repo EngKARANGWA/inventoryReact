@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -17,6 +17,7 @@ import {
   HandCoins,
   Banknote
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface NavItem {
   name: string;

@@ -22,30 +22,16 @@ import {
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
-import { deliveryService, Delivery } from "../../services/deliveryService";
-import { driverService } from "../../services/driverService";
+import { deliveryService, Delivery, CreateDeliveryData } from "../../services/deliveryService";
+import { Driver, driverService } from "../../services/driverService";
 import { purchaseService } from "../../services/purchaseService";
 import { warehouseService } from "../../services/warehouseServices";
 
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
-
-interface Driver {
-  id: number;
-  driverId: string;
-  licenseNumber: string;
-  userId: number;
-  user: {
-    profile: {
-      names: string;
-    };
-  };
-}
 
 interface Purchase {
   id: number;
   purchaseReference: string;
-  description: string;
+  description: string | null;
   productId: number;
   product?: {
     name: string;
@@ -119,17 +105,16 @@ const DeliveryManagement: React.FC = () => {
       ]);
 
       setDrivers(
-        drivers.map((driver) => ({
+        drivers.map((driver: Driver) => ({
           id: driver.id,
           name: driver.user?.profile?.names || "Unknown Driver",
         }))
       );
-
       setPurchases(
-        purchases.map((purchase) => ({
+        purchases.map((purchase: Purchase) => ({
           id: purchase.id,
           reference: purchase.purchaseReference,
-          description: purchase.description,
+          description: purchase.description || "", // Provide empty string fallback for null
         }))
       );
 
@@ -235,12 +220,13 @@ const DeliveryManagement: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const deliveryData = {
+      const deliveryData: CreateDeliveryData = {
         purchaseId: Number(formData.purchaseId),
         driverId: Number(formData.driverId),
         weight: parseFloat(formData.weight),
         notes: formData.notes,
         warehouseId: formData.warehouseId ? Number(formData.warehouseId) : undefined,
+        status: "pending" as const
       };
 
       if (editingDelivery) {

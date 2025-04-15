@@ -243,9 +243,10 @@ const ProductionManagement: React.FC = () => {
     value: string
   ) => {
     const updatedCosts = [...formData.productionCost];
+    const currentItem = updatedCosts[index];
     updatedCosts[index] = {
-      ...updatedCosts[index],
-      [field]: field === "amount" ? parseFloat(value) || 0 : value,
+      description: field === "description" ? value : currentItem?.description || "",
+      amount: field === "amount" ? parseFloat(value) || 0 : currentItem?.amount || 0
     };
     setFormData((prev) => ({
       ...prev,

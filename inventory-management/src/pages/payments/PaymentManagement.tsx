@@ -22,14 +22,17 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { paymentService, Payment } from "../../services/paymentService";
 import Select from "react-select";
+import { purchaseService } from '../../services/purchaseService';
+import { Sale, saleService } from '../../services/saleService';
 
 interface PaymentFilters {
   page: number;
   pageSize: number;
-  payableType: "purchase" | "sale" | "";
+  payableType: 'purchase' | 'sale' | '';
   status: string;
   includeDeleted: boolean;
 }
+
 const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
 // Utility function to format numbers with comma as thousand separator
@@ -42,30 +45,31 @@ const formatNumber = (num: number) => {
   }).format(num);
 };
 
+interface PaymentFormData {
+  amount: string;
+  paymentMethod: 'bank_transfer' | 'cheque' | 'cash' | 'mobile_money';
+  transactionReference: string;
+  purchaseId: string;
+  saleId: string;
+  payableType: 'purchase' | 'sale';
+}
+
 const PaymentManagement: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalPayments, setTotalPayments] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [purchasesLoading, setPurchasesLoading] = useState(false);
-  const [salesLoading, setSalesLoading] = useState(false);
-  const [purchasesSearch, setPurchasesSearch] = useState("");
-  const [salesSearch, setSalesSearch] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [purchasesOptions, setPurchasesOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
+  const [purchaseOptions, setPurchaseOptions] = useState<{ value: number; label: string }[]>([]);
+  const [saleOptions, setSaleOptions] = useState<{ value: number; label: string }[]>([]);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-  const [salesOptions, setSalesOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
+  const [loadingPurchases, setLoadingPurchases] = useState(false);
+  const [loadingSales, setLoadingSales] = useState(false);
 
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Payment;
@@ -80,18 +84,32 @@ const PaymentManagement: React.FC = () => {
     includeDeleted: false,
   });
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PaymentFormData>({
     amount: "",
-    payableType: "",
-    paymentMethod: "",
+    paymentMethod: "bank_transfer",
     transactionReference: "",
     purchaseId: "",
     saleId: "",
+    payableType: "purchase"
   });
 
   useEffect(() => {
     fetchPayments();
-  }, [filters]);
+    fetchPurchases();
+    fetchSales();
+  }, []);
+
+  useEffect(() => {
+    if (showViewModal && selectedPayment) {
+      fetchPaymentDetails(selectedPayment.id);
+    }
+  }, [showViewModal, selectedPayment]);
+
+  useEffect(() => {
+    if (formData.payableType === 'purchase') {
+      fetchPurchases();
+    }
+  }, [formData.payableType]);
 
   useEffect(() => {
     let isMounted = true;
@@ -130,67 +148,59 @@ const PaymentManagement: React.FC = () => {
     };
   }, [showViewModal, selectedPayment]);
 
+  useEffect(() => {
+    if (showAddForm) {
+      fetchPurchases();
+      fetchSales();
+    }
+  }, [showAddForm]);
+
   const fetchPayments = async () => {
-    setLoading(true);
-    setError(null);
-
     try {
-      const { data, pagination } = await paymentService.getAllPayments({
-        ...filters,
-        payableType: filters.payableType || undefined,
-        search: searchTerm,
-      });
-
-      setPayments(data || []);
-      setTotalPayments(pagination?.totalItems || 0);
-    } catch (err) {
-      console.error("Error fetching payments:", err);
-      setError("Failed to fetch payments. Please try again later.");
-      toast.error("Failed to load payments");
-      setPayments([]);
-      setTotalPayments(0);
+      setLoading(true);
+      const response = await paymentService.getAllPayments(filters);
+      setPayments(response.data);
+      setTotalPayments(response.pagination?.totalItems || 0);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      toast.error('Failed to fetch payments');
     } finally {
       setLoading(false);
     }
   };
 
   const fetchPurchases = async () => {
-    setPurchasesLoading(true);
     try {
-      const purchases = await paymentService.getPurchases(purchasesSearch);
-      setPurchasesOptions(
+      setLoadingPurchases(true);
+      const purchases = await purchaseService.getAllPurchases();
+      setPurchaseOptions(
         purchases.map((purchase) => ({
           value: purchase.id,
-          label: `${purchase.purchaseReference} - ${
-            purchase.supplier?.user?.profile?.names || "Unknown"
-          } (${purchase.description})`,
+          label: `${purchase.purchaseReference} - ${purchase.description || 'No description'}`,
         }))
       );
-    } catch (error) {
-      console.error("Error fetching purchases:", error);
-      toast.error("Failed to load purchases");
+    } catch (err) {
+      console.error('Error fetching purchases:', err);
+      toast.error('Failed to load purchases');
     } finally {
-      setPurchasesLoading(false);
+      setLoadingPurchases(false);
     }
   };
 
   const fetchSales = async () => {
-    setSalesLoading(true);
+    setLoadingSales(true);
     try {
-      const sales = await paymentService.getSales(salesSearch);
-      setSalesOptions(
-        sales.map((sale) => ({
-          value: sale.id,
-          label: `${sale.referenceNumber} - ${
-            sale.client?.user?.profile?.names || "Unknown"
-          }`,
-        }))
-      );
-    } catch (error) {
-      console.error("Error fetching sales:", error);
-      toast.error("Failed to load sales");
+      const response = await saleService.getAllSales();
+      const options = response.data.map((sale: Sale) => ({
+        value: sale.id,
+        label: `${sale.referenceNumber} - ${sale.note || 'No description'}`
+      }));
+      setSaleOptions(options);
+    } catch (err) {
+      console.error('Error fetching sales:', err);
+      toast.error('Failed to load sales');
     } finally {
-      setSalesLoading(false);
+      setLoadingSales(false);
     }
   };
 
@@ -210,8 +220,8 @@ const PaymentManagement: React.FC = () => {
   const handleAddClick = () => {
     setFormData({
       amount: "",
-      payableType: "",
-      paymentMethod: "",
+      payableType: "purchase",
+      paymentMethod: "bank_transfer",
       transactionReference: "",
       purchaseId: "",
       saleId: "",
@@ -221,18 +231,16 @@ const PaymentManagement: React.FC = () => {
     setFile(null);
   };
 
-  const handleEditClick = (payment: Payment) => {
+  const handleEdit = (payment: Payment) => {
+    setEditingPayment(payment);
     setFormData({
       amount: payment.amount.toString(),
-      payableType: payment.payableType,
       paymentMethod: payment.paymentMethod,
       transactionReference: payment.transactionReference || "",
       purchaseId: payment.purchaseId?.toString() || "",
       saleId: payment.saleId?.toString() || "",
+      payableType: "purchase"
     });
-    setEditingPayment(payment);
-    setShowAddForm(true);
-    setFile(null);
   };
 
   const loadPaymentImage = async (filename: string) => {
@@ -246,33 +254,22 @@ const PaymentManagement: React.FC = () => {
     }
   };
 
-  const handleDeletePayment = async (paymentId: number) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this payment?")) {
       try {
-        await paymentService.deletePayment(paymentId);
-        setPayments(payments.filter((p) => p.id !== paymentId));
-        setTotalPayments(totalPayments - 1);
-        toast.success("Payment deleted successfully");
-      } catch (err: any) {
-        console.error("Error deleting payment:", err);
-        toast.error(err.message || "Failed to delete payment");
+        await paymentService.deletePayment(id);
+        fetchPayments();
+      } catch (error) {
+        console.error("Error deleting payment:", error);
       }
     }
   };
 
-  const handleFormChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
-      ...(name === "payableType" && {
-        purchaseId: "",
-        saleId: "",
-      }),
+      [name]: value
     }));
   };
 
@@ -282,87 +279,49 @@ const PaymentManagement: React.FC = () => {
     }
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
-      const formDataObj = new FormData();
-      // Remove commas before converting to float
-      const amountValue = parseFloat(formData.amount.replace(/,/g, ''));
-      formDataObj.append("amount", amountValue.toString());
-      formDataObj.append("payableType", formData.payableType);
-      formDataObj.append("paymentMethod", formData.paymentMethod);
+      const selectedPurchase = purchaseOptions.find(
+        (option) => option.value.toString() === formData.purchaseId
+      );
 
-      if (formData.payableType === "purchase" && formData.purchaseId) {
-        formDataObj.append("purchaseId", formData.purchaseId);
+      if (!selectedPurchase) {
+        toast.error('Please select a valid purchase');
+        return;
       }
 
-      if (formData.payableType === "sale" && formData.saleId) {
-        formDataObj.append("saleId", formData.saleId);
-      }
-
-      if (file) {
-        formDataObj.append("transactionReference", file);
-      }
+      const paymentData = {
+        amount: parseFloat(formData.amount),
+        payableType: 'purchase' as const,
+        paymentMethod: formData.paymentMethod,
+        transactionReference: formData.transactionReference,
+        purchaseId: Number(formData.purchaseId),
+      };
 
       if (editingPayment) {
-        const updatedPayment = await paymentService.updatePayment(
-          editingPayment.id,
-          {
-            amount: amountValue,
-            paymentMethod: formData.paymentMethod as
-              | "bank_transfer"
-              | "cheque"
-              | "cash"
-              | "mobile_money",
-          },
-          file || undefined
-        );
-        setPayments(
-          payments.map((p) => (p.id === editingPayment.id ? updatedPayment : p))
-        );
-        toast.success("Payment updated successfully");
+        await paymentService.updatePayment(editingPayment.id, paymentData);
+        toast.success('Payment updated successfully');
       } else {
-        const newPayment = await paymentService.createPayment(
-          {
-            amount: amountValue,
-            payableType: formData.payableType as "purchase" | "sale",
-            paymentMethod: formData.paymentMethod as
-              | "bank_transfer"
-              | "cheque"
-              | "cash"
-              | "mobile_money",
-            ...(formData.payableType === "purchase" && {
-              purchaseId: parseInt(formData.purchaseId),
-            }),
-            ...(formData.payableType === "sale" && {
-              saleId: parseInt(formData.saleId),
-            }),
-          },
-          file || undefined
-        );
-        setPayments([newPayment, ...payments]);
-        setTotalPayments(totalPayments + 1);
-        toast.success("Payment created successfully");
+        await paymentService.createPayment(paymentData);
+        toast.success('Payment created successfully');
       }
 
       setShowAddForm(false);
-    } catch (err: any) {
-      console.error("Error saving payment:", err);
-      toast.error(err.message || "Failed to save payment");
-    } finally {
-      setIsSubmitting(false);
+      fetchPayments();
+    } catch (err) {
+      console.error('Error saving payment:', err);
+      toast.error('Failed to save payment');
     }
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({
+    setFilters(prev => ({
       ...prev,
-      [name]:
-        name === "payableType" ? (value as "purchase" | "sale" | "") : value,
-      page: 1,
+      [name]: value,
+      page: 1
     }));
   };
 
@@ -402,11 +361,10 @@ const PaymentManagement: React.FC = () => {
     });
   }, [payments, sortConfig]);
 
-  const completedPayments = payments.filter(
-    (p) => p.status === "completed"
-  ).length;
-  const pendingPayments = payments.filter((p) => p.status === "pending").length;
-  const totalAmount = payments.reduce((sum, p) => sum + p.amount || 0, 0);
+  // Calculate summary data
+  const totalAmount = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const completedPayments = payments.filter(p => p.status === 'completed').length;
+  const pendingPayments = payments.filter(p => p.status === 'pending').length;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -440,6 +398,19 @@ const PaymentManagement: React.FC = () => {
   const pageSize = filters.pageSize || 10;
   const totalPages = Math.ceil(totalPayments / pageSize);
 
+  const fetchPaymentDetails = async (paymentId: number) => {
+    try {
+      setLoading(true);
+      const response = await paymentService.getPaymentById(paymentId);
+      setSelectedPayment(response);
+    } catch (error) {
+      console.error('Error fetching payment details:', error);
+      toast.error('Failed to fetch payment details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -452,7 +423,7 @@ const PaymentManagement: React.FC = () => {
                 Payment Management
               </h1>
               <p className="text-gray-600">
-                Manage payments for purchases and sales
+                Track and manage payments
               </p>
             </div>
 
@@ -460,60 +431,47 @@ const PaymentManagement: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
-                      Total Payments
-                    </p>
-                    <p className="text-2xl font-bold text-gray-800">
-                     ${formatNumber(totalPayments)}
-                    </p>
+                    <p className="text-sm font-medium text-gray-500">Total Payments</p>
+                    <p className="text-2xl font-bold text-gray-800">{totalPayments}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <CreditCard className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
               </div>
+
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
-                      Completed Payments
-                    </p>
-                    <p className="text-2xl font-bold text-gray-800">
-                      {formatNumber(completedPayments)}
-                    </p>
+                    <p className="text-sm font-medium text-gray-500">Total Amount</p>
+                    <p className="text-2xl font-bold text-gray-800">RWF {formatNumber(totalAmount)}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <DollarSign className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Completed</p>
+                    <p className="text-2xl font-bold text-gray-800">{completedPayments}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                     <Check className="w-6 h-6 text-green-600" />
                   </div>
                 </div>
               </div>
+
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
-                      Pending Payments
-                    </p>
-                    <p className="text-2xl font-bold text-gray-800">
-                      {formatNumber(pendingPayments)}
-                    </p>
+                    <p className="text-sm font-medium text-gray-500">Pending</p>
+                    <p className="text-2xl font-bold text-gray-800">{pendingPayments}</p>
                   </div>
                   <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                     <Clock className="w-6 h-6 text-amber-600" />
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">
-                      Total Amount
-                    </p>
-                    <p className="text-2xl font-bold text-gray-800">
-                      {formatNumber(totalAmount)} RWF
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <DollarSign className="w-6 h-6 text-purple-600" />
                   </div>
                 </div>
               </div>
@@ -577,16 +535,25 @@ const PaymentManagement: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Payable Type
                       </label>
-                      <select
+                      <Select
                         name="payableType"
-                        value={filters.payableType}
-                        onChange={handleFilterChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Types</option>
-                        <option value="purchase">Purchase</option>
-                        <option value="sale">Sale</option>
-                      </select>
+                        options={[
+                          { value: 'purchase', label: 'Purchase' },
+                          { value: 'sale', label: 'Sale' }
+                        ]}
+                        value={filters.payableType ? { value: filters.payableType, label: filters.payableType.charAt(0).toUpperCase() + filters.payableType.slice(1) } : null}
+                        onChange={(option) => {
+                          setFilters(prev => ({
+                            ...prev,
+                            payableType: option?.value as 'purchase' | 'sale' | '' || '',
+                            page: 1
+                          }));
+                        }}
+                        className="w-full"
+                        classNamePrefix="select"
+                        isClearable
+                        placeholder="Select type"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -711,15 +678,6 @@ const PaymentManagement: React.FC = () => {
                           </div>
                         </td>
                       </tr>
-                    ) : error ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="px-6 py-4 text-center text-red-600"
-                        >
-                          {error}
-                        </td>
-                      </tr>
                     ) : sortedPayments.length === 0 ? (
                       <tr>
                         <td
@@ -743,37 +701,8 @@ const PaymentManagement: React.FC = () => {
                               {formatNumber(payment.amount)} RWF
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {payment.payableType === "purchase" ? (
-                                <div className="flex items-center">
-                                  <span className="mr-1">Purchase:</span>
-                                  {payment.purchase?.purchaseReference || "N/A"}
-                                  {payment.purchase?.supplier?.user?.profile
-                                    ?.names && (
-                                    <>
-                                      <span className="mx-1">-</span>
-                                      {
-                                        payment.purchase.supplier.user.profile
-                                          .names
-                                      }
-                                    </>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="flex items-center">
-                                  <span className="mr-1">Sale:</span>
-                                  {payment.sale?.referenceNumber || "N/A"}
-                                  {payment.sale?.client?.user?.profile
-                                    ?.names && (
-                                    <>
-                                      <span className="mx-1">-</span>
-                                      {payment.sale.client.user.profile.names}
-                                    </>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {payment.purchase?.purchaseReference || "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -823,14 +752,14 @@ const PaymentManagement: React.FC = () => {
                               <Eye size={18} />
                             </button>
                             <button
-                              onClick={() => handleEditClick(payment)}
+                              onClick={() => handleEdit(payment)}
                               className="text-blue-600 hover:text-blue-900 mr-4"
                               title="Edit Payment"
                             >
                               <Edit2 size={18} />
                             </button>
                             <button
-                              onClick={() => handleDeletePayment(payment.id)}
+                              onClick={() => handleDelete(payment.id)}
                               className="text-red-600 hover:text-red-900"
                               title="Delete Payment"
                             >
@@ -1096,22 +1025,12 @@ const PaymentManagement: React.FC = () => {
                     <p className="text-sm font-medium">
                       {selectedPayment.purchase?.purchaseReference || "N/A"}
                     </p>
-                    <p className="text-sm text-gray-500">Supplier</p>
-                    <p className="text-sm font-medium">
-                      {selectedPayment.purchase?.supplier?.user?.profile
-                        ?.names || "Unknown"}
-                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     <p className="text-sm text-gray-500">Sale Reference</p>
                     <p className="text-sm font-medium">
                       {selectedPayment.sale?.referenceNumber || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-500">Client</p>
-                    <p className="text-sm font-medium">
-                      {selectedPayment.sale?.client?.user?.profile?.names ||
-                        "Unknown"}
                     </p>
                   </div>
                 )}
@@ -1136,47 +1055,6 @@ const PaymentManagement: React.FC = () => {
         </div>
       )}
 
-      {selectedPayment?.transactionReference && (
-        <div className="mt-4">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Payment Proof
-          </h3>
-          {selectedPayment.transactionReference.match(
-            /\.(jpeg|jpg|gif|png|webp)$/i
-          ) ? (
-            <div className="mt-2">
-              {imageUrl ? (
-                <>
-                  <img
-                    src={imageUrl}
-                    alt="Payment proof"
-                    className="max-w-full h-auto rounded-md cursor-pointer"
-                    onClick={() => window.open(imageUrl, "_blank")}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Click image to view in full size
-                  </p>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-32 bg-gray-100 rounded-md">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <a
-              href={`${API_BASE_URL}/payments/file/${selectedPayment.transactionReference
-                .split("/")
-                .pop()}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              Download Proof Document
-            </a>
-          )}
-        </div>
-      )}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
@@ -1187,7 +1065,6 @@ const PaymentManagement: React.FC = () => {
               <button
                 onClick={() => setShowAddForm(false)}
                 className="text-gray-500 hover:text-gray-700"
-                disabled={isSubmitting}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1206,86 +1083,81 @@ const PaymentManagement: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit}>
+            <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-6">
-                {/* Payable Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payable Type <span className="text-red-500">*</span>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Payable Type
                   </label>
-                  <select
+                  <Select
                     name="payableType"
-                    value={formData.payableType}
-                    onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                    disabled={isSubmitting}
-                  >
-                    <option value="">Select payable type</option>
-                    <option value="purchase">Purchase</option>
-                    <option value="sale">Sale</option>
-                  </select>
+                    options={[
+                      { value: 'purchase', label: 'Purchase' },
+                      { value: 'sale', label: 'Sale' }
+                    ]}
+                    value={formData.payableType ? { value: formData.payableType, label: formData.payableType.charAt(0).toUpperCase() + formData.payableType.slice(1) } : null}
+                    onChange={(option) => {
+                      if (option) {
+                        setFormData(prev => ({
+                          ...prev,
+                          payableType: option.value as 'purchase' | 'sale',
+                          purchaseId: '',
+                          saleId: ''
+                        }));
+                      }
+                    }}
+                    className="basic-single"
+                    classNamePrefix="select"
+                    isClearable
+                    placeholder="Select type"
+                  />
                 </div>
 
-                {/* Purchase/Sale Select */}
-                {formData.payableType === "purchase" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Purchase <span className="text-red-500">*</span>
+                {formData.payableType === 'purchase' && (
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Purchase
                     </label>
                     <Select
-                      id="purchaseId"
                       name="purchaseId"
-                      options={purchasesOptions}
-                      isLoading={purchasesLoading}
-                      onInputChange={(value) => {
-                        setPurchasesSearch(value);
+                      options={purchaseOptions}
+                      value={formData.purchaseId ? purchaseOptions.find(option => option.value.toString() === formData.purchaseId) : null}
+                      onChange={(option) => {
+                        if (option) {
+                          setFormData(prev => ({
+                            ...prev,
+                            purchaseId: option.value.toString()
+                          }));
+                        }
                       }}
-                      onChange={(selectedOption) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          purchaseId: selectedOption?.value.toString() || "",
-                        }));
-                      }}
-                      value={purchasesOptions.find(
-                        (option) =>
-                          option.value.toString() === formData.purchaseId
-                      )}
-                      placeholder="Search and select purchase..."
-                      className="basic-single"
-                      classNamePrefix="select"
-                      isClearable
+                      className="mt-1"
+                      isLoading={loadingPurchases}
+                      placeholder="Select purchase"
                       required
                     />
                   </div>
                 )}
 
-                {formData.payableType === "sale" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Sale <span className="text-red-500">*</span>
+                {formData.payableType === 'sale' && (
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Sale
                     </label>
                     <Select
-                      id="saleId"
                       name="saleId"
-                      options={salesOptions}
-                      isLoading={salesLoading}
-                      onInputChange={(value) => {
-                        setSalesSearch(value);
+                      options={saleOptions}
+                      value={formData.saleId ? saleOptions.find(option => option.value.toString() === formData.saleId) : null}
+                      onChange={(option) => {
+                        if (option) {
+                          setFormData(prev => ({
+                            ...prev,
+                            saleId: option.value.toString()
+                          }));
+                        }
                       }}
-                      onChange={(selectedOption) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          saleId: selectedOption?.value.toString() || "",
-                        }));
-                      }}
-                      value={salesOptions.find(
-                        (option) => option.value.toString() === formData.saleId
-                      )}
-                      placeholder="Search and select sale..."
-                      className="basic-single"
-                      classNamePrefix="select"
-                      isClearable
+                      className="mt-1"
+                      isLoading={loadingSales}
+                      placeholder="Select sale"
                       required
                     />
                   </div>
@@ -1310,7 +1182,6 @@ const PaymentManagement: React.FC = () => {
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
-                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -1325,7 +1196,6 @@ const PaymentManagement: React.FC = () => {
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
-                    disabled={isSubmitting}
                   >
                     <option value="">Select payment method</option>
                     <option value="bank_transfer">Bank Transfer</option>
@@ -1345,7 +1215,6 @@ const PaymentManagement: React.FC = () => {
                     name="transactionReference"
                     onChange={handleFileChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isSubmitting}
                   />
                   {editingPayment?.transactionReference && !file && (
                     <p className="mt-1 text-sm text-gray-500">
@@ -1361,7 +1230,6 @@ const PaymentManagement: React.FC = () => {
                   type="button"
                   onClick={() => setShowAddForm(false)}
                   className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
@@ -1369,40 +1237,14 @@ const PaymentManagement: React.FC = () => {
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                   disabled={
-                    isSubmitting ||
                     !formData.amount ||
                     !formData.payableType ||
                     !formData.paymentMethod ||
                     (formData.payableType === "purchase" &&
-                      !formData.purchaseId) ||
-                    (formData.payableType === "sale" && !formData.saleId)
+                      !formData.purchaseId)
                   }
                 >
-                  {isSubmitting ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      {editingPayment ? "Updating..." : "Creating..."}
-                    </>
-                  ) : editingPayment ? (
+                  {editingPayment ? (
                     "Update Payment"
                   ) : (
                     "Create Payment"

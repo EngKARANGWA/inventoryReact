@@ -265,11 +265,33 @@ export const paymentService = {
     try {
       const response = await axios.get(`${API_BASE_URL}/purchases`, {
         params: { search },
+        timeout: 10000, // 10 second timeout
       });
       return response.data;
     } catch (error) {
-      console.error("Error fetching purchases:", error);
-      return [];
+      if (axios.isAxiosError(error)) {
+        // Handle specific HTTP error codes
+        if (error.response) {
+          switch (error.response.status) {
+            case 500:
+              throw new Error('Server error - please try again later');
+            case 404:
+              throw new Error('Purchases endpoint not found');
+            case 401:
+              throw new Error('Authentication required');
+            default:
+              throw new Error(
+                error.response.data?.message || 
+                `Failed to fetch purchases (Status: ${error.response.status})`
+              );
+          }
+        } else if (error.request) {
+          throw new Error('No response received from server');
+        } else {
+          throw new Error('Request setup error');
+        }
+      }
+      throw new Error('Unknown error occurred while fetching purchases');
     }
   },
 

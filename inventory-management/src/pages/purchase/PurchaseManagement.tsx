@@ -31,6 +31,14 @@ import {
   PurchaseFilterOptions,
 } from "../../services/purchaseService";
 
+interface FormData {
+  supplierId: string;
+  productId: string;
+  weight: string;
+  description: string;
+  expectedDeliveryDate: string;
+}
+
 const PurchaseManagement: React.FC = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [totalPurchases, setTotalPurchases] = useState(0);
@@ -57,7 +65,7 @@ const PurchaseManagement: React.FC = () => {
     productId: undefined,
   });
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     supplierId: "",
     productId: "",
     weight: "",
@@ -151,11 +159,9 @@ const PurchaseManagement: React.FC = () => {
     setFormData({
       supplierId: String(purchase.supplierId),
       productId: String(purchase.productId),
-      weight: purchase.weight,
+      weight: String(purchase.weight),
       description: purchase.description || "",
-      expectedDeliveryDate: purchase.expectedDeliveryDate
-        ? new Date(purchase.expectedDeliveryDate).toISOString().split("T")[0]
-        : "",
+      expectedDeliveryDate: (purchase.expectedDeliveryDate || new Date().toISOString().split('T')[0]) as string,
     });
     setEditingPurchase(purchase);
     setShowAddForm(true);
@@ -982,7 +988,6 @@ const PurchaseManagement: React.FC = () => {
                   )}
                 </div>
 
-                {/* Product Select */}
                 {/* Product Select */}
                 <div className="col-span-1">
                   <label

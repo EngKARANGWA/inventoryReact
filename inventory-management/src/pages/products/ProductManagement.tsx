@@ -152,7 +152,7 @@ const ProductManagement: React.FC = () => {
                     <p className="text-sm font-medium text-gray-500">Recently Added</p>
                     <p className="text-2xl font-bold text-gray-800">
                       {products.length > 0 ? 
-                        new Date(products[0].createdAt).toLocaleDateString() : 
+                        new Date(products[0]?.createdAt || new Date()).toLocaleDateString() : 
                         'None'}
                     </p>
                   </div>

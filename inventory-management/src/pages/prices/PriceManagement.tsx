@@ -158,7 +158,7 @@ const PriceManagement: React.FC = () => {
   // Calculate summary data
   const totalPrices = prices.length;
   const averagePrice = prices.reduce((sum, price) => sum + Number(price.unitPrice), 0) / (prices.length || 1);
-  const latestUpdate = prices.length > 0 ? 
+  const latestUpdate = prices.length > 0 && prices[0]?.updatedAt ? 
     new Date(prices[0].updatedAt).toLocaleDateString() : 'N/A';
 
   const handleSubmit = async (data: any) => {

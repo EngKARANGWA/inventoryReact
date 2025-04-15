@@ -1054,14 +1054,14 @@ const DisposalManagement: React.FC = () => {
                       <div>
                         <div className="text-sm text-gray-900">
                           $
-                          {parseFloat(prices[0].unitPrice.toString()).toFixed(
+                          {parseFloat(prices[0]?.unitPrice?.toString() || '0').toFixed(
                             2
                           )}{" "}
                           per unit
                         </div>
                         <div className="text-xs text-gray-500">
                           Updated:{" "}
-                          {new Date(prices[0].date).toLocaleDateString()}
+                          {prices[0]?.date ? new Date(prices[0].date).toLocaleDateString() : 'N/A'}
                         </div>
                       </div>
                     ) : selectedProduct ? (
