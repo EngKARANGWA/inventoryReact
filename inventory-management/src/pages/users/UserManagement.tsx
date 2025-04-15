@@ -65,19 +65,11 @@ const UserManagement: React.FC = () => {
       }
   };
 
-  const handleRefresh = async () => {
-    try {
-      await fetchUsers();
-      toast.success('Users data refreshed successfully');
-    } catch (error) {
-      toast.error('Failed to refresh users data');
-      console.error('Error refreshing users:', error);
-    }
-  };
+
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
+    handlePageChange(1); // Reset to first page when searching
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -87,7 +79,7 @@ const UserManagement: React.FC = () => {
       [name]: value,
       page: 1 // Reset to first page when filters change
     }));
-    setCurrentPage(1); // Reset to first page when filtering
+    handlePageChange(1); // Reset to first page when filtering
   };
 
   const clearFilters = () => {
@@ -567,7 +559,7 @@ const UserManagement: React.FC = () => {
                     )}
                   </tbody>
                 </table>
-                {renderPagination()}
+                {/* {renderPagination()} */}
               </div>
 
               {totalUsers > 0 && (

@@ -22,12 +22,10 @@ const LatestPricesTable: React.FC = () => {
         const response = await fetch(
           "https://test.gvibyequ.a2hosted.com/api/daily-price/latest-price"
         );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch prices");
-        }
+        if (!response.ok) throw new Error("Failed to fetch prices");
 
         const data = await response.json();
+        console.log("Fetched prices:", data.data); // 👈 Add this
         setPrices(data.data);
         setIsLoading(false);
       } catch (err) {

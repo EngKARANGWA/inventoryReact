@@ -6,6 +6,7 @@ interface RoleFormProps {
   onClose: () => void;
   onSubmit: (formData: FormData) => void;
   initialData?: Partial<FormData>;
+  isSubmitting: boolean;
 }
 
 interface FormData {

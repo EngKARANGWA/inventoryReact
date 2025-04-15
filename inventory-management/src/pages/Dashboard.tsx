@@ -189,7 +189,7 @@ const Dashboard: React.FC = () => {
           pauseOnHover
           aria-label="Notification container"
         />
-        <main className="flex-1 ">
+        <main className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto h-full p-4">
             {/* Add Price Modal */}
             <AddPriceModal

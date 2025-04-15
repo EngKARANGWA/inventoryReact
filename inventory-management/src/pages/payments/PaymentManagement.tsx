@@ -34,11 +34,11 @@ const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
 // Utility function to format numbers with comma as thousand separator
 const formatNumber = (num: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'decimal',
+  return new Intl.NumberFormat("en-US", {
+    style: "decimal",
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-    useGrouping: true
+    useGrouping: true,
   }).format(num);
 };
 
@@ -129,6 +129,18 @@ const PaymentManagement: React.FC = () => {
       }
     };
   }, [showViewModal, selectedPayment]);
+
+  useEffect(() => {
+    if (showAddForm && formData.payableType === "purchase") {
+      fetchPurchases();
+    }
+  }, [showAddForm, formData.payableType]);
+
+  useEffect(() => {
+    if (showAddForm && formData.payableType === "sale") {
+      fetchSales();
+    }
+  }, [showAddForm, formData.payableType]);
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -289,7 +301,7 @@ const PaymentManagement: React.FC = () => {
     try {
       const formDataObj = new FormData();
       // Remove commas before converting to float
-      const amountValue = parseFloat(formData.amount.replace(/,/g, ''));
+      const amountValue = parseFloat(formData.amount.replace(/,/g, ""));
       formDataObj.append("amount", amountValue.toString());
       formDataObj.append("payableType", formData.payableType);
       formDataObj.append("paymentMethod", formData.paymentMethod);
@@ -464,7 +476,7 @@ const PaymentManagement: React.FC = () => {
                       Total Payments
                     </p>
                     <p className="text-2xl font-bold text-gray-800">
-                     ${formatNumber(totalPayments)}
+                      ${formatNumber(totalPayments)}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -882,9 +894,14 @@ const PaymentManagement: React.FC = () => {
                         </span>{" "}
                         to{" "}
                         <span className="font-medium">
-                          {formatNumber(Math.min(currentPage * pageSize, totalPayments))}
+                          {formatNumber(
+                            Math.min(currentPage * pageSize, totalPayments)
+                          )}
                         </span>{" "}
-                        of <span className="font-medium">{formatNumber(totalPayments)}</span>{" "}
+                        of{" "}
+                        <span className="font-medium">
+                          {formatNumber(totalPayments)}
+                        </span>{" "}
                         results
                       </p>
                     </div>
@@ -1299,12 +1316,16 @@ const PaymentManagement: React.FC = () => {
                   <input
                     type="text"
                     name="amount"
-                    value={formData.amount.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}                    onChange={(e) => {
-                      const rawValue = e.target.value.replace(/,/g, '');
+                    value={formData.amount.replace(
+                      /\B(?=(\d{3})+(?!\d))/g,
+                      ","
+                    )}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/,/g, "");
                       if (!isNaN(Number(rawValue))) {
                         setFormData({
                           ...formData,
-                          amount: rawValue
+                          amount: rawValue,
                         });
                       }
                     }}
