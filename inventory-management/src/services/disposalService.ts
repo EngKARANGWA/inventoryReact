@@ -9,7 +9,14 @@ export interface Disposal {
   priceId: number;
   quantity: number;
   date: string;
-  method: "destroyed" | "donated" | "recycled" | "returned_to_supplier" | "expired" | "damaged" | "other";
+  method:
+    | "destroyed"
+    | "donated"
+    | "recycled"
+    | "returned_to_supplier"
+    | "expired"
+    | "damaged"
+    | "other";
   note: string | null;
   warehouseId: number;
   createdAt: string;
@@ -27,7 +34,8 @@ export interface Disposal {
   };
   price?: {
     id: number;
-    unitPrice: number;
+    buyingUnitPrice: number | null;
+    sellingUnitPrice: number | null;
     date: string;
   };
 }
@@ -72,9 +80,14 @@ interface DisposalResponse {
 }
 
 export const disposalService = {
-  createDisposal: async (disposalData: CreateDisposalData): Promise<Disposal> => {
+  createDisposal: async (
+    disposalData: CreateDisposalData
+  ): Promise<Disposal> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/disposal`, disposalData);
+      const response = await axios.post(
+        `${API_BASE_URL}/disposal`,
+        disposalData
+      );
       return response.data.data;
     } catch (error) {
       console.error("Error creating disposal:", error);
@@ -82,7 +95,9 @@ export const disposalService = {
     }
   },
 
-  getAllDisposals: async (options: DisposalFilterOptions = {}): Promise<DisposalResponse> => {
+  getAllDisposals: async (
+    options: DisposalFilterOptions = {}
+  ): Promise<DisposalResponse> => {
     try {
       const params = {
         page: options.page || 1,
@@ -113,7 +128,10 @@ export const disposalService = {
     }
   },
 
-  getDisposalById: async (id: number, includeDeleted: boolean = false): Promise<Disposal | null> => {
+  getDisposalById: async (
+    id: number,
+    includeDeleted: boolean = false
+  ): Promise<Disposal | null> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/disposal/${id}`, {
         params: { includeDeleted: includeDeleted ? "true" : "false" },
@@ -125,9 +143,15 @@ export const disposalService = {
     }
   },
 
-  updateDisposal: async (id: number, disposalData: UpdateDisposalData): Promise<Disposal> => {
+  updateDisposal: async (
+    id: number,
+    disposalData: UpdateDisposalData
+  ): Promise<Disposal> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/disposal/${id}`, disposalData);
+      const response = await axios.put(
+        `${API_BASE_URL}/disposal/${id}`,
+        disposalData
+      );
       return response.data.data;
     } catch (error) {
       console.error("Error updating disposal:", error);
@@ -162,7 +186,7 @@ export const productService = {
 export const warehouseService = {
   getAllWarehouses: async (): Promise<Warehouse[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/warehouses`);
+      const response = await axios.get(`${API_BASE_URL}/warehouse`);
       return response.data || [];
     } catch (error) {
       console.error("Error fetching warehouses:", error);
@@ -175,7 +199,7 @@ export const priceService = {
   getPricesByProduct: async (productId: number): Promise<Price[]> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/daily-price`, {
-        params: { productId }
+        params: { productId },
       });
       return response.data || [];
     } catch (error) {
@@ -199,7 +223,8 @@ interface Warehouse {
 
 interface Price {
   id: number;
-  unitPrice: number;
+  buyingUnitPrice?: number | null;
+  sellingUnitPrice?: number | null;
   date: string;
   productId: number;
   product?: Product;

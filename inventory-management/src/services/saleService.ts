@@ -4,22 +4,24 @@ const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
 export interface Sale {
   id: number;
-  quantity: string;
-  date: string;
+  saleReference: string | null;
+  quantity: number;
+  status: string;
+  expectedDeliveryDate: string | null;
   totalPaid: string;
   totalDelivered: string;
   note: string | null;
-  referenceNumber: string;
+  dailyPriceId: number | null;
   salerId: number;
-  priceId: number;
   clientId: number | null;
   productId: number;
+  blockerId: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
   product: Product;
   saler: Saler;
-  price: DailyPrice;
+  dailyPrice: DailyPrice | null;
   client: any | null;
 }
 
@@ -64,7 +66,8 @@ interface UserProfile {
 
 interface DailyPrice {
   id: number;
-  unitPrice: string;
+  buyingUnitPrice: string;
+  sellingUnitPrice: string;
   date: string;
   productId: number;
   createdAt: string;

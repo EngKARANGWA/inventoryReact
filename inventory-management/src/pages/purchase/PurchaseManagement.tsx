@@ -20,6 +20,7 @@ import {
   Truck as TruckIcon,
   DollarSign,
   Scale,
+  Eye,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -38,6 +39,10 @@ const PurchaseManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(
+    null
+  );
+  const [showViewModal, setShowViewModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -765,6 +770,16 @@ const PurchaseManagement: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                setSelectedPurchase(purchase);
+                                setShowViewModal(true);
+                              }}
+                              className="text-green-600 hover:text-green-900 mr-4"
+                              title="View Details"
+                            >
+                              <Eye size={18} />
+                            </button>
                             {purchase.status !== "all_completed" && (
                               <>
                                 <button
@@ -1140,6 +1155,290 @@ const PurchaseManagement: React.FC = () => {
         </div>
       )}
 
+      {/* View Purchase Details Modal */}
+      {showViewModal && selectedPurchase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                Purchase Details - {selectedPurchase.purchaseReference}
+              </h2>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Basic Information
+                  </h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-500">Reference Number</p>
+                      <p className="text-sm font-medium">
+                        {selectedPurchase.purchaseReference}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Created At</p>
+                      <p className="text-sm font-medium">
+                        {new Date(selectedPurchase.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Status</p>
+                      <p className="text-sm font-medium">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                            selectedPurchase.status
+                          )}`}
+                        >
+                          {selectedPurchase.status.replace("_", " ")}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Product Information
+                  </h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-500">Product</p>
+                      <p className="text-sm font-medium">
+                        {selectedPurchase.product?.name ||
+                          selectedPurchase.dailyPrice?.product?.name ||
+                          "N/A"}
+                        {selectedPurchase.product?.description && (
+                          <span className="text-gray-500 block mt-1">
+                            {selectedPurchase.product.description}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Weight</p>
+                      <p className="text-sm font-medium">
+                        {parseFloat(selectedPurchase.weight).toLocaleString()}{" "}
+                        Kg
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Unit Price</p>
+                      <p className="text-sm font-medium">
+                        {selectedPurchase.dailyPrice?.buyingUnitPrice
+                          ? `${parseFloat(
+                              selectedPurchase.dailyPrice.buyingUnitPrice
+                            ).toLocaleString()} RWF/Kg`
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Supplier Information
+                  </h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-500">Supplier Name</p>
+                      <p className="text-sm font-medium">
+                        {selectedPurchase.supplier?.user?.profile?.names ||
+                          "Unknown Supplier"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Contact</p>
+                      <p className="text-sm font-medium">
+                        {selectedPurchase.supplier?.user?.profile
+                          ?.phoneNumber || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Location</p>
+                      <p className="text-sm font-medium">
+                        {selectedPurchase.supplier?.district},{" "}
+                        {selectedPurchase.supplier?.sector}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Delivery Information
+                  </h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        Expected Delivery Date
+                      </p>
+                      <p className="text-sm font-medium">
+                        {selectedPurchase.expectedDeliveryDate
+                          ? new Date(
+                              selectedPurchase.expectedDeliveryDate
+                            ).toLocaleDateString()
+                          : "Not set"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Total Delivered</p>
+                      <p className="text-sm font-medium">
+                        {parseFloat(
+                          selectedPurchase.totalDelivered
+                        ).toLocaleString()}{" "}
+                        Kg
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Description</p>
+                      <p className="text-sm font-medium">
+                        {selectedPurchase.description ||
+                          "No description provided"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Deliveries Section */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Deliveries ({selectedPurchase.deliveries?.length || 0})
+                </h3>
+                {selectedPurchase.deliveries?.length > 0 ? (
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Reference
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Weight (Kg)
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Delivery Date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {selectedPurchase.deliveries.map((delivery) => (
+                          <tr key={delivery.id}>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                              {delivery.deliveryReference}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                  delivery.status
+                                )}`}
+                              >
+                                {delivery.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                              {parseFloat(delivery.weight).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                              {delivery.deliveredAt
+                                ? new Date(
+                                    delivery.deliveredAt
+                                  ).toLocaleDateString()
+                                : "Not delivered"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No deliveries recorded
+                  </p>
+                )}
+              </div>
+
+              {/* Payments Section */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Payments ({selectedPurchase.payments?.length || 0})
+                </h3>
+                {selectedPurchase.payments?.length > 0 ? (
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Reference
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Amount (RWF)
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Method
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {selectedPurchase.payments.map((payment) => (
+                          <tr key={payment.id}>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                              {payment.paymentReference}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                              {parseFloat(payment.amount).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                              {payment.paymentMethod.replace("_", " ")}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                  payment.status
+                                )}`}
+                              >
+                                {payment.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No payments recorded</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ToastContainer
         position="top-right"
         autoClose={5000}

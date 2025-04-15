@@ -34,10 +34,14 @@ interface Saler {
   name: string;
 }
 
-interface DailyPrice {
+interface Client {
   id: number;
-  price: string;
-  productId: number;
+  name: string;
+}
+
+interface Blocker {
+  id: number;
+  name: string;
 }
 
 interface SortConfig {
@@ -57,7 +61,8 @@ const SaleManagement: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingSalers, setLoadingSalers] = useState(false);
-  const [loadingPrices, setLoadingPrices] = useState(false);
+  const [loadingClients, setLoadingClients] = useState(false);
+  const [loadingBlockers, setLoadingBlockers] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
   const [filters, setFilters] = useState({
@@ -72,16 +77,18 @@ const SaleManagement: React.FC = () => {
   const [formData, setFormData] = useState({
     productId: "",
     salerId: "",
-    priceId: "",
     clientId: "",
+    blockerId: "",
     quantity: "",
     note: "",
     date: new Date().toISOString().split("T")[0],
+    expectedDeliveryDate: "",
   });
 
   const [products, setProducts] = useState<Product[]>([]);
   const [salers, setSalers] = useState<Saler[]>([]);
-  const [prices, setPrices] = useState<DailyPrice[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [blockers, setBlockers] = useState<Blocker[]>([]);
 
   useEffect(() => {
     fetchSales();
@@ -93,34 +100,54 @@ const SaleManagement: React.FC = () => {
     }
   }, [showAddForm]);
 
-  useEffect(() => {
-    if (formData.productId) {
-      updatePriceOptions();
-    }
-  }, [formData.productId]);
-
   const fetchDropdownOptions = async () => {
     try {
       setLoadingProducts(true);
       setLoadingSalers(true);
-      setLoadingPrices(true);
-
-      const [productsRes, salersRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/products`),
-        axios.get(`${API_BASE_URL}/saler`),
-      ]);
-
+      setLoadingClients(true);
+      setLoadingBlockers(true);
+  
+      const [productsRes, salersRes, clientsRes, blockersRes] =
+        await Promise.all([
+          axios.get(`${API_BASE_URL}/products`),
+          axios.get(`${API_BASE_URL}/saler`),
+          axios.get(`${API_BASE_URL}/clients`),
+          axios.get(`${API_BASE_URL}/blockers`),
+        ]);
+  
+      // Handle products response
+      const productsData = productsRes.data.success ? productsRes.data.data : productsRes.data;
       setProducts(
-        productsRes.data.map((product: any) => ({
+        (productsData || []).map((product: any) => ({
           id: product.id,
           name: product.name,
         }))
       );
-
+  
+      // Handle salers response
+      const salersData = salersRes.data.success ? salersRes.data.data : salersRes.data;
       setSalers(
-        salersRes.data.map((saler: any) => ({
+        (salersData || []).map((saler: any) => ({
           id: saler.id,
           name: saler.user?.profile?.names || "Unknown Saler",
+        }))
+      );
+  
+      // Handle clients response
+      const clientsData = clientsRes.data.success ? clientsRes.data.data : clientsRes.data;
+      setClients(
+        (clientsData || []).map((client: any) => ({
+          id: client.id,
+          name: client.user?.profile?.names || "Unknown Client",
+        }))
+      );
+  
+      // Handle blockers response
+      const blockersData = blockersRes.data.success ? blockersRes.data.data : blockersRes.data;
+      setBlockers(
+        (blockersData || []).map((blocker: any) => ({
+          id: blocker.id,
+          name: blocker.user?.profile?.names || "Unknown Blocker",
         }))
       );
     } catch (error) {
@@ -129,32 +156,8 @@ const SaleManagement: React.FC = () => {
     } finally {
       setLoadingProducts(false);
       setLoadingSalers(false);
-    }
-  };
-
-  const updatePriceOptions = async () => {
-    try {
-      setLoadingPrices(true);
-      const response = await axios.get(`${API_BASE_URL}/daily-price`);
-      const filteredPrices = response.data
-        .filter((price: any) => price.productId === Number(formData.productId))
-        .map((price: any) => ({
-          id: price.id,
-          price: price.unitPrice,
-          productId: price.productId,
-        }));
-      setPrices(filteredPrices);
-
-      if (filteredPrices.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          priceId: String(filteredPrices[0].id),
-        }));
-      }
-    } catch (error) {
-      console.error("Error updating price options:", error);
-    } finally {
-      setLoadingPrices(false);
+      setLoadingClients(false);
+      setLoadingBlockers(false);
     }
   };
 
@@ -163,13 +166,13 @@ const SaleManagement: React.FC = () => {
     setError(null);
 
     try {
-      const { data, pagination } = await saleService.getAllSales({
+      const response = await saleService.getAllSales({
         ...filters,
         search: searchTerm,
       });
 
-      setSales(data || []);
-      setTotalSales(pagination?.totalItems || 0);
+      setSales(response.data || []);
+      setTotalSales(response.pagination?.totalItems || 0);
     } catch (err) {
       console.error("Error fetching sales:", err);
       setError("Failed to fetch sales. Please try again later.");
@@ -187,11 +190,12 @@ const SaleManagement: React.FC = () => {
       const saleData = {
         productId: Number(formData.productId),
         salerId: Number(formData.salerId),
-        priceId: Number(formData.priceId),
         quantity: parseFloat(formData.quantity),
         note: formData.note,
         date: formData.date,
+        expectedDeliveryDate: formData.expectedDeliveryDate,
         ...(formData.clientId && { clientId: Number(formData.clientId) }),
+        ...(formData.blockerId && { blockerId: Number(formData.blockerId) }),
       };
 
       if (editingSale) {
@@ -258,11 +262,12 @@ const SaleManagement: React.FC = () => {
     setFormData({
       productId: "",
       salerId: "",
-      priceId: "",
       clientId: "",
+      blockerId: "",
       quantity: "",
       note: "",
       date: new Date().toISOString().split("T")[0],
+      expectedDeliveryDate: "",
     });
     setShowAddForm(true);
   };
@@ -272,11 +277,12 @@ const SaleManagement: React.FC = () => {
     setFormData({
       productId: String(sale.productId),
       salerId: String(sale.salerId),
-      priceId: String(sale.priceId),
       clientId: sale.clientId ? String(sale.clientId) : "",
-      quantity: sale.quantity,
+      blockerId: sale.blockerId ? String(sale.blockerId) : "",
+      quantity: sale.quantity.toString(),
       note: sale.note || "",
-      date: sale.date.split("T")[0],
+      date: sale.createdAt.split("T")[0],
+      expectedDeliveryDate: sale.expectedDeliveryDate?.split("T")[0] || "",
     });
     setShowAddForm(true);
   };
@@ -331,25 +337,27 @@ const SaleManagement: React.FC = () => {
     });
   }, [sales, sortConfig]);
 
-  const pendingSales = sales.filter(
-    (s) =>
-      parseFloat(s.totalPaid) <
-      parseFloat(s.price.unitPrice) * parseFloat(s.quantity)
-  ).length;
-  // const completedSales = sales.filter(
-  //   (s) =>
-  //     parseFloat(s.totalPaid) >=
-  //     parseFloat(s.price.unitPrice) * parseFloat(s.quantity)
-  // ).length;
-  const totalRevenue = sales.reduce(
-    (sum, s) => sum + parseFloat(s.price.unitPrice) * parseFloat(s.quantity),
-    0
-  );
+  const pendingSales = sales.filter((s) => {
+    const unitPrice = s.dailyPrice
+      ? parseFloat(s.dailyPrice.sellingUnitPrice)
+      : 0;
+    return parseFloat(s.totalPaid) < unitPrice * s.quantity;
+  }).length;
+
+  const totalRevenue = sales.reduce((sum, s) => {
+    const unitPrice = s.dailyPrice
+      ? parseFloat(s.dailyPrice.sellingUnitPrice)
+      : 0;
+    return sum + unitPrice * s.quantity;
+  }, 0);
+
   const totalPaid = sales.reduce((sum, s) => sum + parseFloat(s.totalPaid), 0);
 
   const getStatusBadge = (sale: Sale) => {
-    const totalAmount =
-      parseFloat(sale.price.unitPrice) * parseFloat(sale.quantity);
+    const unitPrice = sale.dailyPrice
+      ? parseFloat(sale.dailyPrice.sellingUnitPrice)
+      : 0;
+    const totalAmount = unitPrice * sale.quantity;
     const paidAmount = parseFloat(sale.totalPaid);
 
     if (paidAmount >= totalAmount) {
@@ -617,11 +625,11 @@ const SaleManagement: React.FC = () => {
                     <tr>
                       <th
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort("referenceNumber")}
+                        onClick={() => requestSort("saleReference")}
                       >
                         <div className="flex items-center">
                           Reference
-                          {sortConfig?.key === "referenceNumber" && (
+                          {sortConfig?.key === "saleReference" && (
                             <span className="ml-1">
                               {sortConfig.direction === "ascending" ? "↑" : "↓"}
                             </span>
@@ -655,11 +663,11 @@ const SaleManagement: React.FC = () => {
                       </th>
                       <th
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort("date")}
+                        onClick={() => requestSort("createdAt")}
                       >
                         <div className="flex items-center">
                           Date
-                          {sortConfig?.key === "date" && (
+                          {sortConfig?.key === "createdAt" && (
                             <span className="ml-1">
                               {sortConfig.direction === "ascending" ? "↑" : "↓"}
                             </span>
@@ -707,7 +715,7 @@ const SaleManagement: React.FC = () => {
                         <tr key={sale.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
-                              {sale.referenceNumber}
+                              {sale.saleReference || "N/A"}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -722,7 +730,12 @@ const SaleManagement: React.FC = () => {
                                 {sale.quantity} Kg
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
-                                @ {parseFloat(sale.price.unitPrice).toFixed(2)}
+                                @{" "}
+                                {sale.dailyPrice
+                                  ? parseFloat(
+                                      sale.dailyPrice.sellingUnitPrice
+                                    ).toFixed(2)
+                                  : "N/A"}{" "}
                                 Rwf/Kg
                               </div>
                             </div>
@@ -734,10 +747,12 @@ const SaleManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {(
-                                parseFloat(sale.price.unitPrice) *
-                                parseFloat(sale.quantity)
-                              ).toFixed(2)}
+                              {sale.dailyPrice
+                                ? (
+                                    parseFloat(sale.dailyPrice.sellingUnitPrice) *
+                                    sale.quantity
+                                  ).toFixed(2)
+                                : "N/A"}{" "}
                               Rwf
                             </div>
                           </td>
@@ -750,7 +765,7 @@ const SaleManagement: React.FC = () => {
                             <div className="flex items-center">
                               <Calendar className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
                               <div className="text-sm text-gray-900">
-                                {new Date(sale.date).toLocaleDateString()}
+                                {new Date(sale.createdAt).toLocaleDateString()}
                               </div>
                             </div>
                           </td>
@@ -990,45 +1005,54 @@ const SaleManagement: React.FC = () => {
                   )}
                 </div>
 
-                {/* Price Select */}
+                {/* Client Select */}
                 <div className="col-span-1">
                   <label
-                    htmlFor="priceId"
+                    htmlFor="clientId"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Price <span className="text-red-500">*</span>
+                    Client (Optional)
                   </label>
                   <select
-                    id="priceId"
-                    name="priceId"
-                    value={formData.priceId}
+                    id="clientId"
+                    name="clientId"
+                    value={formData.clientId}
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                    disabled={
-                      isSubmitting || loadingPrices || !formData.productId
-                    }
+                    disabled={isSubmitting || loadingClients}
                   >
-                    <option value="">
-                      {loadingPrices
-                        ? "Loading prices..."
-                        : formData.productId
-                        ? "Select a price"
-                        : "Select product first"}
-                    </option>
-                    {prices.map((price) => (
-                      <option key={price.id} value={price.id}>
-                        ${price.price} per Kg
+                    <option value="">No client</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
                       </option>
                     ))}
                   </select>
-                  {!loadingPrices &&
-                    prices.length === 0 &&
-                    formData.productId && (
-                      <p className="mt-1 text-sm text-red-600">
-                        No prices available for selected product
-                      </p>
-                    )}
+                </div>
+
+                {/* Blocker Select */}
+                <div className="col-span-1">
+                  <label
+                    htmlFor="blockerId"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Blocker (Optional)
+                  </label>
+                  <select
+                    id="blockerId"
+                    name="blockerId"
+                    value={formData.blockerId}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting || loadingBlockers}
+                  >
+                    <option value="">No blocker</option>
+                    {blockers.map((blocker) => (
+                      <option key={blocker.id} value={blocker.id}>
+                        {blocker.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Quantity Input */}
@@ -1073,25 +1097,23 @@ const SaleManagement: React.FC = () => {
                   />
                 </div>
 
-                {/* Client Select (Optional) */}
+                {/* Expected Delivery Date Input */}
                 <div className="col-span-1">
                   <label
-                    htmlFor="clientId"
+                    htmlFor="expectedDeliveryDate"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Client (Optional)
+                    Expected Delivery Date
                   </label>
-                  <select
-                    id="clientId"
-                    name="clientId"
-                    value={formData.clientId}
+                  <input
+                    type="date"
+                    id="expectedDeliveryDate"
+                    name="expectedDeliveryDate"
+                    value={formData.expectedDeliveryDate}
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isSubmitting}
-                  >
-                    <option value="">No client</option>
-                    {/* You would add client options here if you have a client service */}
-                  </select>
+                  />
                 </div>
 
                 {/* Notes */}
@@ -1131,10 +1153,8 @@ const SaleManagement: React.FC = () => {
                     isSubmitting ||
                     loadingProducts ||
                     loadingSalers ||
-                    loadingPrices ||
                     products.length === 0 ||
-                    salers.length === 0 ||
-                    prices.length === 0
+                    salers.length === 0
                   }
                 >
                   {isSubmitting ? (

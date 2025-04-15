@@ -11,32 +11,32 @@ export interface Product {
   deletedAt: string | null;
 }
 
-interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    current_page: number;
-    from: number;
-    last_page: number;
-    per_page: number;
-    to: number;
-    total: number;
-  };
-}
+// interface PaginatedResponse<T> {
+//   data: T[];
+//   meta: {
+//     current_page: number;
+//     from: number;
+//     last_page: number;
+//     per_page: number;
+//     to: number;
+//     total: number;
+//   };
+// }
 
 // Helper function to extract data from API response
 const extractData = <T>(response: any): T => {
   if (response.data && response.data.data) {
-    return response.data.data;
+    return response.data.data as T;
   }
-  return response.data;
+  return response.data as T;
 };
 
 export const productService = {
   // Get all products
-  getAllProducts: async () => {
+  getAllProducts: async (): Promise<Product[]> => {
     try {
-      const response = await axios.get<PaginatedResponse<Product>>(`${API_BASE_URL}/products`);
-      return extractData(response);
+      const response = await axios.get<{ data: Product[] }>(`${API_BASE_URL}/products`);
+      return extractData<Product[]>(response);
     } catch (error) {
       console.error('Error fetching products:', error);
       return [];
@@ -44,10 +44,10 @@ export const productService = {
   },
 
   // Get a single product by ID
-  getProductById: async (productId: string | number) => {
+  getProductById: async (productId: string | number): Promise<Product | null> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products/${productId}`);
-      return extractData(response);
+      const response = await axios.get<{ data: Product }>(`${API_BASE_URL}/products/${productId}`);
+      return extractData<Product>(response);
     } catch (error) {
       console.error(`Error fetching product ${productId}:`, error);
       return null;
@@ -55,10 +55,10 @@ export const productService = {
   },
 
   // Create a new product
-  createProduct: async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>) => {
+  createProduct: async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>): Promise<Product> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/products`, productData);
-      return extractData(response);
+      const response = await axios.post<{ data: Product }>(`${API_BASE_URL}/products`, productData);
+      return extractData<Product>(response);
     } catch (error) {
       console.error('Error creating product:', error);
       throw error;
@@ -66,10 +66,10 @@ export const productService = {
   },
 
   // Update an existing product
-  updateProduct: async (productId: string | number, productData: Partial<Product>) => {
+  updateProduct: async (productId: string | number, productData: Partial<Product>): Promise<Product> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/products/${productId}`, productData);
-      return extractData(response);
+      const response = await axios.put<{ data: Product }>(`${API_BASE_URL}/products/${productId}`, productData);
+      return extractData<Product>(response);
     } catch (error) {
       console.error(`Error updating product ${productId}:`, error);
       throw error;
@@ -77,10 +77,9 @@ export const productService = {
   },
 
   // Delete a product
-  deleteProduct: async (productId: string | number) => {
+  deleteProduct: async (productId: string | number): Promise<void> => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/products/${productId}`);
-      return extractData(response);
+      await axios.delete(`${API_BASE_URL}/products/${productId}`);
     } catch (error) {
       console.error(`Error deleting product ${productId}:`, error);
       throw error;
@@ -88,10 +87,10 @@ export const productService = {
   },
 
   // Get products by category
-  getProductsByCategory: async (category: string) => {
+  getProductsByCategory: async (category: string): Promise<Product[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products/category/${category}`);
-      return extractData(response);
+      const response = await axios.get<{ data: Product[] }>(`${API_BASE_URL}/products/category/${category}`);
+      return extractData<Product[]>(response);
     } catch (error) {
       console.error(`Error fetching products by category ${category}:`, error);
       return [];
@@ -99,10 +98,10 @@ export const productService = {
   },
 
   // Get products by status
-  getProductsByStatus: async (status: 'active' | 'inactive') => {
+  getProductsByStatus: async (status: 'active' | 'inactive'): Promise<Product[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products/status/${status}`);
-      return extractData(response);
+      const response = await axios.get<{ data: Product[] }>(`${API_BASE_URL}/products/status/${status}`);
+      return extractData<Product[]>(response);
     } catch (error) {
       console.error(`Error fetching products by status ${status}:`, error);
       return [];
@@ -110,13 +109,13 @@ export const productService = {
   },
 
   // Get low stock products (quantity below threshold)
-  getLowStockProducts: async (threshold: number = 10) => {
+  getLowStockProducts: async (threshold: number = 10): Promise<Product[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products/low-stock?threshold=${threshold}`);
-      return extractData(response);
+      const response = await axios.get<{ data: Product[] }>(`${API_BASE_URL}/products/low-stock?threshold=${threshold}`);
+      return extractData<Product[]>(response);
     } catch (error) {
       console.error('Error fetching low stock products:', error);
       return [];
     }
   }
-}; 
+};

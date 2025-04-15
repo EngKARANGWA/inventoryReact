@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../../components/ui/sidebar';
 import { Header } from '../../components/ui/header';
-import { Search, Edit2, Trash2, Filter, ChevronDown, ChevronUp, Eye, Users, UserCheck, UserX, Phone, MapPin, Clock, RefreshCw } from 'lucide-react';
+import { Search, Edit2, Trash2, Filter, ChevronDown, ChevronUp, Eye, Users, UserCheck, UserX, Phone, Clock, Plus, RefreshCw } from 'lucide-react';
 import { userService, User } from '../../services/userService';
 import RoleForm from '../../components/users/RoleForm';
 import UserDetailsModal from '../../components/users/UserDetailsModal';
 import { useLocation } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
+
 
 const UserManagement: React.FC = () => {
   const location = useLocation();
@@ -21,41 +22,47 @@ const UserManagement: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     role: '',
-    status: ''
+    status: '',
+    page: 1,
+    pageSize: 10
   });
   const [showRoleForm, setShowRoleForm] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [expandedUser] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(10);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof User;
+    direction: 'ascending' | 'descending';
+  } | null>(null);
 
-  // Fetch users on component mount
+  // Fetch users when filters or search term changes
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [filters, searchTerm]);
 
   const fetchUsers = async () => {
     setLoading(true);
-    setError('');
+    setError(null);
     try {
       const response = await userService.getAllUsers();
-      // Check if response is an array or has a data property
       const usersData = Array.isArray(response) ? response : (response as { data: User[] })?.data || [];
+      
       if (!Array.isArray(usersData)) {
         console.warn('Unexpected response format:', response);
         setUsers([]);
+        setTotalUsers(0);
       } else {
         setUsers(usersData);
+        setTotalUsers(usersData.length); // Update this if your API provides pagination info
       }
     } catch (err) {
       console.error('Error fetching users:', err);
       setError('Failed to fetch users. Please try again later.');
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
+      } finally {
+        setLoading(false);
+      }
   };
 
   const handleRefresh = async () => {
@@ -77,7 +84,8 @@ const UserManagement: React.FC = () => {
     const { name, value } = e.target;
     setFilters(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
+      page: 1 // Reset to first page when filters change
     }));
     setCurrentPage(1); // Reset to first page when filtering
   };
@@ -85,18 +93,19 @@ const UserManagement: React.FC = () => {
   const clearFilters = () => {
     setFilters({
       role: '',
-      status: ''
+      status: '',
+      page: 1,
+      pageSize: 10
     });
-    setCurrentPage(1); // Reset to first page when clearing filters
+    setSearchTerm('');
   };
 
   const handleAddUser = (role: string) => {
     if (skipRole) {
-      // If skipRole is true, directly create a user without showing the role form
       const defaultUserData = {
         username: '',
         email: '',
-        role: role || 'user', // Default to 'user' if no role is provided
+        role: role || 'user',
         status: 'active'
       };
       handleFormSubmit(defaultUserData);
@@ -117,20 +126,19 @@ const UserManagement: React.FC = () => {
       try {
         await userService.deleteUser(userId);
         setUsers(users.filter(user => user.id !== userId));
+        setTotalUsers(totalUsers - 1);
         toast.success('User deleted successfully');
-        // Reset to first page if the last user on the current page was deleted
-        if (currentUsers.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        }
       } catch (err) {
         setError('Failed to delete user');
         toast.error('Failed to delete user');
         console.error('Error deleting user:', err);
+        toast.error('Failed to delete user');
       }
     }
   };
 
   const handleFormSubmit = async (formData: any) => {
+    setIsSubmitting(true);
     try {
       if (editingUser && editingUser.id) {
         await userService.updateUser(editingUser.id, formData);
@@ -139,18 +147,14 @@ const UserManagement: React.FC = () => {
         ));
         toast.success('User updated successfully');
       } else {
-        // Add the role to the formData when creating a new user
         const userDataWithRole = {
           ...formData,
-          role: selectedRole || formData.role // Use selectedRole if available, otherwise use formData.role
+          role: selectedRole || formData.role
         };
-        console.log('Creating user with role:', userDataWithRole.role);
         const newUser = await userService.createUser(userDataWithRole);
-        setUsers([...users, newUser]);
+        setUsers([newUser, ...users]);
+        setTotalUsers(totalUsers + 1);
         toast.success('User created successfully');
-        // Go to the last page to show the newly added user
-        const newTotalPages = Math.ceil((filteredUsers.length + 1) / usersPerPage);
-        setCurrentPage(newTotalPages);
       }
       setShowRoleForm(false);
       setEditingUser(null);
@@ -159,9 +163,23 @@ const UserManagement: React.FC = () => {
       setError('Failed to save user');
       toast.error('Failed to save user');
       console.error('Error saving user:', err);
+      toast.error('Failed to save user');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleRefresh = () => {
+    fetchUsers();
+  };
+
+  const requestSort = (key: keyof User) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig?.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -169,25 +187,25 @@ const UserManagement: React.FC = () => {
     const matchesStatus = !filters.status || user.status === filters.status;
     return matchesSearch && matchesRole && matchesStatus;
   });
+  
+  const sortedUsers = React.useMemo(() => {
+    if (!sortConfig) return filteredUsers;
 
-  // Pagination calculations
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+    return [...filteredUsers].sort((a, b) => {
+      const aValue = a[sortConfig.key] ?? '';
+      const bValue = b[sortConfig.key] ?? '';
 
-  const handleUpdateRoles = (userId: string, newRoles: string[]) => {
-    // In a real application, this would make an API call to update the user's roles
-    console.log('Updating roles for user:', userId, 'New roles:', newRoles);
-    // Update the local state
-    setUsers((prevUsers: User[]) =>
-      prevUsers.map((user: User) =>
-        user.id === userId
-          ? { ...user, role: newRoles[0] as User['role'] } // For now, just use the first role
-          : user
-      ) as User[]
-    );
-  };
+      if (aValue < bValue) {
+        return sortConfig.direction === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [filteredUsers, sortConfig]);
+
+
 
   const availableRoles = [
     { id: 'blocker', label: 'Blocker' },
@@ -204,48 +222,17 @@ const UserManagement: React.FC = () => {
   // Calculate summary data
   const activeUsers = users.filter(user => user.status === 'active').length;
   const inactiveUsers = users.filter(user => user.status === 'inactive').length;
-  const totalUsers = users.length;
   const recentLogins = users.filter(user => user.role !== 'Driver').length;
 
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
+  const currentPage = filters.page || 1;
+  const pageSize = filters.pageSize || 10;
+  const totalPages = Math.ceil(totalUsers / pageSize);
 
-    return (
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
-        <div className="text-sm text-gray-700">
-          Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{' '}
-          <span className="font-medium">
-            {Math.min(indexOfLastUser, filteredUsers.length)}
-          </span>{' '}
-          of <span className="font-medium">{filteredUsers.length}</span> results
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className={`px-4 py-2 border rounded-md ${currentPage === 1 ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-50'}`}
-          >
-            Previous
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-            <button
-              key={number}
-              onClick={() => setCurrentPage(number)}
-              className={`px-4 py-2 border rounded-md ${currentPage === number ? 'bg-blue-50 text-blue-600 border-blue-500' : 'hover:bg-gray-50'}`}
-            >
-              {number}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className={`px-4 py-2 border rounded-md ${currentPage === totalPages ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-50'}`}
-          >
-            Next
-          </button>
-        </div>
-      </div>
-    );
+  const handlePageChange = (newPage: number) => {
+    setFilters(prev => ({
+      ...prev,
+      page: newPage
+    }));
   };
 
   return (
@@ -265,7 +252,7 @@ const UserManagement: React.FC = () => {
       <Sidebar />
       <div className="flex-1 flex flex-col lg:ml-64">
         <Header />
-        <main className="flex-1 w-full">
+        <main className="flex-1 w-full p-6">
           <div className="max-w-7xl mx-auto">
             {/* Enhanced Header */}
             <div className="mb-8">
@@ -350,24 +337,21 @@ const UserManagement: React.FC = () => {
                   >
                     <RefreshCw size={18} />
                   </button>
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => handleAddUser(e.target.value)}
-                    className="px-4 py-2 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <button
+                    onClick={() => handleAddUser('')}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="" className='flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'>Add User</option>
-                    {availableRoles.map(role => (
-                      <option key={role.id} value={role.id}>{role.label}</option>
-                    ))}
-                  </select>
+                    <Plus size={18} className="mr-2" />
+                    Add User
+                  </button>
                 </div>
               </div>
 
               {/* Filters Panel */}
               {showFilters && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h3 className="text-lg font-medium mb-3">Filter Users</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Filters</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                       <select
@@ -395,6 +379,20 @@ const UserManagement: React.FC = () => {
                         <option value="inactive">Inactive</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Items per page</label>
+                      <select
+                        name="pageSize"
+                        value={filters.pageSize}
+                        onChange={handleFilterChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="mt-4 flex justify-end">
                     <button
@@ -402,6 +400,12 @@ const UserManagement: React.FC = () => {
                       className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md mr-2"
                     >
                       Clear Filters
+                    </button>
+                    <button
+                      onClick={fetchUsers}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      Apply Filters
                     </button>
                   </div>
                 </div>
@@ -414,156 +418,264 @@ const UserManagement: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => requestSort('username')}
+                      >
+                        <div className="flex items-center">
+                          Name
+                          {sortConfig?.key === 'username' && (
+                            <span className="ml-1">
+                              {sortConfig.direction === 'ascending' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => requestSort('email')}
+                      >
+                        <div className="flex items-center">
+                          Email
+                          {sortConfig?.key === 'email' && (
+                            <span className="ml-1">
+                              {sortConfig.direction === 'ascending' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => requestSort('role')}
+                      >
+                        <div className="flex items-center">
+                          Role
+                          {sortConfig?.key === 'role' && (
+                            <span className="ml-1">
+                              {sortConfig.direction === 'ascending' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone Number
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => requestSort('status')}
+                      >
+                        <div className="flex items-center">
+                          Status
+                          {sortConfig?.key === 'status' && (
+                            <span className="ml-1">
+                              {sortConfig.direction === 'ascending' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center">Loading...</td>
+                        <td colSpan={6} className="px-6 py-4 text-center">
+                          <div className="flex justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                          </div>
+                        </td>
                       </tr>
                     ) : error ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center text-red-600">{error}</td>
+                        <td colSpan={6} className="px-6 py-4 text-center text-red-600">
+                          {error}
+                        </td>
                       </tr>
-                    ) : currentUsers.length === 0 ? (
+                    ) : sortedUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center">No users found</td>
+                        <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                          No users found. {searchTerm && "Try a different search term."}
+                        </td>
                       </tr>
                     ) : (
-                      currentUsers.map((user) => (
-                        <React.Fragment key={user.id}>
-                          <tr className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.id}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.username}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.roles?.[0]?.name || 'N/A'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.profile?.phoneNumber || 'N/A'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {user.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button
-                                onClick={() => {
-                                  setEditingUser(user);
-                                  setShowDetailsModal(true);
-                                }}
-                                className="text-blue-600 hover:text-blue-900 mr-4"
-                              >
-                                <Eye className="h-5 w-5" />
-                              </button>
-                              <button
-                                onClick={() => handleEditUser(user)}
-                                className="text-blue-600 hover:text-blue-900 mr-4"
-                                title="Edit User"
-                              >
-                                <Edit2 size={18} />
-                              </button>
-                              <button
-                                onClick={() => user.id && handleDeleteUser(String(user.id))}
-                                className="text-red-600 hover:text-red-900"
-                                title="Delete User"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </td>
-                          </tr>
-                          {expandedUser === user.id && (
-                            <tr>
-                              <td colSpan={6} className="px-6 py-4 bg-gray-50">
-                                <div className="text-sm">
-                                  <h4 className="font-medium text-gray-900 mb-2">User Details</h4>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex items-start">
-                                      <MapPin size={18} className="mr-2 mt-1 text-gray-400" />
-                                      <div>
-                                        <p className="font-medium text-gray-700">Address</p>
-                                        <p className="text-gray-600">{user.address || 'N/A'}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-start">
-                                      <Phone size={18} className="mr-2 mt-1 text-gray-400" />
-                                      <div>
-                                        <p className="font-medium text-gray-700">Phone</p>
-                                        <p className="text-gray-600">{user.phoneNumber || 'N/A'}</p>
-                                      </div>
-                                    </div>
-                                    {user.role === 'driver' && (
-                                      <div className="flex items-start">
-                                        <div className="mr-2 mt-1 text-gray-400">
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <rect x="2" y="6" width="20" height="12" rx="2" />
-                                            <path d="M12 18v-6" />
-                                            <path d="M8 18v-6" />
-                                            <path d="M16 18v-6" />
-                                          </svg>
-                                        </div>
-                                        <div>
-                                          <p className="font-medium text-gray-700">License Number</p>
-                                          <p className="text-gray-600">{user.licenseNumber || 'N/A'}</p>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {user.role === 'supplier' && (
-                                      <>
-                                        <div className="flex items-start">
-                                          <div className="mr-2 mt-1 text-gray-400">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                              <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
-                                              <path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4" />
-                                            </svg>
-                                          </div>
-                                          <div>
-                                            <p className="font-medium text-gray-700">District</p>
-                                            <p className="text-gray-600">{user.district || 'N/A'}</p>
-                                          </div>
-                                        </div>
-                                        <div className="flex items-start">
-                                          <div className="mr-2 mt-1 text-gray-400">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                              <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
-                                              <path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4" />
-                                            </svg>
-                                          </div>
-                                          <div>
-                                            <p className="font-medium text-gray-700">Sector</p>
-                                            <p className="text-gray-600">{user.sector || 'N/A'}</p>
-                                          </div>
-                                        </div>
-                                        <div className="flex items-start">
-                                          <div className="mr-2 mt-1 text-gray-400">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                              <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
-                                              <path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4" />
-                                            </svg>
-                                          </div>
-                                          <div>
-                                            <p className="font-medium text-gray-700">Cell</p>
-                                            <p className="text-gray-600">{user.cell || 'N/A'}</p>
-                                          </div>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
+                      sortedUsers.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                <span className="text-gray-600 font-medium">
+                                  {user.username?.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                                <div className="text-sm text-gray-500">{user.id}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {user.roles?.[0]?.name || user.role || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="flex items-center">
+                              <Phone className="w-4 h-4 mr-1 text-gray-400" />
+                              {user.profile?.phoneNumber || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.status || user.accountStatus}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                setEditingUser(user);
+                                setShowDetailsModal(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                              title="View Details"
+                            >
+                              <Eye className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleEditUser(user)}
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                              title="Edit User"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button
+                              onClick={() => user.id && handleDeleteUser(String(user.id))}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete User"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </td>
+                        </tr>
                       ))
                     )}
                   </tbody>
                 </table>
                 {renderPagination()}
               </div>
+
+              {totalUsers > 0 && (
+                <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                  <div className="flex-1 flex justify-between items-center sm:hidden">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                        currentPage === 1
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-700">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage >= totalPages}
+                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                        currentPage >= totalPages
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Showing{" "}
+                        <span className="font-medium">
+                          {(currentPage - 1) * pageSize + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-medium">
+                          {Math.min(currentPage * pageSize, totalUsers)}
+                        </span>{" "}
+                        of <span className="font-medium">{totalUsers}</span>{" "}
+                        results
+                      </p>
+                    </div>
+                    <div>
+                      <nav
+                        className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                        aria-label="Pagination"
+                      >
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                            currentPage === 1
+                              ? "text-gray-300 cursor-not-allowed"
+                              : "text-gray-500 hover:bg-gray-50"
+                          }`}
+                        >
+                          <span className="sr-only">Previous</span>
+                          <ChevronUp className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                        {Array.from(
+                          { length: Math.min(5, totalPages) },
+                          (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
+                            }
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => handlePageChange(pageNum)}
+                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                  currentPage === pageNum
+                                    ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                                    : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          }
+                        )}
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage >= totalPages}
+                          className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                            currentPage >= totalPages
+                              ? "text-gray-300 cursor-not-allowed"
+                              : "text-gray-500 hover:bg-gray-50"
+                          }`}
+                        >
+                          <span className="sr-only">Next</span>
+                          <ChevronDown className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </main>
@@ -584,6 +696,7 @@ const UserManagement: React.FC = () => {
                   setSelectedRole('');
                 }}
                 className="text-gray-500 hover:text-gray-700"
+                disabled={isSubmitting}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -599,6 +712,7 @@ const UserManagement: React.FC = () => {
                 setSelectedRole('');
               }}
               initialData={editingUser || undefined}
+              isSubmitting={isSubmitting}
             />
           </div>
         </div>
@@ -610,17 +724,41 @@ const UserManagement: React.FC = () => {
           user={{
             id: String(editingUser.id),
             name: editingUser.username || '',
-            role: editingUser.role || '',
-            status: editingUser.status || '',
-            roleSpecificData: editingUser.roleSpecificData || {}
+            role: editingUser.roles?.[0]?.name || editingUser.role || '',
+            status: editingUser.status || editingUser.accountStatus || '',
+            roleSpecificData: {
+              phoneNumber: editingUser.profile?.phoneNumber,
+              address: editingUser.profile?.address,
+              ...editingUser.roleSpecificData
+            }
           }}
           onClose={() => {
             setShowDetailsModal(false);
             setEditingUser(null);
           }}
-          onUpdateRoles={handleUpdateRoles}
+          onUpdateRoles={(userId, newRoles) => {
+            // Handle role update
+            const updatedUsers = users.map(user => 
+              user.id === userId 
+                ? { ...user, role: newRoles[0] } 
+                : user
+            );
+            setUsers(updatedUsers);
+          }}
         />
       )}
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

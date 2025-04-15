@@ -24,19 +24,30 @@ export interface ProductionCost {
   amount: number;
 }
 
+export interface DailyPrice {
+  buyingUnitPrice: number;
+  sellingUnitPrice: number;
+}
+
 export interface Production {
   id: number;
   referenceNumber: string;
   productId: number;
-  quantityProduced: number | string;
+  quantityProduced: number;
+  mainProductId?: number | null;
+  usedQuantity?: number | null;
   date: string;
   productionCost: ProductionCost[];
   userId: number;
   notes?: string;
   product?: Product;
+  mainProduct?: Product | null;
   createdBy?: User;
-  warehouseId?: number;
-  warehouse?: Warehouse;
+  warehouseId?: number | null;
+  warehouse?: Warehouse | null;
+  dailyPrice?: DailyPrice | null;
+  efficiency?: number;
+  wastePercentage?: number;
 }
 
 interface FilterParams {

@@ -71,9 +71,7 @@ const DisposalManagement: React.FC = () => {
   const [warehouses, setWarehouses] = useState<
     { id: number; name: string; location: string }[]
   >([]);
-  const [prices, setPrices] = useState<
-    { id: number; unitPrice: number; date: string }[]
-  >([]);
+  const [prices, setPrices] = useState<Price[]>([]);
 
   const methodOptions = [
     {
@@ -112,6 +110,14 @@ const DisposalManagement: React.FC = () => {
       icon: <Package className="w-4 h-4 mr-2" />,
     },
   ];
+
+  interface Price {
+    id: number;
+    buyingUnitPrice?: number | null;
+    sellingUnitPrice?: number | null;
+    date: string;
+    productId: number;
+  }
 
   useEffect(() => {
     fetchDisposals();
@@ -160,10 +166,22 @@ const DisposalManagement: React.FC = () => {
     try {
       setLoadingPrices(true);
       const prices = await priceService.getPricesByProduct(productId);
-      setPrices(prices);
+
+      setPrices(
+        prices.map((p) => ({
+          id: p.id,
+          buyingUnitPrice:
+            p.buyingUnitPrice !== undefined ? p.buyingUnitPrice : null,
+          sellingUnitPrice:
+            p.sellingUnitPrice !== undefined ? p.sellingUnitPrice : null,
+          date: p.date,
+          productId: p.productId,
+        }))
+      );
     } catch (error) {
       console.error("Error fetching prices:", error);
       toast.error("Failed to load product prices");
+      setPrices([]);
     } finally {
       setLoadingPrices(false);
     }
@@ -180,7 +198,7 @@ const DisposalManagement: React.FC = () => {
       });
 
       const processedDisposals: Disposal[] = (data || []).map(
-        (disposal: Disposal) => ({
+        (disposal: any) => ({
           ...disposal,
           quantity: disposal.quantity
             ? parseFloat(disposal.quantity.toString())
@@ -240,15 +258,27 @@ const DisposalManagement: React.FC = () => {
     });
     setEditingDisposal(disposal);
     setSelectedProduct(disposal.productId);
+
     if (disposal.price) {
       setPrices([
         {
           id: disposal.price.id,
-          unitPrice: parseFloat(disposal.price.unitPrice.toString()),
+          buyingUnitPrice:
+            disposal.price.buyingUnitPrice !== undefined
+              ? disposal.price.buyingUnitPrice
+              : null,
+          sellingUnitPrice:
+            disposal.price.sellingUnitPrice !== undefined
+              ? disposal.price.sellingUnitPrice
+              : null,
           date: disposal.price.date,
+          productId: disposal.productId,
         },
       ]);
+    } else {
+      setPrices([]);
     }
+
     setShowAddForm(true);
   };
 
@@ -390,9 +420,11 @@ const DisposalManagement: React.FC = () => {
     0
   );
   const totalValue = disposals.reduce((sum, d) => {
-    const price = d.price?.unitPrice
-      ? parseFloat(d.price.unitPrice.toString())
-      : 0;
+    const price =
+      d.price?.buyingUnitPrice !== undefined &&
+      d.price?.buyingUnitPrice !== null
+        ? parseFloat(d.price.buyingUnitPrice.toString())
+        : 0;
     return sum + (d.quantity || 0) * price;
   }, 0);
 
@@ -706,14 +738,17 @@ const DisposalManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {disposal.quantity.toLocaleString()} Kg
+                              {(disposal.quantity || 0).toLocaleString()} Kg
                             </div>
                             {disposal.price && (
                               <div className="text-xs text-gray-500">
                                 @ $
-                                {parseFloat(
-                                  disposal.price.unitPrice.toString()
-                                ).toFixed(2)}
+                                {disposal.price.buyingUnitPrice !== undefined &&
+                                disposal.price.buyingUnitPrice !== null
+                                  ? Number(
+                                      disposal.price.buyingUnitPrice
+                                    ).toFixed(2)
+                                  : "N/A"}
                                 /unit
                               </div>
                             )}
@@ -1050,23 +1085,27 @@ const DisposalManagement: React.FC = () => {
                       <div className="text-sm text-gray-500">
                         Loading prices...
                       </div>
-                    ) : prices.length > 0 ? (
-                      <div>
-                        <div className="text-sm text-gray-900">
-                          $
-                          {parseFloat(prices[0].unitPrice.toString()).toFixed(
-                            2
-                          )}{" "}
-                          per unit
+                    ) : prices.length > 0 && prices[0] ? (
+                      prices[0].buyingUnitPrice !== undefined &&
+                      prices[0].buyingUnitPrice !== null ? (
+                        <div>
+                          <div className="text-sm text-gray-900">
+                            ${Number(prices[0].buyingUnitPrice).toFixed(2)} per
+                            unit
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Updated:{" "}
+                            {new Date(prices[0].date).toLocaleDateString()}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          Updated:{" "}
-                          {new Date(prices[0].date).toLocaleDateString()}
+                      ) : (
+                        <div className="text-sm text-yellow-500">
+                          Price not available for this product
                         </div>
-                      </div>
+                      )
                     ) : selectedProduct ? (
                       <div className="text-sm text-red-500">
-                        No price found for this product
+                        No price records found for this product
                       </div>
                     ) : (
                       <div className="text-sm text-gray-500">
