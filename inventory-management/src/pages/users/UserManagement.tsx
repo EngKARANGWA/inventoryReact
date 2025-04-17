@@ -1,40 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { Sidebar } from '../../components/ui/sidebar';
-import { Header } from '../../components/ui/header';
-import { Search, Edit2, Trash2, Filter, ChevronDown, ChevronUp, Eye, Users, UserCheck, UserX, Phone, Clock, Plus, RefreshCw } from 'lucide-react';
-import { userService, User } from '../../services/userService';
-import RoleForm from '../../components/users/RoleForm';
-import UserDetailsModal from '../../components/users/UserDetailsModal';
-import { useLocation } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import { Sidebar } from "../../components/ui/sidebar";
+import { Header } from "../../components/ui/header";
+import {
+  Search,
+  Edit2,
+  Trash2,
+  Filter,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Users,
+  UserCheck,
+  UserX,
+  Phone,
+  Clock,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
+import { userService, User } from "../../services/userService";
+import RoleForm from "../../components/users/RoleForm";
+import UserDetailsModal from "../../components/users/UserDetailsModal";
+// import { useLocation } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 const UserManagement: React.FC = () => {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const skipRole = queryParams.get('skipRole') === 'true';
-  
+  // const location = useLocation();
+  // const queryParams = new URLSearchParams(location.search);
+  // const skipRole = queryParams.get("skipRole") === "true";
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    role: '',
-    status: '',
+    role: "",
+    status: "",
     page: 1,
-    pageSize: 10
+    pageSize: 10,
   });
   const [showRoleForm, setShowRoleForm] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [totalUsers, setTotalUsers] = useState(0);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof User;
-    direction: 'ascending' | 'descending';
+    direction: "ascending" | "descending";
   } | null>(null);
 
   // Fetch users when filters or search term changes
@@ -47,10 +61,12 @@ const UserManagement: React.FC = () => {
     setError(null);
     try {
       const response = await userService.getAllUsers();
-      const usersData = Array.isArray(response) ? response : (response as { data: User[] })?.data || [];
-      
+      const usersData = Array.isArray(response)
+        ? response
+        : (response as { data: User[] })?.data || [];
+
       if (!Array.isArray(usersData)) {
-        console.warn('Unexpected response format:', response);
+        console.warn("Unexpected response format:", response);
         setUsers([]);
         setTotalUsers(0);
       } else {
@@ -58,14 +74,12 @@ const UserManagement: React.FC = () => {
         setTotalUsers(usersData.length); // Update this if your API provides pagination info
       }
     } catch (err) {
-      console.error('Error fetching users:', err);
-      setError('Failed to fetch users. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
+      console.error("Error fetching users:", err);
+      setError("Failed to fetch users. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
-
-
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -74,57 +88,48 @@ const UserManagement: React.FC = () => {
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [name]: value,
-      page: 1 // Reset to first page when filters change
+      page: 1, // Reset to first page when filters change
     }));
     handlePageChange(1); // Reset to first page when filtering
   };
 
   const clearFilters = () => {
     setFilters({
-      role: '',
-      status: '',
+      role: "",
+      status: "",
       page: 1,
-      pageSize: 10
+      pageSize: 10,
     });
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   const handleAddUser = (role: string) => {
-    if (skipRole) {
-      const defaultUserData = {
-        username: '',
-        email: '',
-        role: role || 'user',
-        status: 'active'
-      };
-      handleFormSubmit(defaultUserData);
-    } else {
-      setSelectedRole(role);
-      setShowRoleForm(true);
-    }
+    setEditingUser(null); // Ensure we're not in edit mode
+    setSelectedRole(role || ""); // Set the selected role (empty if not specified)
+    setShowRoleForm(true); // Always show the form
   };
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
-    setSelectedRole(user.role || '');
+    setSelectedRole(user.role || "");
     setShowRoleForm(true);
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await userService.deleteUser(userId);
-        setUsers(users.filter(user => user.id !== userId));
+        setUsers(users.filter((user) => user.id !== userId));
         setTotalUsers(totalUsers - 1);
-        toast.success('User deleted successfully');
+        toast.success("User deleted successfully");
       } catch (err) {
-        setError('Failed to delete user');
-        toast.error('Failed to delete user');
-        console.error('Error deleting user:', err);
-        toast.error('Failed to delete user');
+        setError("Failed to delete user");
+        toast.error("Failed to delete user");
+        console.error("Error deleting user:", err);
+        toast.error("Failed to delete user");
       }
     }
   };
@@ -134,28 +139,30 @@ const UserManagement: React.FC = () => {
     try {
       if (editingUser && editingUser.id) {
         await userService.updateUser(editingUser.id, formData);
-        setUsers(users.map(user => 
-          user.id === editingUser.id ? { ...user, ...formData } : user
-        ));
-        toast.success('User updated successfully');
+        setUsers(
+          users.map((user) =>
+            user.id === editingUser.id ? { ...user, ...formData } : user
+          )
+        );
+        toast.success("User updated successfully");
       } else {
         const userDataWithRole = {
           ...formData,
-          role: selectedRole || formData.role
+          role: selectedRole || formData.role,
         };
         const newUser = await userService.createUser(userDataWithRole);
         setUsers([newUser, ...users]);
         setTotalUsers(totalUsers + 1);
-        toast.success('User created successfully');
+        toast.success("User created successfully");
       }
       setShowRoleForm(false);
       setEditingUser(null);
-      setSelectedRole('');
+      setSelectedRole("");
     } catch (err) {
-      setError('Failed to save user');
-      toast.error('Failed to save user');
-      console.error('Error saving user:', err);
-      toast.error('Failed to save user');
+      setError("Failed to save user");
+      toast.error("Failed to save user");
+      console.error("Error saving user:", err);
+      toast.error("Failed to save user");
     } finally {
       setIsSubmitting(false);
     }
@@ -166,64 +173,65 @@ const UserManagement: React.FC = () => {
   };
 
   const requestSort = (key: keyof User) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig?.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
+    let direction: "ascending" | "descending" = "ascending";
+    if (sortConfig?.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
     }
     setSortConfig({ key, direction });
   };
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = !filters.role || user.role === filters.role;
     const matchesStatus = !filters.status || user.status === filters.status;
     return matchesSearch && matchesRole && matchesStatus;
   });
-  
+
   const sortedUsers = React.useMemo(() => {
     if (!sortConfig) return filteredUsers;
 
     return [...filteredUsers].sort((a, b) => {
-      const aValue = a[sortConfig.key] ?? '';
-      const bValue = b[sortConfig.key] ?? '';
+      const aValue = a[sortConfig.key] ?? "";
+      const bValue = b[sortConfig.key] ?? "";
 
       if (aValue < bValue) {
-        return sortConfig.direction === 'ascending' ? -1 : 1;
+        return sortConfig.direction === "ascending" ? -1 : 1;
       }
       if (aValue > bValue) {
-        return sortConfig.direction === 'ascending' ? 1 : -1;
+        return sortConfig.direction === "ascending" ? 1 : -1;
       }
       return 0;
     });
   }, [filteredUsers, sortConfig]);
 
-
-
   const availableRoles = [
-    { id: 'blocker', label: 'Blocker' },
-    { id: 'scaleMonitor', label: 'Scale Monitor' },
-    { id: 'saler', label: 'Saler' },
-    { id: 'stockKeeper', label: 'Stock Keeper' },
-    { id: 'client', label: 'Client' },
-    { id: 'driver', label: 'Driver' },
-    { id: 'supplier', label: 'Supplier' },
-    { id: 'productionManager', label: 'Production Manager' },
-    { id: 'cashier', label: 'Cashier' }
+    { id: "blocker", label: "Blocker" },
+    { id: "scaleMonitor", label: "Scale Monitor" },
+    { id: "saler", label: "Saler" },
+    { id: "stockKeeper", label: "Stock Keeper" },
+    { id: "client", label: "Client" },
+    { id: "driver", label: "Driver" },
+    { id: "supplier", label: "Supplier" },
+    { id: "productionManager", label: "Production Manager" },
+    { id: "cashier", label: "Cashier" },
   ];
 
   // Calculate summary data
-  const activeUsers = users.filter(user => user.status === 'active').length;
-  const inactiveUsers = users.filter(user => user.status === 'inactive').length;
-  const recentLogins = users.filter(user => user.role !== 'Driver').length;
+  const activeUsers = users.filter((user) => user.status === "active").length;
+  const inactiveUsers = users.filter(
+    (user) => user.status === "inactive"
+  ).length;
+  const recentLogins = users.filter((user) => user.role !== "Driver").length;
 
   const currentPage = filters.page || 1;
   const pageSize = filters.pageSize || 10;
   const totalPages = Math.ceil(totalUsers / pageSize);
 
   const handlePageChange = (newPage: number) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      page: newPage
+      page: newPage,
     }));
   };
 
@@ -240,7 +248,7 @@ const UserManagement: React.FC = () => {
         draggable
         pauseOnHover
       />
-      
+
       <Sidebar />
       <div className="flex-1 flex flex-col lg:ml-64">
         <Header />
@@ -248,8 +256,12 @@ const UserManagement: React.FC = () => {
           <div className="max-w-7xl mx-auto">
             {/* Enhanced Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">User Management</h1>
-              <p className="text-gray-600">Manage system users and their permissions</p>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                User Management
+              </h1>
+              <p className="text-gray-600">
+                Manage system users and their permissions
+              </p>
             </div>
 
             {/* Summary Cards */}
@@ -257,8 +269,12 @@ const UserManagement: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Total Users</p>
-                    <p className="text-2xl font-bold text-gray-800">{totalUsers}</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Total Users
+                    </p>
+                    <p className="text-2xl font-bold text-gray-800">
+                      {totalUsers}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <Users className="w-6 h-6 text-blue-600" />
@@ -268,8 +284,12 @@ const UserManagement: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Active Users</p>
-                    <p className="text-2xl font-bold text-gray-800">{activeUsers}</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Active Users
+                    </p>
+                    <p className="text-2xl font-bold text-gray-800">
+                      {activeUsers}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                     <UserCheck className="w-6 h-6 text-green-600" />
@@ -279,8 +299,12 @@ const UserManagement: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Inactive Users</p>
-                    <p className="text-2xl font-bold text-gray-800">{inactiveUsers}</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Inactive Users
+                    </p>
+                    <p className="text-2xl font-bold text-gray-800">
+                      {inactiveUsers}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                     <UserX className="w-6 h-6 text-red-600" />
@@ -290,8 +314,12 @@ const UserManagement: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Recent Logins</p>
-                    <p className="text-2xl font-bold text-gray-800">{recentLogins}</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Recent Logins
+                    </p>
+                    <p className="text-2xl font-bold text-gray-800">
+                      {recentLogins}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                     <Clock className="w-6 h-6 text-amber-600" />
@@ -304,7 +332,10 @@ const UserManagement: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={20}
+                  />
                   <input
                     type="text"
                     placeholder="Search users..."
@@ -320,7 +351,11 @@ const UserManagement: React.FC = () => {
                   >
                     <Filter size={18} className="mr-2" />
                     Filters
-                    {showFilters ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
+                    {showFilters ? (
+                      <ChevronUp size={18} className="ml-2" />
+                    ) : (
+                      <ChevronDown size={18} className="ml-2" />
+                    )}
                   </button>
                   <button
                     onClick={handleRefresh}
@@ -329,23 +364,40 @@ const UserManagement: React.FC = () => {
                   >
                     <RefreshCw size={18} />
                   </button>
-                  <button
-                    onClick={() => handleAddUser('')}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <Plus size={18} className="mr-2" />
-                    Add User
-                  </button>
+                  <div className="relative group">
+                    <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <Plus size={18} className="mr-2" />
+                      Add User
+                      <ChevronDown size={18} className="ml-2" />
+                    </button>
+                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden group-hover:block z-10">
+                      <div className="py-1">
+                        {availableRoles.map((role) => (
+                          <button
+                            key={role.id}
+                            onClick={() => handleAddUser(role.id)}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            {role.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Filters Panel */}
               {showFilters && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Filters</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    Filters
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Role
+                      </label>
                       <select
                         name="role"
                         value={filters.role}
@@ -353,13 +405,17 @@ const UserManagement: React.FC = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">All Roles</option>
-                        {availableRoles.map(role => (
-                          <option key={role.id} value={role.id}>{role.label}</option>
+                        {availableRoles.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.label}
+                          </option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Status
+                      </label>
                       <select
                         name="status"
                         value={filters.status}
@@ -372,7 +428,9 @@ const UserManagement: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Items per page</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Items per page
+                      </label>
                       <select
                         name="pageSize"
                         value={filters.pageSize}
@@ -410,41 +468,41 @@ const UserManagement: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th 
+                      <th
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort('username')}
+                        onClick={() => requestSort("username")}
                       >
                         <div className="flex items-center">
                           Name
-                          {sortConfig?.key === 'username' && (
+                          {sortConfig?.key === "username" && (
                             <span className="ml-1">
-                              {sortConfig.direction === 'ascending' ? '↑' : '↓'}
+                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
                             </span>
                           )}
                         </div>
                       </th>
-                      <th 
+                      <th
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort('email')}
+                        onClick={() => requestSort("email")}
                       >
                         <div className="flex items-center">
                           Email
-                          {sortConfig?.key === 'email' && (
+                          {sortConfig?.key === "email" && (
                             <span className="ml-1">
-                              {sortConfig.direction === 'ascending' ? '↑' : '↓'}
+                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
                             </span>
                           )}
                         </div>
                       </th>
-                      <th 
+                      <th
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort('role')}
+                        onClick={() => requestSort("role")}
                       >
                         <div className="flex items-center">
                           Role
-                          {sortConfig?.key === 'role' && (
+                          {sortConfig?.key === "role" && (
                             <span className="ml-1">
-                              {sortConfig.direction === 'ascending' ? '↑' : '↓'}
+                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
                             </span>
                           )}
                         </div>
@@ -452,15 +510,15 @@ const UserManagement: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Phone Number
                       </th>
-                      <th 
+                      <th
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort('status')}
+                        onClick={() => requestSort("status")}
                       >
                         <div className="flex items-center">
                           Status
-                          {sortConfig?.key === 'status' && (
+                          {sortConfig?.key === "status" && (
                             <span className="ml-1">
-                              {sortConfig.direction === 'ascending' ? '↑' : '↓'}
+                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
                             </span>
                           )}
                         </div>
@@ -481,14 +539,21 @@ const UserManagement: React.FC = () => {
                       </tr>
                     ) : error ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center text-red-600">
+                        <td
+                          colSpan={6}
+                          className="px-6 py-4 text-center text-red-600"
+                        >
                           {error}
                         </td>
                       </tr>
                     ) : sortedUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                          No users found. {searchTerm && "Try a different search term."}
+                        <td
+                          colSpan={6}
+                          className="px-6 py-4 text-center text-gray-500"
+                        >
+                          No users found.{" "}
+                          {searchTerm && "Try a different search term."}
                         </td>
                       </tr>
                     ) : (
@@ -502,8 +567,12 @@ const UserManagement: React.FC = () => {
                                 </span>
                               </div>
                               <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                                <div className="text-sm text-gray-500">{user.id}</div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {user.username}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {user.id}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -512,19 +581,23 @@ const UserManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                              {user.roles?.[0]?.name || user.role || 'N/A'}
+                              {user.roles?.[0]?.name || user.role || "N/A"}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <div className="flex items-center">
                               <Phone className="w-4 h-4 mr-1 text-gray-400" />
-                              {user.profile?.phoneNumber || 'N/A'}
+                              {user.profile?.phoneNumber || "N/A"}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                user.status === "active"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
                               {user.status || user.accountStatus}
                             </span>
                           </td>
@@ -547,7 +620,9 @@ const UserManagement: React.FC = () => {
                               <Edit2 size={18} />
                             </button>
                             <button
-                              onClick={() => user.id && handleDeleteUser(String(user.id))}
+                              onClick={() =>
+                                user.id && handleDeleteUser(String(user.id))
+                              }
                               className="text-red-600 hover:text-red-900"
                               title="Delete User"
                             >
@@ -679,19 +754,30 @@ const UserManagement: React.FC = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">
-                {editingUser ? 'Edit User Role' : 'Add New User'}
+                {editingUser ? "Edit User" : "Add New User"}
               </h2>
               <button
                 onClick={() => {
                   setShowRoleForm(false);
                   setEditingUser(null);
-                  setSelectedRole('');
+                  setSelectedRole("");
                 }}
                 className="text-gray-500 hover:text-gray-700"
                 disabled={isSubmitting}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -701,10 +787,11 @@ const UserManagement: React.FC = () => {
               onClose={() => {
                 setShowRoleForm(false);
                 setEditingUser(null);
-                setSelectedRole('');
+                setSelectedRole("");
               }}
               initialData={editingUser || undefined}
               isSubmitting={isSubmitting}
+              mode={editingUser ? "edit" : "add"}
             />
           </div>
         </div>
@@ -715,14 +802,14 @@ const UserManagement: React.FC = () => {
         <UserDetailsModal
           user={{
             id: String(editingUser.id),
-            name: editingUser.username || '',
-            role: editingUser.roles?.[0]?.name || editingUser.role || '',
-            status: editingUser.status || editingUser.accountStatus || '',
+            name: editingUser.username || "",
+            role: editingUser.roles?.[0]?.name || editingUser.role || "",
+            status: editingUser.status || editingUser.accountStatus || "",
             roleSpecificData: {
               phoneNumber: editingUser.profile?.phoneNumber,
               address: editingUser.profile?.address,
-              ...editingUser.roleSpecificData
-            }
+              ...editingUser.roleSpecificData,
+            },
           }}
           onClose={() => {
             setShowDetailsModal(false);
@@ -730,10 +817,8 @@ const UserManagement: React.FC = () => {
           }}
           onUpdateRoles={(userId, newRoles) => {
             // Handle role update
-            const updatedUsers = users.map(user => 
-              user.id === userId 
-                ? { ...user, role: newRoles[0] } 
-                : user
+            const updatedUsers = users.map((user) =>
+              user.id === userId ? { ...user, role: newRoles[0] } : user
             );
             setUsers(updatedUsers);
           }}

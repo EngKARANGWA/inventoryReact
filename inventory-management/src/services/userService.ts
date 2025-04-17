@@ -162,6 +162,8 @@ export const userService = {
         endpoint = '/stockkeeper';
       } else if (role === 'supplier') {
         endpoint = '/supplier';
+      }else if (role === 'productionmanager') {
+        endpoint = '/pm';
       } else if (role === 'admin') {
         endpoint = '/admins';
       }

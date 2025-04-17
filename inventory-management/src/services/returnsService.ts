@@ -14,10 +14,15 @@ export interface Return {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  status: string; // Add this
   sale?: {
     id: number;
     referenceNumber: string;
-    quantity: number;
+    quantity: string; 
+    status: string;
+    expectedDeliveryDate: string;
+    totalPaid: string;
+    totalDelivered: string;
     date: string;
     productId: number;
   };
@@ -28,9 +33,14 @@ export interface Return {
   };
   stockMovements?: Array<{
     id: number;
-    quantity: number;
+    referenceNumber: string;
+    productId: number;
+    quantity: string;
     direction: 'in' | 'out';
+    warehouseId: number;
+    sourceType: string;
     movementDate: string;
+    notes: string;
     warehouse: {
       id: number;
       name: string;
@@ -38,7 +48,7 @@ export interface Return {
   }>;
 }
 
-interface CreateReturnData {
+export interface CreateReturnData {
   saleId: number;
   returnedQuantity: number;
   note?: string;
@@ -79,6 +89,25 @@ export const returnsService = {
     try {
       const response = await axios.post(`${API_BASE_URL}/returns`, returnData);
       return handleResponse(response);
+    } catch (error) {
+      handleError(error);
+      throw error;
+    }
+  },
+
+  updateReturn: async (id: number, returnData: CreateReturnData): Promise<Return> => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/returns/${id}`, returnData);
+      return handleResponse(response);
+    } catch (error) {
+      handleError(error);
+      throw error;
+    }
+  },
+
+  deleteReturn: async (id: number): Promise<void> => {
+    try {
+      await axios.delete(`${API_BASE_URL}/returns/${id}`);
     } catch (error) {
       handleError(error);
       throw error;
