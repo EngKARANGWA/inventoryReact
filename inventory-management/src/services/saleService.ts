@@ -16,6 +16,16 @@ export interface Sale {
   clientId: number | null;
   productId: number;
   blockerId: number | null;
+  blocker: {
+    id: number;
+    userId: number;
+    user: {
+      id: number;
+      profile: {
+        names: string;
+      };
+    };
+  } | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -80,7 +90,7 @@ interface CreateSaleData {
   productId: number;
   quantity: number;
   salerId: number;
-  priceId: number;
+  priceId?: number;
   clientId?: number;
   note?: string;
   date?: string;

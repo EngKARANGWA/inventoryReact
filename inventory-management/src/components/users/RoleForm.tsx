@@ -1,5 +1,5 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React from "react";
+import { X } from "lucide-react";
 
 interface RoleFormProps {
   role: string;
@@ -7,6 +7,7 @@ interface RoleFormProps {
   onSubmit: (formData: FormData) => void;
   initialData?: Partial<FormData>;
   isSubmitting: boolean;
+  mode: "add" | "edit";
 }
 
 interface FormData {
@@ -19,12 +20,13 @@ interface FormData {
   cashierId?: string;
   stockKeeperId?: string;
   clientId?: string;
+  tinNumber?: string;
   names: string;
   username: string;
   email: string;
   phoneNumber: string;
   address: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   district?: string;
   sector?: string;
   cell?: string;
@@ -32,18 +34,24 @@ interface FormData {
 }
 
 const defaultFormData: FormData = {
-  names: '',
-  username:'',
-  email: '',
-  phoneNumber: '',
-  address: '',
-  status: 'active'
+  names: "",
+  username: "",
+  email: "",
+  phoneNumber: "",
+  address: "",
+  status: "active",
 };
 
-const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialData = {} }) => {
+const RoleForm: React.FC<RoleFormProps> = ({
+  role,
+  onClose,
+  onSubmit,
+  initialData = {},
+  mode,
+}) => {
   const [formData, setFormData] = React.useState<FormData>({
     ...defaultFormData,
-    ...initialData
+    ...initialData,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,13 +62,13 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const renderForm = () => {
     switch (role) {
-      case 'blocker':
+      case "blocker":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -70,10 +78,10 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter blocker ID"
+                placeholder="Enter Full names"
               />
             </div>
             <div>
@@ -83,8 +91,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.username|| ''}
-                onChange={(e) => handleChange('username', e.target.value)}
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
               />
@@ -96,8 +104,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="email"
                 required
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter email address"
               />
@@ -109,8 +117,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
@@ -121,25 +129,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -159,7 +154,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           </form>
         );
 
-      case 'scaleMonitor':
+      case "scaleMonitor":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -169,8 +164,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full Name"
               />
@@ -182,8 +177,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.username || ''}
-                onChange={(e) => handleChange('username', e.target.value)}
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
               />
@@ -195,8 +190,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
@@ -208,8 +203,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="email"
                 required
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="scale@example.com"
               />
@@ -220,25 +215,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -258,7 +240,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           </form>
         );
 
-      case 'saler':
+      case "saler":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -268,8 +250,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
               />
@@ -281,8 +263,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.username || ''}
-                onChange={(e) => handleChange('username', e.target.value)}
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
               />
@@ -294,8 +276,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
@@ -307,37 +289,39 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="email"
                 required
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="sale@example.com"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tin Number
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.tinNumber || ""}
+                onChange={(e) => handleChange("tinNumber", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter TIN number"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Address
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -357,7 +341,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           </form>
         );
 
-      case 'stockKeeper':
+      case "stockKeeper":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -367,8 +351,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
               />
@@ -380,8 +364,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.username || ''}
-                onChange={(e) => handleChange('username', e.target.value)}
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
               />
@@ -393,50 +377,37 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
-            </div> 
+            </div>
             <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <input
                 type="email"
                 required
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="stock@example.com"
               />
-              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Address
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -456,7 +427,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           </form>
         );
 
-      case 'client':
+      case "client":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -466,8 +437,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full Name"
               />
@@ -479,8 +450,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.username || ''}
-                onChange={(e) => handleChange('username', e.target.value)}
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
               />
@@ -492,8 +463,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
@@ -505,8 +476,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="email"
                 required
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="client@example.com"
               />
@@ -517,25 +488,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -555,7 +513,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           </form>
         );
 
-      case 'driver':
+      case "driver":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -565,8 +523,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
               />
@@ -578,8 +536,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.username || ''}
-                onChange={(e) => handleChange('username', e.target.value)}
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
               />
@@ -591,8 +549,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
@@ -604,21 +562,21 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="email"
                 required
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="driver@example.com"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                driving licence
+                Driving licence
               </label>
               <input
                 type="text"
                 required
-                value={formData.licenseNumber || ''}
-                onChange={(e) => handleChange('licenseNumber', e.target.value)}
+                value={formData.licenseNumber || ""}
+                onChange={(e) => handleChange("licenseNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter license number"
               />
@@ -629,38 +587,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                License Number
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.licenseNumber || ''}
-                onChange={(e) => handleChange('licenseNumber', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter license number"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -680,7 +612,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           </form>
         );
 
-      case 'supplier':
+      case "supplier":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -690,8 +622,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full names"
               />
@@ -703,10 +635,37 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.username || ''}
-                onChange={(e) => handleChange('username', e.target.value)}
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="email@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tin Number
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.tinNumber || ""}
+                onChange={(e) => handleChange("tinNumber", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter TIN number"
               />
             </div>
             <div>
@@ -716,8 +675,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.district || ''}
-                onChange={(e) => handleChange('district', e.target.value)}
+                value={formData.district || ""}
+                onChange={(e) => handleChange("district", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter district"
               />
@@ -729,8 +688,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.sector || ''}
-                onChange={(e) => handleChange('sector', e.target.value)}
+                value={formData.sector || ""}
+                onChange={(e) => handleChange("sector", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter sector"
               />
@@ -742,8 +701,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.cell || ''}
-                onChange={(e) => handleChange('cell', e.target.value)}
+                value={formData.cell || ""}
+                onChange={(e) => handleChange("cell", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter cell"
               />
@@ -755,8 +714,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
@@ -767,25 +726,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -805,22 +751,9 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           </form>
         );
 
-      case 'productionManager':
+      case "productionManager":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Production Manager ID
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.productManagerId || ''}
-                onChange={(e) => handleChange('productManagerId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter production manager ID"
-              />
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name
@@ -828,10 +761,38 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="email@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="User Name"
               />
             </div>
             <div>
@@ -841,8 +802,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
@@ -853,25 +814,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -891,7 +839,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
           </form>
         );
 
-      case 'cashier':
+      case "cashier":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -901,8 +849,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.names || ''}
-                onChange={(e) => handleChange('names', e.target.value)}
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter Full Names"
               />
@@ -914,8 +862,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="text"
                 required
-                value={formData.username || ''}
-                onChange={(e) => handleChange('username', e.target.value)}
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="User Name"
               />
@@ -927,8 +875,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="email"
                 required
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="email@example.com"
               />
@@ -941,8 +889,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               <input
                 type="tel"
                 required
-                value={formData.phoneNumber || ''}
-                onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter phone number"
               />
@@ -953,25 +901,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
               </label>
               <textarea
                 required
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter address"
                 rows={3}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status || 'active'}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -1001,7 +936,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
       <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">
-            {initialData ? 'Edit User' : 'Add New User'}
+            {mode === "edit" ? "Edit User" : "Add New User"}
           </h2>
           <button
             onClick={onClose}
@@ -1016,5 +951,4 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onClose, onSubmit, initialDat
   );
 };
 
-
-export default RoleForm; 
+export default RoleForm;

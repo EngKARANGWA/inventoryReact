@@ -9,12 +9,12 @@ export interface Delivery {
   direction: "in" | "out";
   deliveredAt: string;
   notes: string | null;
-  quantity: string; // Changed from number to string to match API
+  quantity: string;
   purchaseId: number | null;
   saleId: number | null;
   driverId: number;
-  productId: number | null; // Made nullable to match API
-  warehouseId: number | null; // Made nullable to match API
+  productId: number | null;
+  warehouseId: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -32,22 +32,43 @@ export interface Delivery {
     id: number;
     name: string;
     description: string;
-  } | null; // Made nullable to match API
+  } | null;
   warehouse?: {
     id: number;
     name: string;
     location: string;
-  } | null; // Made nullable to match API
+    capacity?: number;
+    currentOccupancy?: number;
+  } | null;
   purchase?: {
     id: number;
     purchaseReference: string;
     description: string;
-  } | null; // Made nullable to match API
+    weight?: string;
+    status?: string;
+    expectedDeliveryDate?: string;
+    totalPaid?: string;
+    totalDelivered?: string;
+    supplier?: {
+      id: number;
+      supplierId: string;
+      district?: string;
+      sector?: string;
+      cell?: string;
+      tinNumber?: string;
+    };
+  } | null;
   sale?: {
     id: number;
     referenceNumber: string;
+    saleReference?: string; // Add this to match the response
     quantity: string;
-  } | null; // Made nullable to match API
+    status?: string;
+    note?: string;
+    client?: {
+      name?: string;
+    };
+  } | null;
 }
 
 export interface CreateDeliveryData {

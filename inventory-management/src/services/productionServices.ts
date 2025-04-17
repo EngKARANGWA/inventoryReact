@@ -56,20 +56,30 @@ interface FilterParams {
   endDate?: string;
 }
 
+// Updated to make all fields consistent with what's being passed in handleFormSubmit
 interface CreateProductionData {
   productId: number;
   quantityProduced: number;
-  productionCost?: ProductionCost[];
-  notes?: string;
+  mainProductId?: number;
+  usedQuantity?: number;
   warehouseId?: number;
+  notes?: string;
+  productionCost?: ProductionCost[];
+  efficiency?: number;
+  wastePercentage?: number;
 }
 
+// Make UpdateProductionData consistent with CreateProductionData
 interface UpdateProductionData {
   productId?: number;
   quantityProduced?: number;
-  productionCost?: ProductionCost[];
-  notes?: string;
+  mainProductId?: number;
+  usedQuantity?: number;
   warehouseId?: number;
+  notes?: string;
+  productionCost?: ProductionCost[];
+  efficiency?: number;
+  wastePercentage?: number;
 }
 
 export const productionService = {
