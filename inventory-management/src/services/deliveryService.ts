@@ -125,26 +125,23 @@ export const deliveryService = {
   },
 
   getAllDeliveries: async (
-    options: DeliveryFilterOptions = {}
   ): Promise<DeliveryResponse> => {
     try {
-      const params = {
-        page: options.page || 1,
-        pageSize: options.pageSize || 10,
-        includeDeleted: options.includeDeleted ? "true" : "false",
-        search: options.search,
-        status: options.status,
-        direction: options.direction,
-        productId: options.productId,
-        warehouseId: options.warehouseId,
-        driverId: options.driverId,
-        dateFrom: options.dateFrom,
-        dateTo: options.dateTo,
-      };
+      // const params = {
+      //   page: options.page || 1,
+      //   pageSize: options.pageSize || 10,
+      //   includeDeleted: options.includeDeleted ? "true" : "false",
+      //   search: options.search,
+      //   status: options.status,
+      //   direction: options.direction,
+      //   productId: options.productId,
+      //   warehouseId: options.warehouseId,
+      //   driverId: options.driverId,
+      //   dateFrom: options.dateFrom,
+      //   dateTo: options.dateTo,
+      // };
 
-      const response = await axios.get(`${API_BASE_URL}/deliveries`, {
-        params,
-      });
+      const response = await axios.get(`${API_BASE_URL}/deliveries`);
       return response.data;
     } catch (error) {
       console.error("Error fetching deliveries:", error);

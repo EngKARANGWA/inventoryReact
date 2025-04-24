@@ -72,11 +72,8 @@ const PaymentManagement: React.FC = () => {
     // setError(null);
 
     try {
-      const response = await paymentService.getAllPayments({
-        ...filters,
-        payableType: filters.payableType || undefined,
-        search: searchTerm,
-      });
+      // Call without any parameters
+      const response = await paymentService.getAllPayments();
 
       setPayments(response.data || []);
       setTotalPayments(response.pagination?.totalItems || 0);
@@ -89,7 +86,7 @@ const PaymentManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, searchTerm]);
+  }, []); // Empty dependency array since we're not using any external values
 
   useEffect(() => {
     fetchPayments();

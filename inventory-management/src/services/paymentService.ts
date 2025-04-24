@@ -91,16 +91,7 @@ interface UpdatePaymentData {
   transactionReference?: string;
 }
 
-interface PaymentFilterOptions {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  status?: string;
-  payableType?: "purchase" | "sale" | "";
-  purchaseId?: number;
-  saleId?: number;
-  includeDeleted?: boolean;
-}
+
 
 interface PaymentResponse {
   success: boolean;
@@ -144,37 +135,24 @@ export const paymentService = {
     }
   },
 
-  getAllPayments: async (
-    options: PaymentFilterOptions = {}
-  ): Promise<PaymentResponse> => {
-    try {
-      const params = {
-        page: options.page || 1,
-        pageSize: options.pageSize || 10,
-        includeDeleted: options.includeDeleted ? "true" : "false",
-        search: options.search,
-        status: options.status,
-        payableType: options.payableType,
-        purchaseId: options.purchaseId,
-        saleId: options.saleId,
-      };
-
-      const response = await axios.get(`${API_BASE_URL}/payments`);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching payments:", error);
-      return {
-        success: false,
-        data: [],
-        pagination: {
-          totalItems: 0,
-          currentPage: 1,
-          pageSize: 10,
-          totalPages: 1,
-        },
-      };
-    }
-  },
+getAllPayments: async (): Promise<PaymentResponse> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/payments`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching payments:", error);
+    return {
+      success: false,
+      data: [],
+      pagination: {
+        totalItems: 0,
+        currentPage: 1,
+        pageSize: 10,
+        totalPages: 1,
+      },
+    };
+  }
+},
 
   getPaymentById: async (
     id: number,
