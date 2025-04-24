@@ -55,8 +55,7 @@ export interface Purchase {
   id: number;
   purchaseReference: string;
   description: string | null;
-  buyingUnitPrice: string;
-  sellingUnitPrice: string;
+  unitPrice: string | null;
   weight: string;
   status:
     | "draft"
@@ -64,13 +63,12 @@ export interface Purchase {
     | "payment_completed"
     | "delivery_complete"
     | "all_completed";
-  expectedDeliveryDate: string;
+  expectedDeliveryDate: string | null;
   totalPaid: string;
   totalDelivered: string;
   supplierId: number;
   productId: number;
   blockerId: number | null;
-  dailyPriceId: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -78,15 +76,13 @@ export interface Purchase {
   product?: Product;
   payments: Payment[];
   deliveries: Delivery[];
-  dailyPrice?: {
+  blocker?: {
     id: number;
-    product?:{
-      name: string;
-      description: string;
-    };
-    buyingUnitPrice: string;
-    sellingUnitPrice: string;
-    date: string;
+    blockerId: string;
+    userId: number;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
   };
 }
 
@@ -94,6 +90,7 @@ interface CreatePurchaseData {
   supplierId: number;
   productId: number;
   weight: number;
+  unitPrice: number;
   description?: string;
   expectedDeliveryDate?: string;
 }

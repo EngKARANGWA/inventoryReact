@@ -10,10 +10,7 @@ import {
   TrendingDown,
   BarChart3,
   ArrowRightLeft,
-  Plus,
   ChartArea,
-  BanknoteArrowUp,
-  Coins,
   RefreshCw,
   Download,
   Filter,
@@ -23,9 +20,7 @@ import {
 } from "lucide-react";
 import { StockMovementChart } from "../components/ui/StockMovementChart";
 import AddPriceModal from "../components/ui/AddPriceModal";
-import PriceTrendsChart from "../components/ui/PriceTrendsChart";
 import StockTrendsChart from "../components/ui/StockTrendsChart";
-import LatestPricesTable from "../components/ui/LatestPricesTable";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -46,7 +41,9 @@ const SummaryCard: React.FC<{
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs md:text-sm font-medium text-gray-500">{title}</p>
+          <p className="text-xs md:text-sm font-medium text-gray-500">
+            {title}
+          </p>
           <p className="text-xl md:text-2xl font-bold text-gray-800 mt-1">
             {value}
           </p>
@@ -235,7 +232,7 @@ const Dashboard: React.FC = () => {
                     Last updated: {new Date().toLocaleTimeString()}
                   </span>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
@@ -251,7 +248,7 @@ const Dashboard: React.FC = () => {
                       <ChevronDown size={16} className="ml-1" />
                     )}
                   </button>
-                  
+
                   <button
                     onClick={handleExportData}
                     className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
@@ -260,7 +257,7 @@ const Dashboard: React.FC = () => {
                     <Download size={16} className="mr-1" />
                     <span>Export</span>
                   </button>
-                  
+
                   <button
                     onClick={handleRefresh}
                     className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
@@ -274,7 +271,7 @@ const Dashboard: React.FC = () => {
 
               {/* Filters Panel */}
               {showFilters && (
-                <div 
+                <div
                   id="filters-panel"
                   className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 transition-all"
                 >
@@ -305,7 +302,7 @@ const Dashboard: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Stock Trends Filter
@@ -327,7 +324,7 @@ const Dashboard: React.FC = () => {
                         <option value="warehouse">By Warehouse</option>
                       </select>
                     </div>
-                    
+
                     {stockFilterType === "product" && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -350,7 +347,7 @@ const Dashboard: React.FC = () => {
                         </select>
                       </div>
                     )}
-                    
+
                     {stockFilterType === "warehouse" && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -378,67 +375,9 @@ const Dashboard: React.FC = () => {
               )}
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-              {/* Latest Prices Table */}
-              <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center">
-                    <Coins className="w-6 h-6 text-blue-600 mr-2" />
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Latest Prices
-                    </h2>
-                  </div>
-                  <button
-                    onClick={() => setIsAddPriceModalOpen(true)}
-                    className="flex items-center px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
-                  >
-                    <Plus size={16} className="mr-1 md:mr-2" />
-                    <span>Change Prices</span>
-                  </button>
-                </div>
-                <LatestPricesTable key={refreshKey} />
-              </div>
 
-              {/* Price Trends Chart */}
-              <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
-                  <div className="flex items-center">
-                    <BanknoteArrowUp className="w-6 h-6 text-blue-600 mr-2" />
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Price Trends
-                    </h2>
-                  </div>
-                  <div className="w-full sm:w-64">
-                    <select
-                      value={priceTrendFilter}
-                      onChange={(e) =>
-                        setPriceTrendFilter(
-                          e.target.value ? Number(e.target.value) : ""
-                        )
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      disabled={isLoading}
-                    >
-                      <option value="">All Products</option>
-                      {products.map((product) => (
-                        <option key={product.id} value={product.id}>
-                          {product.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="h-80">
-                  <PriceTrendsChart
-                    filterProductId={priceTrendFilter || undefined}
-                  />
-                </div>
-              </div>
-            </div>
-
-{/* Stock Trends Section */}
-<div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
+            {/* Stock Trends Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
                 <div className="flex items-center">
                   <ChartArea className="w-6 h-6 text-blue-600 mr-2" />
@@ -512,18 +451,18 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
-              <div className="h-80">
-                <StockTrendsChart
-                  filterType={stockFilterType}
-                  filterId={
-                    stockFilterType === "product"
-                      ? selectedStockProduct || undefined
-                      : stockFilterType === "warehouse"
-                      ? selectedStockWarehouse || undefined
-                      : undefined
-                  }
-                />
-              </div>
+                <div className="h-80">
+                  <StockTrendsChart
+                    filterType={stockFilterType}
+                    filterId={
+                      stockFilterType === "product"
+                        ? selectedStockProduct || undefined
+                        : stockFilterType === "warehouse"
+                        ? selectedStockWarehouse || undefined
+                        : undefined
+                    }
+                  />
+                </div>
               </div>
             </div>
             {/* Stock Movement Analysis Section */}
@@ -549,8 +488,6 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             </div>
-
-            
           </div>
         </main>
       </div>
