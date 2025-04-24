@@ -113,21 +113,6 @@ interface PaymentResponse {
   };
 }
 
-// interface PurchaseResponse {
-//   success: boolean;
-//   data: Purchase[];
-// }
-
-// interface SaleResponse {
-//   success: boolean;
-//   data: Sale[];
-//   pagination: {
-//     totalItems: number;
-//     currentPage: number;
-//     pageSize: number;
-//     totalPages: number;
-//   };
-// }
 
 export const paymentService = {
   createPayment: async (
@@ -174,7 +159,7 @@ export const paymentService = {
         saleId: options.saleId,
       };
 
-      const response = await axios.get(`${API_BASE_URL}/payments`, { params });
+      const response = await axios.get(`${API_BASE_URL}/payments`);
       return response.data;
     } catch (error) {
       console.error("Error fetching payments:", error);
