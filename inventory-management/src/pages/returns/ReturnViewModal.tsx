@@ -2,15 +2,13 @@ import React, { useState, useEffect } from "react";
 import { 
   X, 
   Package, 
-  Truck, 
-  FileText, 
+  Truck,
   Check, 
   Clock, 
   Info, 
   ArrowDown, 
   ArrowUp, 
   Calendar, 
-  User, 
   Box, 
   MapPin,
   RefreshCw

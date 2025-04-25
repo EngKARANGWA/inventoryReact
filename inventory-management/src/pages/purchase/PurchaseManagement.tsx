@@ -37,7 +37,7 @@ const PurchaseManagement: React.FC = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [totalPurchases, setTotalPurchases] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(
@@ -86,7 +86,7 @@ const PurchaseManagement: React.FC = () => {
 
   const fetchPurchases = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    // setError(null);
 
     try {
       const purchases = await purchaseService.getAllPurchases({
@@ -98,7 +98,7 @@ const PurchaseManagement: React.FC = () => {
       setTotalPurchases(purchases.length);
     } catch (err) {
       console.error("Error fetching purchases:", err);
-      setError("Failed to fetch purchases. Please try again later.");
+      toast.info("Failed to fetch purchases. Please try again later.");
       toast.error("Failed to load purchases");
       setPurchases([]);
       setTotalPurchases(0);

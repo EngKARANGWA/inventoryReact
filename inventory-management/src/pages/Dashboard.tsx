@@ -102,6 +102,7 @@ const Dashboard: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   // Sample data for the dashboard with improved formatting
   const summaryData = [
@@ -158,6 +159,7 @@ const Dashboard: React.FC = () => {
 
         setProducts(productsData);
         setWarehouses(warehousesData);
+        setLastUpdated(new Date());
       } catch (err) {
         console.error("Error fetching filter data:", err);
         toast.error("Failed to load filter data");
@@ -167,7 +169,8 @@ const Dashboard: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+    // Using refreshKey in the dependency array means this useEffect will run when refreshKey changes
+  }, [refreshKey]);
 
   const handlePriceAdded = () => {
     toast.success("Price changed successfully!");
@@ -229,7 +232,7 @@ const Dashboard: React.FC = () => {
                 <div className="flex items-center">
                   <Clock className="w-5 h-5 text-blue-500 mr-2" />
                   <span className="text-sm text-gray-600">
-                    Last updated: {new Date().toLocaleTimeString()}
+                    Last updated: {lastUpdated.toLocaleTimeString()}
                   </span>
                 </div>
 
@@ -461,6 +464,7 @@ const Dashboard: React.FC = () => {
                         ? selectedStockWarehouse || undefined
                         : undefined
                     }
+                    // Remove refreshKey prop which was causing the TypeScript error
                   />
                 </div>
               </div>
@@ -485,6 +489,7 @@ const Dashboard: React.FC = () => {
                   onFilterChange={(filter) => {
                     console.log("Filter changed:", filter);
                   }}
+                  // Remove refreshKey prop which was causing the TypeScript error
                 />
               </div>
             </div>

@@ -61,10 +61,7 @@ const DeliveryManagement: React.FC = () => {
     setError(null);
 
     try {
-      const response = await deliveryService.getAllDeliveries({
-        ...filters,
-        search: searchTerm,
-      });
+      const response = await deliveryService.getAllDeliveries();
 
       setDeliveries(response.deliveries || []);
       setTotalDeliveries(response.total || 0);
