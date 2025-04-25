@@ -14,7 +14,7 @@ export interface Return {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  status: string; 
+  status: string;
   sale?: {
     id: number;
     referenceNumber: string;
@@ -49,9 +49,9 @@ export interface Return {
 }
 
 export interface CreateReturnData {
-  referenceNumber?: string;  // Added this field
-  productId?: number;        // Added this field
-  status?: string;           // Added this field
+  referenceNumber?: string; // Added this field
+  productId?: number; // Added this field
+  status?: string; // Added this field
   saleId: number;
   returnedQuantity: number;
   note?: string;
@@ -67,10 +67,9 @@ interface GetReturnsOptions {
 
 // Helper function to handle API responses
 const handleResponse = (response: any) => {
-  if (response.data && Array.isArray(response.data)) {
-    return response.data;
-  }
-  if (response.data) {
+  if (response.data && response.data.data) {
+    return response.data.data;
+  } else if (response.data) {
     return response.data;
   }
   return response;
@@ -103,6 +102,11 @@ export const returnsService = {
     returnData: CreateReturnData
   ): Promise<Return> => {
     try {
+      // Ensure id is a valid number
+      if (!id || isNaN(Number(id))) {
+        throw new Error("Invalid return ID for update");
+      }
+      
       const response = await axios.put(
         `${API_BASE_URL}/returns/${id}`,
         returnData
@@ -116,6 +120,11 @@ export const returnsService = {
 
   deleteReturn: async (id: number): Promise<void> => {
     try {
+      // Ensure id is a valid number
+      if (!id || isNaN(Number(id))) {
+        throw new Error("Invalid return ID for deletion");
+      }
+      
       await axios.delete(`${API_BASE_URL}/returns/${id}`);
     } catch (error) {
       handleError(error);
@@ -138,8 +147,8 @@ export const returnsService = {
 
       const response = await axios.get(`${API_BASE_URL}/returns`, { params });
       return {
-        data: response.data.data,
-        pagination: response.data.pagination,
+        data: response.data.data || [],
+        pagination: response.data.pagination || {},
       };
     } catch (error) {
       handleError(error);
@@ -168,16 +177,24 @@ export const returnsService = {
   },
 
   // Get a single return by ID
-  getReturnById: async (
-    id: number,
-    includeDeleted: boolean = false
-  ): Promise<Return | null> => {
+  getReturnById: async (id: number): Promise<Return | null> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/returns/${id}`, {
-        params: { includeDeleted: includeDeleted ? "true" : "false" },
-      });
-      return handleResponse(response);
+      // Validate the ID to prevent API calls with undefined
+      if (!id || isNaN(Number(id))) {
+        console.error("Invalid return ID:", id);
+        throw new Error("Invalid return ID");
+      }
+      
+      console.log(`Fetching return with ID: ${id}`);
+      const response = await axios.get(`${API_BASE_URL}/returns/${id}`);
+      
+      // Extract the return data from the response
+      const returnData = handleResponse(response);
+      console.log("Return data fetched successfully");
+      
+      return returnData;
     } catch (error) {
+      console.error(`Error fetching return with ID ${id}:`, error);
       handleError(error);
       return null;
     }
