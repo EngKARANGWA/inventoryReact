@@ -98,6 +98,7 @@ interface CreateSaleData {
 
 interface UpdateSaleData {
   quantity?: number;
+  unitPrice?: number;
   note?: string;
 }
 
@@ -113,19 +114,11 @@ interface SaleResponse {
 }
 
 export const saleService = {
-  getAllSales: async (filters: any = {}): Promise<SaleResponse> => {
+  getAllSales: async (): Promise<SaleResponse> => {
     try {
-      const params = {
-        page: filters.page || 1,
-        pageSize: filters.pageSize || 10,
-        search: filters.search,
-        productId: filters.productId,
-        salerId: filters.salerId,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-      };
 
-      const response = await axios.get(`${API_BASE_URL}/sales`, { params });
+
+      const response = await axios.get(`${API_BASE_URL}/sales`);
       return response.data;
     } catch (error) {
       console.error("Error fetching sales:", error);
