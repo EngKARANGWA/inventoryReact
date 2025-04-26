@@ -169,7 +169,9 @@ export const returnsService = {
   getSales: async (): Promise<{ data: any[] }> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/sales`);
-      return handleResponse(response);
+      return {
+        data: response.data?.data || []
+      };
     } catch (error) {
       handleError(error);
       return { data: [] };

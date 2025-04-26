@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { X, Save, Package, ShoppingCart } from "lucide-react";
-import { CreateReturnData, Return, returnsService } from "../../services/returnsService";
+import { X, Save, Package } from "lucide-react";
+import Select from "react-select";
+import {
+  CreateReturnData,
+  Return,
+  returnsService,
+} from "../../services/returnsService";
 
 interface ReturnFormData {
   saleId: number;
@@ -38,26 +43,39 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
     note: "",
     status: "pending",
   });
-  
+
   const [sales, setSales] = useState<SaleOption[]>([]);
-  const [filteredSales, setFilteredSales] = useState<SaleOption[]>([]);
-  const [saleSearchTerm, setSaleSearchTerm] = useState("");
-  const [showSaleDropdown, setShowSaleDropdown] = useState(false);
-  
   const [selectedSale, setSelectedSale] = useState<SaleOption | null>(null);
-  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitDisabled, setSubmitDisabled] = useState(true);
 
-  // Load sales data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const salesResponse = await returnsService.getSales();
-        setSales(salesResponse.data || []);
-        setFilteredSales(salesResponse.data || []);
+        const response = await returnsService.getSales();
+
+        // Check if response exists and has data
+        if (response && response.data) {
+          const transformedSales = response.data.map((sale: any) => ({
+            id: sale.id,
+            referenceNumber: sale.saleReference, // Using the correct field from API
+            quantity: sale.quantity,
+            productId: sale.productId,
+            product: sale.product
+              ? {
+                  id: sale.product.id,
+                  name: sale.product.name,
+                  description: sale.product.description,
+                }
+              : undefined,
+          }));
+          setSales(transformedSales);
+        } else {
+          console.warn("No data received from sales API");
+          setSales([]);
+        }
       } catch (err) {
         console.error("Error loading form data:", err);
         setError("Failed to load sales data. Please try again.");
@@ -78,7 +96,7 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
         note: returnToEdit.note,
         status: returnToEdit.status || "pending",
       });
-      
+
       // Find and set selected sale
       if (returnToEdit.sale) {
         setSelectedSale({
@@ -86,33 +104,21 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
           referenceNumber: returnToEdit.sale.referenceNumber,
           quantity: returnToEdit.sale.quantity,
           productId: returnToEdit.productId,
-          product: returnToEdit.product
+          product: returnToEdit.product,
         });
       }
     }
   }, [returnToEdit]);
 
-  // Handle search and filtering for sales dropdown
-  useEffect(() => {
-    if (saleSearchTerm.trim() === "") {
-      setFilteredSales(sales);
-    } else {
-      const filtered = sales.filter(sale => 
-        sale.referenceNumber.toLowerCase().includes(saleSearchTerm.toLowerCase()) ||
-        (sale.product?.name && sale.product.name.toLowerCase().includes(saleSearchTerm.toLowerCase()))
-      );
-      setFilteredSales(filtered);
-    }
-  }, [saleSearchTerm, sales]);
-
   // Validate form
   useEffect(() => {
-    // Check if form is valid for submission
-    const isValid = 
-      formData.saleId > 0 && 
+    const isValid =
+      formData.saleId > 0 &&
       formData.returnedQuantity > 0 &&
-      (selectedSale ? formData.returnedQuantity <= parseFloat(selectedSale.quantity) : true);
-    
+      (selectedSale
+        ? formData.returnedQuantity <= parseFloat(selectedSale.quantity)
+        : true);
+
     setSubmitDisabled(!isValid);
   }, [formData, selectedSale]);
 
@@ -122,41 +128,24 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
     >
   ) => {
     const { name, value } = e.target;
-    
-    if (name === 'returnedQuantity') {
-      // Ensure positive number and not exceeding available quantity
+
+    if (name === "returnedQuantity") {
       const numValue = parseFloat(value) || 0;
       const maxQuantity = selectedSale ? parseFloat(selectedSale.quantity) : 0;
-      
-      // Don't allow quantity greater than what's available
+
       if (numValue > maxQuantity) {
-        setError(`Returned quantity cannot exceed original sale quantity (${maxQuantity})`);
+        setError(
+          `Returned quantity cannot exceed original sale quantity (${maxQuantity})`
+        );
         return;
       } else {
         setError(null);
       }
-      
-      setFormData(prev => ({ ...prev, returnedQuantity: numValue }));
+
+      setFormData((prev) => ({ ...prev, returnedQuantity: numValue }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
-  };
-
-  const handleSaleSelect = (sale: SaleOption) => {
-    setSelectedSale(sale);
-    setFormData(prev => ({ 
-      ...prev, 
-      saleId: sale.id,
-      // Reset quantity to prevent validation errors
-      returnedQuantity: 0
-    }));
-    setShowSaleDropdown(false);
-    setSaleSearchTerm("");
-  };
-
-  const handleSaleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSaleSearchTerm(e.target.value);
-    setShowSaleDropdown(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,12 +154,11 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
     setError(null);
 
     try {
-      // Prepare the data to match CreateReturnData interface
       const submitData: CreateReturnData = {
         saleId: formData.saleId,
         returnedQuantity: formData.returnedQuantity,
         note: formData.note || undefined,
-        status: formData.status
+        status: formData.status,
       };
 
       if (returnToEdit) {
@@ -211,59 +199,53 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
 
           <div className="space-y-4">
             {/* Sale Selection Field */}
-            <div className="relative">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Associated Sale <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <div className="flex items-center border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-                  <div className="px-3 py-2 text-gray-500">
-                    <ShoppingCart size={20} />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search sales by reference or product..."
-                    value={saleSearchTerm}
-                    onChange={handleSaleSearchChange}
-                    onClick={() => setShowSaleDropdown(true)}
-                    className="w-full px-2 py-2 outline-none"
-                    disabled={loading || !!returnToEdit}
-                  />
-                  {selectedSale && (
-                    <div className="px-3 py-2 bg-blue-100 text-blue-800 text-sm whitespace-nowrap">
-                      Selected: {selectedSale.referenceNumber}
-                    </div>
-                  )}
-                </div>
-                
-                {showSaleDropdown && !returnToEdit && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {loading ? (
-                      <div className="p-3 text-center text-gray-500">Loading sales...</div>
-                    ) : filteredSales.length === 0 ? (
-                      <div className="p-3 text-center text-gray-500">No sales found</div>
-                    ) : (
-                      filteredSales.map(sale => (
-                        <div
-                          key={sale.id}
-                          className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 flex justify-between"
-                          onClick={() => handleSaleSelect(sale)}
-                        >
-                          <div>
-                            <div className="font-medium text-gray-800">{sale.referenceNumber}</div>
-                            <div className="text-sm text-gray-600">
-                              {sale.product?.name || `Product ID: ${sale.productId}`}
-                            </div>
-                          </div>
-                          <div className="text-sm text-gray-700">
-                            Quantity: {parseFloat(sale.quantity).toFixed(2)} KG
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
+              <Select
+                id="saleId"
+                name="saleId"
+                options={sales.map((sale) => ({
+                  value: sale.id,
+                  label: `${sale.referenceNumber} - ${
+                    sale.product?.name || `Product ID: ${sale.productId}`
+                  } (${parseFloat(sale.quantity).toFixed(2)} KG)`,
+                }))}
+                isLoading={loading && sales.length === 0}
+                onChange={(selectedOption) => {
+                  if (selectedOption) {
+                    const selectedSale = sales.find(
+                      (s) => s.id === selectedOption.value
+                    );
+                    if (selectedSale) {
+                      setSelectedSale(selectedSale);
+                      setFormData((prev) => ({
+                        ...prev,
+                        saleId: selectedSale.id,
+                        returnedQuantity: 0,
+                      }));
+                    }
+                  }
+                }}
+                value={
+                  selectedSale
+                    ? {
+                        value: selectedSale.id,
+                        label: `${selectedSale.referenceNumber} - ${
+                          selectedSale.product?.name ||
+                          `Product ID: ${selectedSale.productId}`
+                        } (${parseFloat(selectedSale.quantity).toFixed(2)} KG)`,
+                      }
+                    : null
+                }
+                placeholder="Search sales by reference or product..."
+                className="basic-single"
+                classNamePrefix="select"
+                isClearable
+                required
+                isDisabled={loading || !!returnToEdit}
+              />
               {selectedSale && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-md">
                   <h4 className="font-medium text-gray-700 flex items-center">
@@ -273,20 +255,23 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
                   <div className="grid grid-cols-2 gap-2 mt-1 text-sm">
                     <div>
                       <span className="text-gray-500">Name:</span>{" "}
-                      <span className="font-medium">{selectedSale.product?.name || 'Unknown'}</span>
+                      <span className="font-medium">
+                        {selectedSale.product?.name || "Unknown"}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-500">Available Quantity:</span>{" "}
-                      <span className="font-medium">{parseFloat(selectedSale.quantity).toFixed(2)} KG</span>
+                      <span className="font-medium">
+                        {parseFloat(selectedSale.quantity).toFixed(2)} KG
+                      </span>
                     </div>
                   </div>
                 </div>
               )}
             </div>
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Status Field */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
@@ -300,7 +285,7 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-              </div>
+              </div> */}
 
               {/* Returned Quantity Field */}
               <div>
@@ -315,7 +300,9 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
                   required
                   min="0.01"
                   step="0.01"
-                  max={selectedSale ? parseFloat(selectedSale.quantity) : undefined}
+                  max={
+                    selectedSale ? parseFloat(selectedSale.quantity) : undefined
+                  }
                   disabled={!selectedSale}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
