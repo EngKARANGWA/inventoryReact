@@ -68,15 +68,17 @@ const TransferManagement: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productsLoading, setProductsLoading] = useState(false);
   const [driversLoading, setDriversLoading] = useState(false);
-  const [productsSearch, setProductsSearch] = useState("");
-  const [driversSearch, setDriversSearch] = useState("");
+  // Removed the unused state setter declarations
   const [productsOptions, setProductsOptions] = useState<
     { value: number; label: string }[]
   >([]);
   const [driversOptions, setDriversOptions] = useState<
     { value: number; label: string }[]
   >([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  // Keep warehouses state as it will be used in the TransferForm component
+  const [warehouseOptions, setWarehouseOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [transferToDelete, setTransferToDelete] = useState<number | null>(null);
   const [viewType, setViewType] = useState<"table" | "cards">("table");
@@ -163,9 +165,9 @@ const TransferManagement: React.FC = () => {
       setDriversLoading(true);
 
       const [products, warehouses, drivers] = await Promise.all([
-        productService.getAllProducts(productsSearch),
+        productService.getAllProducts(""), // Directly pass empty string instead of productsSearch
         warehouseService.getAllWarehouses(),
-        driverService.getAllDrivers(driversSearch),
+        driverService.getAllDrivers(""), // Directly pass empty string instead of driversSearch
       ]);
 
       setProductsOptions(
@@ -175,11 +177,11 @@ const TransferManagement: React.FC = () => {
         }))
       );
 
-      setWarehouses(
+      // Transform warehouses to options format for dropdowns
+      setWarehouseOptions(
         warehouses.map((warehouse: Warehouse) => ({
-          id: warehouse.id,
-          name: warehouse.name,
-          location: warehouse.location,
+          value: warehouse.id,
+          label: warehouse.name,
         }))
       );
 
@@ -645,6 +647,7 @@ const TransferManagement: React.FC = () => {
           driversLoading={driversLoading}
           productsOptions={productsOptions}
           driversOptions={driversOptions}
+          warehouseOptions={warehouseOptions} // Pass the warehouse options to the form
           onChange={handleFormChange}
           onSelectChange={handleSelectChange}
           onSubmit={handleFormSubmit}

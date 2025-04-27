@@ -13,7 +13,6 @@ import {
   Package,
   Warehouse,
   Calendar,
-  Plus,
   Download,
   FileText,
   AlertCircle,
@@ -449,7 +448,7 @@ const StockMovementManagement: React.FC = () => {
                     <RefreshCw size={16} />
                     <span className="sr-only">Refresh</span>
                   </button>
-                  
+{/*                   
                   <button
                     className="flex items-center px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
                     disabled
@@ -457,7 +456,7 @@ const StockMovementManagement: React.FC = () => {
                   >
                     <Plus size={16} className="mr-1 md:mr-2" />
                     <span>New Movement</span>
-                  </button>
+                  </button> */}
                 </div>
               </div>
 

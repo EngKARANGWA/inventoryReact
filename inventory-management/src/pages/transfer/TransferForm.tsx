@@ -34,6 +34,7 @@ interface TransferFormProps {
   driversLoading: boolean;
   productsOptions: { value: number; label: string }[];
   driversOptions: { value: number; label: string }[];
+  warehouseOptions?: { value: number; label: string }[];
   onChange: (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
