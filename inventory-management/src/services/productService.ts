@@ -6,24 +6,22 @@ export interface Product {
   id: number;
   name: string;
   description: string;
+  type: 'raw_material' | 'finished_product';
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
 }
 
-// interface PaginatedResponse<T> {
-//   data: T[];
-//   meta: {
-//     current_page: number;
-//     from: number;
-//     last_page: number;
-//     per_page: number;
-//     to: number;
-//     total: number;
-//   };
-// }
+interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
 
-// Helper function to extract data from API response
 const extractData = <T>(response: any): T => {
   if (response.data && response.data.data) {
     return response.data.data as T;
@@ -32,29 +30,49 @@ const extractData = <T>(response: any): T => {
 };
 
 export const productService = {
-  // Get all products
-  getAllProducts: async (): Promise<Product[]> => {
+  getAllProducts: async (options?: {
+    page?: number;
+    pageSize?: number;
+    type?: string;
+    includeDeleted?: boolean;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<PaginatedResponse<Product>> => {
     try {
-      const response = await axios.get<{ data: Product[] }>(`${API_BASE_URL}/products`);
-      return extractData<Product[]>(response);
+      const response = await axios.get<{ 
+        data: Product[];
+        pagination: {
+          page: number;
+          pageSize: number;
+          totalItems: number;
+          totalPages: number;
+        }
+      }>(`${API_BASE_URL}/products`, { params: options });
+      
+      return {
+        data: extractData<Product[]>(response),
+        pagination: response.data.pagination
+      };
     } catch (error) {
       console.error('Error fetching products:', error);
-      return [];
+      throw error;
     }
   },
 
-  // Get a single product by ID
-  getProductById: async (productId: string | number): Promise<Product | null> => {
+  getProductById: async (productId: string | number, includeDeleted: boolean = false): Promise<Product | null> => {
     try {
-      const response = await axios.get<{ data: Product }>(`${API_BASE_URL}/products/${productId}`);
+      const response = await axios.get<{ data: Product }>(
+        `${API_BASE_URL}/products/${productId}`,
+        { params: { includeDeleted } }
+      );
       return extractData<Product>(response);
     } catch (error) {
       console.error(`Error fetching product ${productId}:`, error);
-      return null;
+      throw error;
     }
   },
 
-  // Create a new product
   createProduct: async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>): Promise<Product> => {
     try {
       const response = await axios.post<{ data: Product }>(`${API_BASE_URL}/products`, productData);
@@ -65,10 +83,12 @@ export const productService = {
     }
   },
 
-  // Update an existing product
   updateProduct: async (productId: string | number, productData: Partial<Product>): Promise<Product> => {
     try {
-      const response = await axios.put<{ data: Product }>(`${API_BASE_URL}/products/${productId}`, productData);
+      const response = await axios.put<{ data: Product }>(
+        `${API_BASE_URL}/products/${productId}`,
+        productData
+      );
       return extractData<Product>(response);
     } catch (error) {
       console.error(`Error updating product ${productId}:`, error);
@@ -76,7 +96,6 @@ export const productService = {
     }
   },
 
-  // Delete a product
   deleteProduct: async (productId: string | number): Promise<void> => {
     try {
       await axios.delete(`${API_BASE_URL}/products/${productId}`);
@@ -86,36 +105,22 @@ export const productService = {
     }
   },
 
-  // Get products by category
-  getProductsByCategory: async (category: string): Promise<Product[]> => {
+  restoreProduct: async (productId: string | number): Promise<void> => {
     try {
-      const response = await axios.get<{ data: Product[] }>(`${API_BASE_URL}/products/category/${category}`);
-      return extractData<Product[]>(response);
+      await axios.post(`${API_BASE_URL}/products/${productId}/restore`);
     } catch (error) {
-      console.error(`Error fetching products by category ${category}:`, error);
-      return [];
+      console.error(`Error restoring product ${productId}:`, error);
+      throw error;
     }
   },
 
-  // Get products by status
-  getProductsByStatus: async (status: 'active' | 'inactive'): Promise<Product[]> => {
+  getProductStockLevels: async (productId: string | number): Promise<any> => {
     try {
-      const response = await axios.get<{ data: Product[] }>(`${API_BASE_URL}/products/status/${status}`);
-      return extractData<Product[]>(response);
+      const response = await axios.get(`${API_BASE_URL}/products/${productId}/stock`);
+      return extractData<any>(response);
     } catch (error) {
-      console.error(`Error fetching products by status ${status}:`, error);
-      return [];
-    }
-  },
-
-  // Get low stock products (quantity below threshold)
-  getLowStockProducts: async (threshold: number = 10): Promise<Product[]> => {
-    try {
-      const response = await axios.get<{ data: Product[] }>(`${API_BASE_URL}/products/low-stock?threshold=${threshold}`);
-      return extractData<Product[]>(response);
-    } catch (error) {
-      console.error('Error fetching low stock products:', error);
-      return [];
+      console.error(`Error fetching stock levels for product ${productId}:`, error);
+      throw error;
     }
   }
 };
