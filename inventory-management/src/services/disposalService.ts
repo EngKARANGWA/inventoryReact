@@ -96,22 +96,11 @@ export const disposalService = {
   },
 
   getAllDisposals: async (
-    options: DisposalFilterOptions = {}
   ): Promise<DisposalResponse> => {
     try {
-      const params = {
-        page: options.page || 1,
-        pageSize: options.pageSize || 10,
-        includeDeleted: options.includeDeleted ? "true" : "false",
-        search: options.search,
-        method: options.method,
-        productId: options.productId,
-        warehouseId: options.warehouseId,
-        startDate: options.startDate,
-        endDate: options.endDate,
-      };
 
-      const response = await axios.get(`${API_BASE_URL}/disposal`, { params });
+
+      const response = await axios.get(`${API_BASE_URL}/disposal`);
       return response.data;
     } catch (error) {
       console.error("Error fetching disposals:", error);
@@ -221,7 +210,7 @@ interface Warehouse {
   location: string;
 }
 
-interface Price {
+export interface Price {
   id: number;
   buyingUnitPrice?: number | null;
   sellingUnitPrice?: number | null;
