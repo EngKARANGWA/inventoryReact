@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
 export interface Supplier {
@@ -34,21 +33,82 @@ export interface Payment {
   id: number;
   paymentReference: string;
   amount: string;
-  payableType: string;
+  payableType?: string;
   paymentMethod: string;
   status: string;
-  transactionReference: string | null;
+  transactionReference?: string | null;
   paidAt: string | null;
+  purchaseId?: number;
+  saleId?: null | number;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: null | string;
+  purchase_id?: number;
+  sale_id?: null | number;
+}
+
+export interface Driver {
+  id: number;
+  driverId: string;
+  licenseNumber: string;
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: null | string;
+  user_id: number;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    profile: {
+      id: number;
+      names: string;
+      phoneNumber: string;
+      address: string;
+      status: string;
+    };
+  };
+}
+
+export interface Warehouse {
+  id: number;
+  name: string;
+  location: string;
+  capacity: number;
+  currentOccupancy: number;
+  status: string;
+  managerId: null | number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: null | string;
 }
 
 export interface Delivery {
   id: number;
   deliveryReference: string;
   status: string;
+  direction: string;
   deliveredAt: string;
   notes: string;
-  weight: string;
+  quantity: string;
+  unitPrice: null | string;
+  purchaseId: number;
+  saleId: null | number;
   driverId: number;
+  productId: number;
+  warehouseId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: null | string;
+  warehouse_id: number;
+  purchase_id: number;
+  sale_id: null | number;
+  driver_id: number;
+  product_id: number;
+  driver: Driver;
+  warehouse: Warehouse;
+  product: Product;
+  weight?: string; // Keep for backward compatibility
 }
 
 export interface Purchase {
@@ -72,6 +132,9 @@ export interface Purchase {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  supplier_id?: number; // Added for API compatibility
+  product_id?: number; // Added for API compatibility
+  blocker_id?: number | null; // Added for API compatibility
   supplier: Supplier;
   product?: Product;
   payments: Payment[];
@@ -104,6 +167,7 @@ interface UpdatePurchaseData {
     | "delivery_complete"
     | "all_completed";
   expectedDeliveryDate?: string;
+  weight?: number;
 }
 
 export interface PurchaseFilterOptions {
@@ -115,7 +179,6 @@ export interface PurchaseFilterOptions {
   productId?: number;
   search?: string;
 }
-
 
 export const purchaseService = {
   getAllSuppliers: async (): Promise<Supplier[]> => {
@@ -181,11 +244,23 @@ export const purchaseService = {
         supplierId: completeOptions.supplierId,
       };
 
-      const response = await axios.get<Purchase[]>(
-        `${API_BASE_URL}/purchases`,
-        { params }
-      );
-      return response.data;
+      const response = await axios.get(`${API_BASE_URL}/purchases`, { params });
+
+      // Check if response.data has the expected structure based on API examples
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
+        // Return the data array from the response
+        return response.data.data;
+      } else if (Array.isArray(response.data)) {
+        // If response.data is already an array, return it directly
+        return response.data;
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        return [];
+      }
     } catch (error) {
       console.error("Error fetching purchases:", error);
       return [];
@@ -200,7 +275,17 @@ export const purchaseService = {
       const response = await axios.get(`${API_BASE_URL}/purchases/${id}`, {
         params: { includeDeleted: includeDeleted ? "true" : "false" },
       });
-      return response.data;
+
+      // Check if response.data has the expected structure (with success and data fields)
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      } else if (response.data && typeof response.data === "object") {
+        // If direct object is returned
+        return response.data;
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        return null;
+      }
     } catch (error) {
       console.error("Error fetching purchase:", error);
       return null;

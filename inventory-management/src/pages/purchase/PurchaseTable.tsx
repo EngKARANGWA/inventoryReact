@@ -1,6 +1,5 @@
 // components/PurchaseTable.tsx
 import React from "react";
-import { Purchase } from "../../services/purchaseService";
 import {
   Edit2,
   Trash2,
@@ -11,7 +10,11 @@ import {
   Clock,
   CreditCard,
   Truck as TruckIcon,
+  AlertTriangle,
 } from "lucide-react";
+import { Purchase } from "../../services/purchaseService";
+
+// We don't need to redefine these interfaces since we're importing them from purchaseService
 
 interface PurchaseTableProps {
   purchases: Purchase[];
@@ -31,8 +34,9 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
   requestSort,
 }) => {
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "all_completed":
+      case "completed":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case "cancelled":
         return <X className="w-4 h-4 text-red-500" />;
@@ -40,14 +44,21 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
         return <CreditCard className="w-4 h-4 text-blue-500" />;
       case "delivery_complete":
         return <TruckIcon className="w-4 h-4 text-amber-500" />;
+      case "approved":
+        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+      case "pending":
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case "rejected":
+        return <X className="w-4 h-4 text-red-500" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
+        return <AlertTriangle className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "all_completed":
+      case "completed":
         return "bg-green-100 text-green-800";
       case "approved":
         return "bg-blue-100 text-blue-800";
@@ -56,10 +67,40 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
       case "delivery_complete":
         return "bg-amber-100 text-amber-800";
       case "cancelled":
+      case "rejected":
         return "bg-red-100 text-red-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  // Calculate delivery completion percentage
+  const getDeliveryPercentage = (purchase: Purchase) => {
+    const totalWeight = parseFloat(purchase.weight);
+    const deliveredWeight = parseFloat(purchase.totalDelivered);
+
+    if (totalWeight <= 0) return 0;
+    return Math.min(100, Math.round((deliveredWeight / totalWeight) * 100));
+  };
+
+  // Calculate payment completion percentage
+  const getPaymentPercentage = (purchase: Purchase) => {
+    if (!purchase.unitPrice) return "N/A";
+
+    const totalValue =
+      parseFloat(purchase.weight) * parseFloat(purchase.unitPrice);
+    const paidAmount = parseFloat(purchase.totalPaid);
+
+    if (totalValue <= 0) return 0;
+    return Math.min(100, Math.round((paidAmount / totalValue) * 100));
+  };
+
+  // Format currency with RWF
+  const formatCurrency = (amount: string | null) => {
+    if (!amount) return "N/A";
+    return `${parseFloat(amount).toLocaleString()} RWF`;
   };
 
   return (
@@ -100,7 +141,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
               </div>
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Price (RWF)
+              Price & Payment
             </th>
             <th
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -155,6 +196,9 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 <div className="text-xs text-gray-500">
                   {purchase.supplier?.user?.profile?.phoneNumber || "N/A"}
                 </div>
+                <div className="text-xs text-gray-500">
+                  {purchase.supplier?.district}, {purchase.supplier?.sector}
+                </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">
@@ -170,7 +214,16 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 </div>
                 <div className="text-xs text-gray-500">
                   Delivered:{" "}
-                  {parseFloat(purchase.totalDelivered).toLocaleString()} Kg
+                  {parseFloat(purchase.totalDelivered).toLocaleString()} Kg (
+                  {getDeliveryPercentage(purchase)}%)
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                  <div
+                    className="bg-blue-600 h-1.5 rounded-full"
+                    style={{
+                      width: `${getDeliveryPercentage(purchase)}%`,
+                    }}
+                  ></div>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -182,7 +235,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     : "N/A"}
                 </div>
                 <div className="text-xs text-gray-500">
-                  Total:{" "}
+                  Total Value:{" "}
                   {purchase.unitPrice
                     ? `${(
                         parseFloat(purchase.weight) *
@@ -190,6 +243,24 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                       ).toLocaleString()} RWF`
                     : "N/A"}
                 </div>
+                <div className="text-xs text-gray-500">
+                  Paid: {formatCurrency(purchase.totalPaid)}
+                  {purchase.unitPrice &&
+                  typeof getPaymentPercentage(purchase) === "number"
+                    ? ` (${getPaymentPercentage(purchase)}%)`
+                    : ""}
+                </div>
+                {purchase.unitPrice &&
+                  typeof getPaymentPercentage(purchase) === "number" && (
+                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                      <div
+                        className="bg-green-600 h-1.5 rounded-full"
+                        style={{
+                          width: `${getPaymentPercentage(purchase)}%`,
+                        }}
+                      ></div>
+                    </div>
+                  )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
@@ -202,6 +273,39 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                       : "Not set"}
                   </div>
                 </div>
+                {/* Show days remaining or overdue */}
+                {purchase.expectedDeliveryDate && (
+                  <div className="text-xs mt-1">
+                    {(() => {
+                      const today = new Date();
+                      const deliveryDate = new Date(
+                        purchase.expectedDeliveryDate
+                      );
+                      const diffTime = deliveryDate.getTime() - today.getTime();
+                      const diffDays = Math.ceil(
+                        diffTime / (1000 * 60 * 60 * 24)
+                      );
+
+                      if (diffDays > 0) {
+                        return (
+                          <span className="text-blue-600">
+                            {diffDays} days remaining
+                          </span>
+                        );
+                      } else if (diffDays < 0) {
+                        return (
+                          <span className="text-red-600">
+                            {Math.abs(diffDays)} days overdue
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span className="text-green-600">Due today</span>
+                        );
+                      }
+                    })()}
+                  </div>
+                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
@@ -225,25 +329,26 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     <Eye size={18} />
                   </button>
 
-                  {purchase.status !== "all_completed" && (
-                    <>
-                      <button
-                        onClick={() => onEdit(purchase)}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50"
-                        title="Edit Purchase"
-                      >
-                        <Edit2 size={18} />
-                      </button>
+                  {purchase.status !== "all_completed" &&
+                    purchase.status !== "delivery_complete" && (
+                      <>
+                        <button
+                          onClick={() => onEdit(purchase)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50"
+                          title="Edit Purchase"
+                        >
+                          <Edit2 size={18} />
+                        </button>
 
-                      <button
-                        onClick={() => onDelete(purchase.id)}
-                        className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
-                        title="Delete Purchase"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </>
-                  )}
+                        <button
+                          onClick={() => onDelete(purchase.id)}
+                          className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
+                          title="Delete Purchase"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </>
+                    )}
                 </div>
               </td>
             </tr>

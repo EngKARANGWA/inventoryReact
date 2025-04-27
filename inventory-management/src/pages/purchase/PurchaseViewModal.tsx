@@ -1,6 +1,4 @@
-// components/PurchaseViewModal.tsx
 import React from "react";
-import { Purchase } from "../../services/purchaseService";
 import {
   X,
   ShoppingCart,
@@ -11,7 +9,10 @@ import {
   CreditCard,
   Clock,
   Activity,
+  Building,
+  User,
 } from "lucide-react";
+import { Purchase, Payment, Delivery } from "../../services/purchaseService";
 
 interface PurchaseViewModalProps {
   isOpen: boolean;
@@ -25,10 +26,40 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
   purchase,
 }) => {
   if (!isOpen || !purchase) return null;
+  
+  // Safely access payments array with proper type casting
+  const getPaymentsArray = (): Payment[] => {
+    if (Array.isArray(purchase.payments)) {
+      return purchase.payments;
+    }
+    // If it's an object with numeric keys (sometimes happens with API responses)
+    if (purchase.payments && typeof purchase.payments === 'object') {
+      return Object.values(purchase.payments) as Payment[];
+    }
+    return [];
+  };
 
+  // Safely access deliveries array with proper type casting
+  const getDeliveriesArray = (): Delivery[] => {
+    if (Array.isArray(purchase.deliveries)) {
+      return purchase.deliveries;
+    }
+    // If it's an object with numeric keys (sometimes happens with API responses)
+    if (purchase.deliveries && typeof purchase.deliveries === 'object') {
+      return Object.values(purchase.deliveries) as Delivery[];
+    }
+    return [];
+  };
+
+  // Debug logs to check data structure
+  console.log("Purchase object in modal:", purchase);
+  console.log("Has payments array?", purchase.payments ? `Yes (${getPaymentsArray().length})` : "No");
+  console.log("Has deliveries array?", purchase.deliveries ? `Yes (${getDeliveriesArray().length})` : "No");
+  
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "all_completed":
+      case "completed":
         return "bg-green-100 text-green-800";
       case "approved":
         return "bg-blue-100 text-blue-800";
@@ -44,8 +75,9 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "all_completed":
+      case "completed":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case "cancelled":
         return <X className="w-4 h-4 text-red-500" />;
@@ -57,6 +89,22 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
         return <Clock className="w-4 h-4 text-gray-500" />;
     }
   };
+
+  const remainingWeight = 
+    parseFloat(purchase.weight) - parseFloat(purchase.totalDelivered);
+  
+  const deliveryProgressPercentage = 
+    Math.min(100, (parseFloat(purchase.totalDelivered) / parseFloat(purchase.weight)) * 100);
+  
+  const calculateTotalValue = () => {
+    if (purchase.unitPrice) {
+      return (parseFloat(purchase.weight) * parseFloat(purchase.unitPrice)).toLocaleString();
+    }
+    return "N/A";
+  };
+
+  const deliveries = getDeliveriesArray();
+  const payments = getPaymentsArray();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -173,10 +221,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                   <p className="text-sm text-gray-500">Total Value</p>
                   <p className="text-sm font-medium text-gray-900">
                     {purchase.unitPrice
-                      ? `${(
-                          parseFloat(purchase.weight) *
-                          parseFloat(purchase.unitPrice)
-                        ).toLocaleString()} RWF`
+                      ? `${calculateTotalValue()} RWF`
                       : "N/A"}
                   </p>
                 </div>
@@ -213,7 +258,13 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-500">Location</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {purchase.supplier?.district}, {purchase.supplier?.sector}
+                    {purchase.supplier?.district || "N/A"}, {purchase.supplier?.sector || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">TIN Number</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {purchase.supplier?.tinNumber || "N/A"}
                   </p>
                 </div>
               </div>
@@ -240,11 +291,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-500">Remaining</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {(
-                      parseFloat(purchase.weight) -
-                      parseFloat(purchase.totalDelivered)
-                    ).toLocaleString()}{" "}
-                    Kg
+                    {remainingWeight.toLocaleString()} Kg
                   </p>
                 </div>
                 <div>
@@ -253,22 +300,18 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                     <div
                       className="bg-blue-600 h-2.5 rounded-full"
                       style={{
-                        width: `${Math.min(
-                          100,
-                          (parseFloat(purchase.totalDelivered) /
-                            parseFloat(purchase.weight)) *
-                            100
-                        )}%`,
+                        width: `${deliveryProgressPercentage}%`,
                       }}
                     ></div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    {Math.round(
-                      (parseFloat(purchase.totalDelivered) /
-                        parseFloat(purchase.weight)) *
-                        100
-                    )}
-                    % complete
+                    {Math.round(deliveryProgressPercentage)}% complete
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Total Paid</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {parseFloat(purchase.totalPaid).toLocaleString()} RWF
                   </p>
                 </div>
               </div>
@@ -287,11 +330,11 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
             <div className="p-4">
               <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                 <TruckIcon className="w-4 h-4 mr-2 text-gray-500" />
-                Deliveries ({purchase.deliveries?.length || 0})
+                Deliveries ({deliveries.length})
               </h4>
 
-              {purchase.deliveries?.length > 0 ? (
-                <div className="border rounded-md overflow-hidden">
+              {deliveries.length > 0 ? (
+                <div className="border rounded-md overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -302,7 +345,16 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                           Status
                         </th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Weight (Kg)
+                          Driver
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Quantity (Kg)
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Product
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Warehouse
                         </th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Delivery Date
@@ -310,7 +362,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {purchase.deliveries.map((delivery) => (
+                      {deliveries.map((delivery) => (
                         <tr key={delivery.id} className="hover:bg-gray-50">
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                             {delivery.deliveryReference}
@@ -325,13 +377,20 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                             </span>
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            {parseFloat(delivery.weight).toLocaleString()}
+                            {delivery.driver?.user?.profile?.names || "N/A"}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {parseFloat(delivery.quantity || '0').toLocaleString()}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {delivery.product?.name || "N/A"}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {delivery.warehouse?.name || "N/A"}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                             {delivery.deliveredAt
-                              ? new Date(
-                                  delivery.deliveredAt
-                                ).toLocaleDateString()
+                              ? new Date(delivery.deliveredAt).toLocaleDateString()
                               : "Not delivered"}
                           </td>
                         </tr>
@@ -350,11 +409,11 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
             <div className="border-t border-gray-200 p-4">
               <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                 <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
-                Payments ({purchase.payments?.length || 0})
+                Payments ({payments.length})
               </h4>
 
-              {purchase.payments?.length > 0 ? (
-                <div className="border rounded-md overflow-hidden">
+              {payments.length > 0 ? (
+                <div className="border rounded-md overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -376,7 +435,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {purchase.payments.map((payment) => (
+                      {payments.map((payment) => (
                         <tr key={payment.id} className="hover:bg-gray-50">
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                             {payment.paymentReference}
@@ -412,6 +471,82 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                 </div>
               )}
             </div>
+            
+            {/* Warehouse Information Section */}
+            {deliveries.length > 0 && deliveries[0]?.warehouse && (
+              <div className="border-t border-gray-200 p-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <Building className="w-4 h-4 mr-2 text-gray-500" />
+                  Warehouse Information
+                </h4>
+                
+                <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500">Warehouse Name</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {deliveries[0].warehouse?.name || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Location</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {deliveries[0].warehouse?.location || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Capacity</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {deliveries[0].warehouse?.capacity
+                        ? deliveries[0].warehouse.capacity.toLocaleString() + " Kg"
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {deliveries[0].warehouse?.status || "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Driver Information Section */}
+            {deliveries.length > 0 && deliveries[0]?.driver && (
+              <div className="border-t border-gray-200 p-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <User className="w-4 h-4 mr-2 text-gray-500" />
+                  Driver Information
+                </h4>
+                
+                <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500">Driver Name</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {deliveries[0].driver?.user?.profile?.names || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Driver ID</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {deliveries[0].driver?.driverId || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">License Number</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {deliveries[0].driver?.licenseNumber || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Contact</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {deliveries[0].driver?.user?.profile?.phoneNumber || "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex justify-end">

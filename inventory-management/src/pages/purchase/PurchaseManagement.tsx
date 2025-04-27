@@ -81,6 +81,35 @@ const PurchaseManagement: React.FC = () => {
     expectedDeliveryDate: "",
   });
 
+  const handleViewPurchase = async (purchase: Purchase) => {
+    try {
+      // Store the basic purchase info immediately for better UX
+      setSelectedPurchase(purchase);
+      setShowViewModal(true);
+
+      // Fetch the complete purchase details with payments and deliveries
+      const detailedPurchase = await purchaseService.getPurchaseById(
+        purchase.id
+      );
+
+      if (detailedPurchase) {
+        // Update with the detailed version that includes payments and deliveries
+        setSelectedPurchase(detailedPurchase);
+
+        // Debug: Log to see what we're getting
+        console.log("Detailed purchase:", detailedPurchase);
+        console.log("Payments count:", detailedPurchase.payments?.length || 0);
+        console.log(
+          "Deliveries count:",
+          detailedPurchase.deliveries?.length || 0
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching purchase details:", error);
+      toast.error("Failed to load complete purchase details");
+    }
+  };
+
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
@@ -89,13 +118,20 @@ const PurchaseManagement: React.FC = () => {
     // setError(null);
 
     try {
-      const purchases = await purchaseService.getAllPurchases({
+      const response = await purchaseService.getAllPurchases({
         ...filters,
         search: searchTerm,
       });
 
-      setPurchases(purchases);
-      setTotalPurchases(purchases.length);
+      if (Array.isArray(response)) {
+        setPurchases(response);
+        setTotalPurchases(response.length);
+      } else {
+        console.error("Error: API response is not an array", response);
+        toast.error("Received invalid data format from server");
+        setPurchases([]);
+        setTotalPurchases(0);
+      }
     } catch (err) {
       console.error("Error fetching purchases:", err);
       toast.info("Failed to fetch purchases. Please try again later.");
@@ -311,6 +347,7 @@ const PurchaseManagement: React.FC = () => {
   };
 
   const sortedPurchases = React.useMemo(() => {
+    if (!purchases || !Array.isArray(purchases)) return [];
     if (!sortConfig) return purchases;
 
     return [...purchases].sort((a, b) => {
@@ -681,10 +718,7 @@ const PurchaseManagement: React.FC = () => {
                   >
                     <PurchaseTable
                       purchases={paginatedPurchases}
-                      onView={(purchase) => {
-                        setSelectedPurchase(purchase);
-                        setShowViewModal(true);
-                      }}
+                      onView={handleViewPurchase}
                       onEdit={handleEditClick}
                       onDelete={handleDeleteConfirm}
                       sortConfig={sortConfig}
@@ -818,10 +852,7 @@ const PurchaseManagement: React.FC = () => {
                   <>
                     <PurchaseCards
                       purchases={paginatedPurchases}
-                      onView={(purchase) => {
-                        setSelectedPurchase(purchase);
-                        setShowViewModal(true);
-                      }}
+                      onView={handleViewPurchase}
                       onEdit={handleEditClick}
                       onDelete={handleDeleteConfirm}
                     />
