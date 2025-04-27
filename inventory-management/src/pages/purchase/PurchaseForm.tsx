@@ -123,8 +123,8 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
                 </option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
-                    {product.name}{" "}
-                    {product.description ? `- ${product.description}` : ""}
+                    {product.name} ({product.type})
+                    {product.description && ` - ${product.description}`}
                   </option>
                 ))}
               </select>

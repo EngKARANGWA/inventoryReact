@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   ArrowRight,
   FileText,
+  TruckIcon,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -265,7 +266,7 @@ const PurchaseManagement: React.FC = () => {
         supplierId: Number(formData.supplierId),
         productId: Number(formData.productId),
         weight: parseFloat(formData.weight),
-        unitPrice: parseFloat(formData.unitPrice), // Add this line
+        unitPrice: parseFloat(formData.unitPrice),
         description: formData.description,
         expectedDeliveryDate: formData.expectedDeliveryDate || undefined,
       };
@@ -275,6 +276,7 @@ const PurchaseManagement: React.FC = () => {
           description: purchaseData.description,
           expectedDeliveryDate: purchaseData.expectedDeliveryDate,
           weight: purchaseData.weight,
+          unitPrice: purchaseData.unitPrice,
         };
 
         const updatedPurchase = await purchaseService.updatePurchase(
@@ -299,7 +301,7 @@ const PurchaseManagement: React.FC = () => {
     } catch (err: any) {
       console.error("Error saving purchase:", err);
       toast.error(
-        err.response?.data?.error || err.message || "Failed to save purchase"
+        err.response?.data?.message || err.message || "Failed to save purchase"
       );
     } finally {
       setIsSubmitting(false);
@@ -448,50 +450,62 @@ const PurchaseManagement: React.FC = () => {
                     <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
                   </div>
                 </div>
-                <div className="mt-2 text-xs text-gray-500">
-                  Total value:{" "}
-                  {loading ? "..." : `${totalAmount.toLocaleString()} RWF`}
-                </div>
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Approved Purchases
+                      Completed Deliveries
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
                       {loading ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        approvedPurchases
+                        purchases.filter(
+                          (p) => p.status === "delivery_complete"
+                        ).length
                       )}
                     </p>
                   </div>
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <Check className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+                    <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
                   {loading
                     ? "..."
                     : `${(
-                        (approvedPurchases / totalPurchases) * 100 || 0
+                        (purchases.filter(
+                          (p) => p.status === "delivery_complete"
+                        ).length /
+                          totalPurchases) *
+                          100 || 0
                       ).toFixed(1)}% of total`}
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
+              {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Total Weight
+                      Paid Purchases Weight
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
                       {loading ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        totalWeight.toLocaleString()
+                        purchases
+                          .filter(
+                            (p) =>
+                              p.status === "payment_completed" ||
+                              p.status === "all_completed"
+                          )
+                          .reduce(
+                            (sum, p) => sum + parseFloat(p.weight || "0"),
+                            0
+                          )
+                          .toLocaleString()
                       )}
                     </p>
                   </div>
@@ -502,19 +516,19 @@ const PurchaseManagement: React.FC = () => {
                 <div className="mt-2 text-xs text-gray-500">
                   Measured in kilograms (Kg)
                 </div>
-              </div>
+              </div> */}
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Total Amount
+                      Total Amount Paid
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
                       {loading ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        totalAmount.toLocaleString()
+                        `${totalAmount.toLocaleString()} RWF`
                       )}
                     </p>
                   </div>

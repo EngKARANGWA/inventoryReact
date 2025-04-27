@@ -33,7 +33,8 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
   sortConfig,
   requestSort,
 }) => {
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status?: string) => {
+    if (!status) return <AlertTriangle className="w-4 h-4 text-gray-500" />
     switch (status.toLowerCase()) {
       case "all_completed":
       case "completed":
@@ -55,7 +56,8 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
+    if (!status) return "bg-purple-100 text-purple-800"
     switch (status.toLowerCase()) {
       case "all_completed":
       case "completed":

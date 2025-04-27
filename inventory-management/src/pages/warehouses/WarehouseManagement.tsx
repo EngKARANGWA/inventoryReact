@@ -439,7 +439,7 @@ const WarehouseManagement: React.FC = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
@@ -525,7 +525,7 @@ const WarehouseManagement: React.FC = () => {
                   {totalOccupancy.toLocaleString()} KGs occupied
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Controls Bar */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">

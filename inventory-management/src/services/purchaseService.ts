@@ -26,7 +26,11 @@ export interface Supplier {
 export interface Product {
   id: number;
   name: string;
+  type: string;
   description: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Payment {
@@ -108,7 +112,7 @@ export interface Delivery {
   driver: Driver;
   warehouse: Warehouse;
   product: Product;
-  weight?: string; // Keep for backward compatibility
+  weight?: string;
 }
 
 export interface Purchase {
@@ -132,9 +136,9 @@ export interface Purchase {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  supplier_id?: number; // Added for API compatibility
-  product_id?: number; // Added for API compatibility
-  blocker_id?: number | null; // Added for API compatibility
+  supplier_id?: number;
+  product_id?: number;
+  blocker_id?: number | null;
   supplier: Supplier;
   product?: Product;
   payments: Payment[];
@@ -194,9 +198,20 @@ export const purchaseService = {
   getAllProducts: async (): Promise<Product[]> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/products`);
-      return response.data;
+
+      if (
+        response.data &&
+        response.data.success &&
+        Array.isArray(response.data.data)
+      ) {
+        return response.data.data;
+      }
+
+      console.error("Unexpected API response format:", response.data);
+      return [];
     } catch (error) {
       console.error("Error fetching products:", error);
+      // toast.error("Failed to load products");
       return [];
     }
   },
@@ -209,13 +224,28 @@ export const purchaseService = {
         `${API_BASE_URL}/purchases`,
         purchaseData
       );
-      // Fetch the complete purchase after creation
-      const completePurchase = await axios.get(
-        `${API_BASE_URL}/purchases/${response.data.id}`
-      );
-      return completePurchase.data;
+
+      if (response.data && response.data.success && response.data.data) {
+        try {
+          const completePurchase = await axios.get(
+            `${API_BASE_URL}/purchases/${response.data.data.id}`
+          );
+          return completePurchase.data.data;
+        } catch (fetchError) {
+          console.error("Error fetching complete purchase:", fetchError);
+          return response.data.data;
+        }
+      }
+      throw new Error("Unexpected API response format");
     } catch (error) {
       console.error("Error creating purchase:", error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to create purchase"
+        );
+      }
       throw error;
     }
   },
@@ -301,9 +331,21 @@ export const purchaseService = {
         `${API_BASE_URL}/purchases/${id}`,
         purchaseData
       );
-      return response.data;
+      
+      // Handle nested response structure
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      }
+      throw new Error("Unexpected API response format");
     } catch (error) {
       console.error("Error updating purchase:", error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message || 
+          error.message || 
+          "Failed to update purchase"
+        );
+      }
       throw error;
     }
   },
