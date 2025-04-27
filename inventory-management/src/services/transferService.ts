@@ -2,6 +2,22 @@ import axios from "axios";
 
 const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
+
+export interface Warehouse {
+  id: number;
+  name: string;
+  location: string;
+  capacity: number;
+  currentOccupancy: number;
+  status: string;
+  managerId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  manager: any | null;
+  scaleMonitor: any | null;
+}
+
 export interface Transfer {
   id: number;
   referenceNumber: string;
@@ -93,18 +109,12 @@ export const transferService = {
   },
 
   getAllTransfers: async (
-    options: TransferFilterOptions = {}
+    // options: TransferFilterOptions = {}
   ): Promise<TransferResponse> => {
     try {
-      const params = {
-        page: options.page || 1,
-        pageSize: options.pageSize || 10,
-        includeDeleted: options.includeDeleted ? "true" : "false",
-        search: options.search,
-        status: options.status,
-      };
+      
 
-      const response = await axios.get(`${API_BASE_URL}/transfers`, { params });
+      const response = await axios.get(`${API_BASE_URL}/transfers`);
       return response.data;
     } catch (error) {
       console.error("Error fetching transfers:", error);
