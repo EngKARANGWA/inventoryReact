@@ -9,6 +9,7 @@ export interface ProductionCost {
 export interface Product {
   id: number;
   name: string;
+  type: string;
   description?: string;
   unit?: string;
 }

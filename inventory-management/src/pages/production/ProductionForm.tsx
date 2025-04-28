@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { Product, Production, ProductionCost, Warehouse } from "./types";
 
@@ -43,6 +43,57 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     usedQuantity: "",
     unitPrice: "",
   });
+
+  const [loadingPrice, setLoadingPrice] = useState(false);
+  const [totalCost, setTotalCost] = useState(0);
+
+  // Filter products by type
+  const rawMaterials = products.filter(product => product.type === "raw_material");
+  const finishedProducts = products.filter(product => product.type === "finished_product");
+
+  useEffect(() => {
+    // Calculate total cost whenever relevant fields change
+    const rawMaterialCost = formData.mainProductId && formData.usedQuantity && formData.unitPrice
+      ? parseFloat(formData.usedQuantity) * parseFloat(formData.unitPrice)
+      : 0;
+    
+    const additionalCosts = formData.productionCost.reduce(
+      (sum, cost) => sum + (cost.cost || cost.amount || cost.price || 0),
+      0
+    );
+
+    setTotalCost(rawMaterialCost + additionalCosts);
+  }, [formData.mainProductId, formData.usedQuantity, formData.unitPrice, formData.productionCost]);
+
+  const fetchAveragePrice = async (productId: string) => {
+    if (!productId) return;
+    
+    try {
+      setLoadingPrice(true);
+      const response = await fetch(
+        `https://test.gvibyequ.a2hosted.com/api/stoke-movements/average-price/${productId}`
+      );
+      const data = await response.json();
+      
+      if (data.success && data.data.averageUnitPrice) {
+        const roundedPrice = Math.round(data.data.averageUnitPrice * 100) / 100;
+        setFormData(prev => ({
+          ...prev,
+          unitPrice: roundedPrice.toString(),
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch average price:", error);
+    } finally {
+      setLoadingPrice(false);
+    }
+  };
+
+  useEffect(() => {
+    if (formData.mainProductId) {
+      fetchAveragePrice(formData.mainProductId);
+    }
+  }, [formData.mainProductId]);
 
   const handleFormChange = (
     e: React.ChangeEvent<
@@ -207,7 +258,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                       disabled={isSubmitting || loadingProducts}
                     >
                       <option value="">Select raw material (optional)</option>
-                      {products
+                      {rawMaterials
                         .filter(
                           (p) =>
                             !formData.productId ||
@@ -230,31 +281,63 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
               </div>
 
               {formData.mainProductId && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quantity Used <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="usedQuantity"
-                    value={formData.usedQuantity}
-                    onChange={handleFormChange}
-                    className={`w-full px-3 py-2 border ${
-                      formErrors.usedQuantity
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    min="0.01"
-                    step="0.01"
-                    disabled={isSubmitting}
-                    placeholder="e.g. 50.25"
-                  />
-                  {formErrors.usedQuantity && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {formErrors.usedQuantity}
-                    </p>
-                  )}
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Quantity Used <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="usedQuantity"
+                      value={formData.usedQuantity}
+                      onChange={handleFormChange}
+                      className={`w-full px-3 py-2 border ${
+                        formErrors.usedQuantity
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                      min="0.01"
+                      step="0.01"
+                      disabled={isSubmitting}
+                      placeholder="e.g. 50.25"
+                    />
+                    {formErrors.usedQuantity && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {formErrors.usedQuantity}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Unit Price
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="unitPrice"
+                        value={formData.unitPrice}
+                        onChange={handleFormChange}
+                        className={`w-full px-3 py-2 border ${
+                          formErrors.unitPrice ? "border-red-500" : "border-gray-300"
+                        } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        min="0"
+                        step="0.01"
+                        disabled={isSubmitting || loadingPrice}
+                        placeholder="Loading..."
+                      />
+                      {loadingPrice && (
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                        </div>
+                      )}
+                    </div>
+                    {formErrors.unitPrice && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {formErrors.unitPrice}
+                      </p>
+                    )}
+                  </div>
+                </>
               )}
             </div>
 
@@ -283,7 +366,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                       disabled={isSubmitting || loadingProducts}
                     >
                       <option value="">Select produced product</option>
-                      {products
+                      {finishedProducts
                         .filter(
                           (p) =>
                             !formData.mainProductId ||
@@ -328,30 +411,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                 {formErrors.quantityProduced && (
                   <p className="mt-1 text-sm text-red-600">
                     {formErrors.quantityProduced}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Unit Price (Optional)
-                </label>
-                <input
-                  type="number"
-                  name="unitPrice"
-                  value={formData.unitPrice}
-                  onChange={handleFormChange}
-                  className={`w-full px-3 py-2 border ${
-                    formErrors.unitPrice ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  min="0"
-                  step="0.01"
-                  disabled={isSubmitting}
-                  placeholder="e.g. 150.00"
-                />
-                {formErrors.unitPrice && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {formErrors.unitPrice}
                   </p>
                 )}
               </div>
@@ -454,6 +513,39 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                 Add Cost Item
               </button>
             </div>
+          </div>
+
+          {/* Total Cost Calculation */}
+          <div className="mt-4 p-4 bg-gray-50 rounded-md">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Total Production Cost:</span>
+              <span className="text-lg font-semibold">
+                {totalCost.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                RWF
+              </span>
+            </div>
+            {formData.mainProductId && formData.usedQuantity && formData.unitPrice && (
+              <div className="text-sm text-gray-600 mt-2">
+                <p>
+                  (Raw Material: {parseFloat(formData.usedQuantity)} × {parseFloat(formData.unitPrice).toFixed(2)} ={" "}
+                  {(parseFloat(formData.usedQuantity) * parseFloat(formData.unitPrice)).toFixed(2)} RWF)
+                </p>
+              </div>
+            )}
+            {formData.productionCost.length > 0 && (
+              <div className="text-sm text-gray-600 mt-1">
+                <p>
+                  (Additional Costs:{" "}
+                  {formData.productionCost
+                    .reduce((sum, cost) => sum + (cost.cost || cost.amount || cost.price || 0), 0)
+                    .toFixed(2)}{" "}
+                  RWF)
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Form Actions */}
