@@ -32,7 +32,7 @@ export interface Payment {
   };
   sale?: {
     id: number;
-    referenceNumber: string;
+    saleReference: string;
     client?: {
       id: number;
       user?: {
@@ -229,7 +229,7 @@ getAllPayments: async (): Promise<PaymentResponse> => {
       const response = await axios.get(`${API_BASE_URL}/purchases`, {
         params: { search },
       });
-      return response.data;
+      return response.data.data || [];
     } catch (error) {
       console.error("Error fetching purchases:", error);
       return [];

@@ -75,7 +75,6 @@ export interface CreateDeliveryData {
   direction: "in" | "out";
   quantity: number;
   driverId: number;
-  productId: number;
   warehouseId: number;
   saleId?: number;
   purchaseId?: number;

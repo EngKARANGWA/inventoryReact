@@ -27,12 +27,13 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const [purchasesLoading, setPurchasesLoading] = useState(false);
   const [salesLoading, setSalesLoading] = useState(false);
   const [purchasesOptions, setPurchasesOptions] = useState<
-    { value: number; label: string }[]
+    { value: number; label: string; totalPaid: number; weight: number; unitPrice: number }[]
   >([]);
   const [salesOptions, setSalesOptions] = useState<
-    { value: number; label: string }[]
+    { value: number; label: string; totalPaid: number; quantity: number; unitPrice: number }[]
   >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [remainingAmount, setRemainingAmount] = useState<number | null>(null);
 
   useEffect(() => {
     if (payment) {
@@ -50,25 +51,54 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   useEffect(() => {
     if (formData.payableType === "purchase") {
       fetchPurchases();
-    }
-  }, [formData.payableType]);
-
-  useEffect(() => {
-    if (formData.payableType === "sale") {
+    } else if (formData.payableType === "sale") {
       fetchSales();
     }
   }, [formData.payableType]);
 
+  useEffect(() => {
+    if (formData.payableType === "purchase" && formData.purchaseId) {
+      const selectedPurchase = purchasesOptions.find(
+        (p) => p.value.toString() === formData.purchaseId
+      );
+      if (selectedPurchase) {
+        const totalAmount = selectedPurchase.weight * selectedPurchase.unitPrice;
+        const remaining = totalAmount - selectedPurchase.totalPaid;
+        setRemainingAmount(remaining > 0 ? remaining : 0);
+      }
+    } else if (formData.payableType === "sale" && formData.saleId) {
+      const selectedSale = salesOptions.find(
+        (s) => s.value.toString() === formData.saleId
+      );
+      if (selectedSale) {
+        const totalAmount = selectedSale.quantity * selectedSale.unitPrice;
+        const remaining = totalAmount - selectedSale.totalPaid;
+        setRemainingAmount(remaining > 0 ? remaining : 0);
+      }
+    } else {
+      setRemainingAmount(null);
+    }
+  }, [formData.purchaseId, formData.saleId, purchasesOptions, salesOptions]);
+
+
   const fetchPurchases = async () => {
     setPurchasesLoading(true);
     try {
-      const purchases = await paymentService.getPurchases("");
+      const response = await paymentService.getPurchases("");
+      const purchases = response || [];
+      const filteredPurchases = purchases.filter(
+        (p: any) => p.status !== "delivery_complete" && p.status !== "completed"
+      );
+      
       setPurchasesOptions(
-        purchases.map((purchase) => ({
+        filteredPurchases.map((purchase: any) => ({
           value: purchase.id,
           label: `${purchase.purchaseReference} - ${
             purchase.supplier?.user?.profile?.names || "Unknown"
           } (${purchase.description})`,
+          totalPaid: parseFloat(purchase.totalPaid) || 0,
+          weight: parseFloat(purchase.weight) || 0,
+          unitPrice: parseFloat(purchase.unitPrice) || 0
         }))
       );
     } catch (error) {
@@ -81,13 +111,21 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const fetchSales = async () => {
     setSalesLoading(true);
     try {
-      const sales = await paymentService.getSales("");
+      const response = await paymentService.getSales("");
+      const sales = response || [];
+      const filteredSales = sales.filter(
+        (s: any) => s.status !== "completed" && s.status !== "payment_complete"
+      );
+      
       setSalesOptions(
-        sales.map((sale) => ({
+        filteredSales.map((sale: any) => ({
           value: sale.id,
-          label: `${sale.referenceNumber} - ${
+          label: `${sale.saleReference} - ${
             sale.client?.user?.profile?.names || "Unknown"
           }`,
+          totalPaid: parseFloat(sale.totalPaid) || 0,
+          quantity: parseFloat(sale.quantity) || 0,
+          unitPrice: parseFloat(sale.unitPrice) || 0
         }))
       );
     } catch (error) {
@@ -162,16 +200,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   };
 
-//   const getPaymentMethodIcon = (method: string) => {
-//     switch (method) {
-//       case "bank_transfer": return <CreditCard className="w-4 h-4 text-blue-500" />;
-//       case "mobile_money": return <DollarSign className="w-4 h-4 text-green-500" />;
-//       case "cash": return <DollarSign className="w-4 h-4 text-purple-500" />;
-//       case "cheque": return <CreditCard className="w-4 h-4 text-amber-500" />;
-//       default: return <CreditCard className="w-4 h-4 text-gray-500" />;
-//     }
-//   };
-
   return (
     <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
@@ -192,9 +220,16 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         <div className="grid grid-cols-1 gap-6">
           {/* Payable Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Payable Type <span className="text-red-500">*</span>
-            </label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Payable Type <span className="text-red-500">*</span>
+              </label>
+              {remainingAmount !== null && (
+                <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm">
+                  Remaining: {remainingAmount.toLocaleString()} RWF
+                </div>
+              )}
+            </div>
             <select
               name="payableType"
               value={formData.payableType}
@@ -238,7 +273,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
               />
               {!purchasesLoading && purchasesOptions.length === 0 && (
                 <p className="mt-1 text-sm text-red-600">
-                  No purchases available. Please add purchases first.
+                  No purchases available or all purchases are already completed.
                 </p>
               )}
             </div>
@@ -272,7 +307,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
               />
               {!salesLoading && salesOptions.length === 0 && (
                 <p className="mt-1 text-sm text-red-600">
-                  No sales available. Please add sales first.
+                  No sales available or all sales are already completed.
                 </p>
               )}
             </div>

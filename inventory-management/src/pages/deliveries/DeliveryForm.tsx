@@ -16,6 +16,42 @@ interface DeliveryFormProps {
   deliveries: Delivery[];
 }
 
+interface Warehouse {
+  id: number;
+  name: string;
+  location: string;
+}
+
+interface Driver {
+  id: number;
+  driverId: string;
+  licenseNumber: string;
+  user?: {
+    profile?: {
+      names: string;
+    };
+  };
+}
+
+interface Purchase {
+  id: number;
+  purchaseReference: string;
+  description: string;
+  product?: { name: string };
+  weight: string;
+  totalDelivered: string;
+  status?: string;
+}
+
+interface Sale {
+  id: number;
+  saleReference: string;
+  product?: { name: string };
+  quantity: string;
+  totalDelivered: string;
+  status?: string;
+}
+
 const DeliveryForm: React.FC<DeliveryFormProps> = ({
   editingDelivery,
   setShowAddForm,
@@ -29,14 +65,12 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     direction: "in" as "in" | "out",
     quantity: "",
     driverId: "",
-    productId: "",
     warehouseId: "",
     purchaseId: "",
     saleId: "",
     notes: "",
   });
 
-  const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [loadingWarehouses, setLoadingWarehouses] = useState(false);
   const [loadingPurchases, setLoadingPurchases] = useState(false);
@@ -44,26 +78,11 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   const [salesSearch, setSalesSearch] = useState("");
   const [purchasesSearch, setPurchasesSearch] = useState("");
 
-  const [products, setProducts] = useState<
-    { id: number; name: string; description: string }[]
-  >([]);
-  const [warehouses, setWarehouses] = useState<
-    { id: number; name: string; location: string }[]
-  >([]);
-  const [drivers, setDrivers] = useState<
-    { id: number; driverId: string; user: { profile?: { names: string } } }[]
-  >([]);
-  const [purchases, setPurchases] = useState<
-    {
-      id: number;
-      purchaseReference: string;
-      description: string;
-      product?: { name: string };
-    }[]
-  >([]);
-  const [sales, setSales] = useState<
-    { id: number; referenceNumber: string; product?: { name: string } }[]
-  >([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [remainingQuantity, setRemainingQuantity] = useState<number | null>(null);
 
   useEffect(() => {
     if (editingDelivery) {
@@ -71,7 +90,6 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         direction: editingDelivery.direction,
         quantity: editingDelivery.quantity.toString(),
         driverId: editingDelivery.driverId.toString(),
-        productId: editingDelivery.productId?.toString() || "",
         warehouseId: editingDelivery.warehouseId?.toString() || "",
         purchaseId: editingDelivery.purchaseId?.toString() || "",
         saleId: editingDelivery.saleId?.toString() || "",
@@ -80,23 +98,42 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     }
   }, [editingDelivery]);
 
+  useEffect(() => {
+    if (formData.direction === "in" && formData.purchaseId) {
+      const selectedPurchase = purchases.find(p => p.id.toString() === formData.purchaseId);
+      if (selectedPurchase) {
+        const totalWeight = parseFloat(selectedPurchase.weight);
+        const totalDelivered = parseFloat(selectedPurchase.totalDelivered || "0");
+        const remaining = totalWeight - totalDelivered;
+        setRemainingQuantity(remaining > 0 ? remaining : 0);
+      }
+    } else if (formData.direction === "out" && formData.saleId) {
+      const selectedSale = sales.find(s => s.id.toString() === formData.saleId);
+      if (selectedSale) {
+        const totalQuantity = parseFloat(selectedSale.quantity);
+        const totalDelivered = parseFloat(selectedSale.totalDelivered || "0");
+        const remaining = totalQuantity - totalDelivered;
+        setRemainingQuantity(remaining > 0 ? remaining : 0);
+      }
+    } else {
+      setRemainingQuantity(null);
+    }
+  }, [formData.purchaseId, formData.saleId, purchases, sales]);
+
   const fetchDropdownOptions = async () => {
     try {
-      setLoadingProducts(true);
       setLoadingDrivers(true);
       setLoadingWarehouses(true);
 
-      const [productsRes, warehousesRes, driversRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/products`),
-        axios.get(`${API_BASE_URL}/warehouse`),
-        axios.get(`${API_BASE_URL}/drivers`, {
-          params: { include: "user.profile" },
-        }),
-      ]);
+      // Fetch drivers with user profile included
+      const driversRes = await axios.get(`${API_BASE_URL}/drivers`, {
+        params: { include: "user.profile" }
+      });
+      setDrivers(driversRes.data?.data || driversRes.data || []);
 
-      setProducts(productsRes.data || []);
-      setWarehouses(warehousesRes.data || []);
-      setDrivers(driversRes.data || []);
+      // Fetch warehouses
+      const warehousesRes = await axios.get(`${API_BASE_URL}/warehouse`); // Changed from /warehouse to /warehouses
+      setWarehouses(warehousesRes.data?.data || warehousesRes.data || []);
 
       if (formData.direction === "in") {
         setLoadingPurchases(true);
@@ -106,7 +143,11 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             search: purchasesSearch
           },
         });
-        setPurchases(purchasesRes.data || []);
+        const data = purchasesRes.data?.data || purchasesRes.data || [];
+        const filteredPurchases = data.filter(
+          (p: Purchase) => p.status !== "delivery_complete" && p.status !== "completed"
+        );
+        setPurchases(filteredPurchases);
       } else if (formData.direction === "out") {
         setLoadingSales(true);
         const salesRes = await axios.get(`${API_BASE_URL}/sales`, {
@@ -115,12 +156,15 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             search: salesSearch
           },
         });
-        setSales(salesRes.data?.data || []);
+        const data = salesRes.data?.data || salesRes.data || [];
+        const filteredSales = data.filter(
+          (s: Sale) => s.status !== "completed" && s.status !== "payment_complete"
+        );
+        setSales(filteredSales);
       }
     } catch (error) {
       console.error("Error fetching dropdown options:", error);
     } finally {
-      setLoadingProducts(false);
       setLoadingDrivers(false);
       setLoadingWarehouses(false);
       setLoadingPurchases(false);
@@ -133,9 +177,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   }, [formData.direction, purchasesSearch, salesSearch]);
 
   const handleFormChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -157,7 +199,6 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         direction: formData.direction,
         quantity: parseFloat(formData.quantity),
         driverId: Number(formData.driverId),
-        productId: Number(formData.productId),
         warehouseId: Number(formData.warehouseId),
         notes: formData.notes,
         ...(formData.direction === "in" && formData.purchaseId
@@ -194,16 +235,12 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
 
   const salesOptions = sales.map((sale) => ({
     value: sale.id,
-    label: `${sale.referenceNumber || "N/A"} (${
-      sale.product?.name || "Unknown Product"
-    })`,
+    label: `${sale.saleReference} (${sale.product?.name || "Unknown Product"})`,
   }));
 
   const purchasesOptions = purchases.map((purchase) => ({
     value: purchase.id,
-    label: `${purchase.purchaseReference} (${
-      purchase.product?.name || "Unknown Product"
-    })`,
+    label: `${purchase.purchaseReference} (${purchase.product?.name || "Unknown Product"})`,
   }));
 
   return (
@@ -225,6 +262,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
 
         <form onSubmit={handleFormSubmit}>
           <div className="grid grid-cols-1 gap-6">
+            {/* Direction field remains the same */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Direction <span className="text-red-500">*</span>
@@ -242,42 +280,92 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="productId"
-                value={formData.productId}
-                onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                disabled={
-                  !!editingDelivery || isSubmitting || loadingProducts
-                }
-              >
-                <option value="">
-                  {loadingProducts
-                    ? "Loading products..."
-                    : "Select a product"}
-                </option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-              {!loadingProducts && products.length === 0 && (
-                <p className="mt-1 text-sm text-red-600">
-                  No products available
-                </p>
-              )}
-            </div>
+            {/* Purchase/Sale selection */}
+            {formData.direction === "in" ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Purchase <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  id="purchaseId"
+                  name="purchaseId"
+                  options={purchasesOptions}
+                  isLoading={loadingPurchases}
+                  onInputChange={(value) => {
+                    setPurchasesSearch(value);
+                  }}
+                  onChange={(selectedOption) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      purchaseId: selectedOption?.value.toString() || "",
+                    }));
+                  }}
+                  value={purchasesOptions.find(
+                    (option) =>
+                      option.value.toString() === formData.purchaseId
+                  )}
+                  placeholder="Search and select purchase..."
+                  className="basic-single"
+                  classNamePrefix="select"
+                  isClearable
+                  required
+                  isDisabled={isSubmitting}
+                />
+                {!loadingPurchases && purchasesOptions.length === 0 && (
+                  <p className="mt-1 text-sm text-red-600">
+                    No purchases available or all purchases are already completed.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sale <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  id="saleId"
+                  name="saleId"
+                  options={salesOptions}
+                  isLoading={loadingSales}
+                  onInputChange={(value) => {
+                    setSalesSearch(value);
+                  }}
+                  onChange={(selectedOption) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      saleId: selectedOption?.value.toString() || "",
+                    }));
+                  }}
+                  value={salesOptions.find(
+                    (option) => option.value.toString() === formData.saleId
+                  )}
+                  placeholder="Search and select sale..."
+                  className="basic-single"
+                  classNamePrefix="select"
+                  isClearable
+                  required
+                  isDisabled={isSubmitting}
+                />
+                {!loadingSales && salesOptions.length === 0 && (
+                  <p className="mt-1 text-sm text-red-600">
+                    No sales available or all sales are already completed.
+                  </p>
+                )}
+              </div>
+            )}
 
+            {/* Quantity field remains the same */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quantity (Kg) <span className="text-red-500">*</span>
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Quantity (Kg) <span className="text-red-500">*</span>
+                </label>
+                {remainingQuantity !== null && (
+                  <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm">
+                    Remaining: {remainingQuantity.toLocaleString()} Kg
+                  </div>
+                )}
+              </div>
               <input
                 type="number"
                 name="quantity"
@@ -287,9 +375,11 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 required
                 min="0.01"
                 step="0.01"
+                max={remainingQuantity?.toString() || undefined}
               />
             </div>
 
+            {/* Warehouse selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Warehouse <span className="text-red-500">*</span>
@@ -322,6 +412,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               )}
             </div>
 
+            {/* Driver selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Driver <span className="text-red-500">*</span>
@@ -343,7 +434,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 </option>
                 {drivers.map((driver) => (
                   <option key={driver.id} value={driver.id}>
-                    {driver.user?.profile?.names || "Unknown Driver"}
+                    {driver.user?.profile?.names || `Driver ${driver.driverId}`}
                   </option>
                 ))}
               </select>
@@ -354,69 +445,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               )}
             </div>
 
-            {formData.direction === "in" ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Purchase <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  id="purchaseId"
-                  name="purchaseId"
-                  options={purchasesOptions}
-                  isLoading={loadingPurchases}
-                  onInputChange={(value) => {
-                    setPurchasesSearch(value);
-                  }}
-                  onChange={(selectedOption) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      purchaseId: selectedOption?.value.toString() || "",
-                    }));
-                  }}
-                  value={purchasesOptions.find(
-                    (option) =>
-                      option.value.toString() === formData.purchaseId
-                  )}
-                  placeholder="Search and select purchase..."
-                  className="basic-single"
-                  classNamePrefix="select"
-                  isClearable
-                  required
-                  isDisabled={isSubmitting}
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sale <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  id="saleId"
-                  name="saleId"
-                  options={salesOptions}
-                  isLoading={loadingSales}
-                  onInputChange={(value) => {
-                    setSalesSearch(value);
-                  }}
-                  onChange={(selectedOption) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      saleId: selectedOption?.value.toString() || "",
-                    }));
-                  }}
-                  value={salesOptions.find(
-                    (option) => option.value.toString() === formData.saleId
-                  )}
-                  placeholder="Search and select sale..."
-                  className="basic-single"
-                  classNamePrefix="select"
-                  isClearable
-                  required
-                  isDisabled={isSubmitting}
-                />
-              </div>
-            )}
-
+            {/* Notes field remains the same */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Notes
@@ -432,6 +461,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             </div>
           </div>
 
+          {/* Submit buttons remain the same */}
           <div className="mt-6 flex justify-end space-x-3">
             <button
               type="button"
@@ -446,14 +476,12 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               disabled={
                 isSubmitting ||
-                loadingProducts ||
                 loadingDrivers ||
                 loadingWarehouses ||
                 (formData.direction === "in" && loadingPurchases) ||
                 (formData.direction === "out" && loadingSales) ||
                 !formData.quantity ||
                 !formData.driverId ||
-                !formData.productId ||
                 !formData.warehouseId ||
                 (formData.direction === "in" && !formData.purchaseId) ||
                 (formData.direction === "out" && !formData.saleId)

@@ -151,7 +151,7 @@ const PaymentTable: React.FC<PaymentTableProps> = ({
                   ) : (
                     <div className="flex items-center">
                       <span className="mr-1">Sale:</span>
-                      {payment.sale?.referenceNumber || "N/A"}
+                      {payment.sale?.saleReference || "N/A"}
                       {payment.sale?.client?.user?.profile?.names && (
                         <>
                           <span className="mx-1">-</span>
