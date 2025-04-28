@@ -115,7 +115,7 @@ const PaymentCards: React.FC<PaymentCardsProps> = ({
                   </>
                 ) : (
                   <>
-                    {payment.sale?.referenceNumber || "N/A"}
+                    {payment.sale?.saleReference || "N/A"}
                     {payment.sale?.client?.user?.profile?.names && (
                       <span className="text-xs text-gray-500 block">
                         {payment.sale.client.user.profile.names}

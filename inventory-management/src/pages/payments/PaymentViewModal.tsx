@@ -283,7 +283,7 @@ const PaymentViewModal: React.FC<PaymentViewModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-500">Sale Reference</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {payment.sale?.referenceNumber || "N/A"}
+                    {payment.sale?.saleReference || "N/A"}
                   </p>
                 </div>
                 <div>

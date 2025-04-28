@@ -7,11 +7,9 @@ import {
   ChevronDown,
   ChevronUp,
   Plus,
-  Check,
   RefreshCw,
   ShoppingCart,
   DollarSign,
-  Scale,
   Download,
   ArrowLeft,
   ArrowRight,
@@ -384,13 +382,13 @@ const PurchaseManagement: React.FC = () => {
   }, [sortedPurchases, searchTerm]);
 
   // Calculate summary statistics
-  const approvedPurchases = purchases.filter(
-    (p) => p.status === "approved"
-  ).length;
-  const totalWeight = purchases.reduce(
-    (sum, p) => sum + parseFloat(p.weight || "0"),
-    0
-  );
+  // const approvedPurchases = purchases.filter(
+  //   (p) => p.status === "approved"
+  // ).length;
+  // const totalWeight = purchases.reduce(
+  //   (sum, p) => sum + parseFloat(p.weight || "0"),
+  //   0
+  // );
   const totalAmount = purchases.reduce(
     (sum, p) =>
       sum + parseFloat(p.weight || "0") * parseFloat(p.unitPrice || "0"),

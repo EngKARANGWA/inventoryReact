@@ -22,8 +22,6 @@ import {
   AlertCircle,
   Download,
   FileText,
-  Percent,
-  HardDrive,
   Users,
 } from "lucide-react";
 import {
@@ -368,21 +366,21 @@ const WarehouseManagement: React.FC = () => {
     currentPage * pageSize
   );
 
-  // Calculate summary statistics
-  const totalWarehouses = warehouses.length;
-  const activeWarehouses = warehouses.filter(
-    (wh) => wh.status === "active"
-  ).length;
-  const totalCapacity = warehouses.reduce(
-    (sum, wh) => sum + (wh.capacity || 0),
-    0
-  );
-  const totalOccupancy = warehouses.reduce(
-    (sum, wh) => sum + (wh.currentOccupancy || 0),
-    0
-  );
-  const utilizationRate =
-    totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
+  // // Calculate summary statistics
+  // const totalWarehouses = warehouses.length;
+  // const activeWarehouses = warehouses.filter(
+  //   (wh) => wh.status === "active"
+  // ).length;
+  // const totalCapacity = warehouses.reduce(
+  //   (sum, wh) => sum + (wh.capacity || 0),
+  //   0
+  // );
+  // const totalOccupancy = warehouses.reduce(
+  //   (sum, wh) => sum + (wh.currentOccupancy || 0),
+  //   0
+  // );
+  // const utilizationRate =
+  //   totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
 
   const handleExportData = () => {
     toast.info("Data export feature will be implemented soon!");
