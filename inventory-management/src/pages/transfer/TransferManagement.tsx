@@ -5,6 +5,8 @@ import { AlertCircle, RefreshCw, Truck } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { transferService, Transfer } from "../../services/transferService";
+import { productService } from '../../services/productService';
+import { driverService } from '../../services/driverService';
 import axios from "axios";
 
 // Import the new components
@@ -24,6 +26,8 @@ const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 interface Product {
   id: number;
   name: string;
+  description: string;
+  type: string;
 }
 
 interface UserProfile {
@@ -36,6 +40,7 @@ interface User {
 
 interface Driver {
   id: number;
+  driverId: string;
   user?: User;
 }
 
@@ -59,26 +64,16 @@ const TransferManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(
-    null
-  );
+  const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTransfer, setEditingTransfer] = useState<Transfer | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productsLoading, setProductsLoading] = useState(false);
   const [driversLoading, setDriversLoading] = useState(false);
-  // Removed the unused state setter declarations
-  const [productsOptions, setProductsOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
-  const [driversOptions, setDriversOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
-  // Keep warehouses state as it will be used in the TransferForm component
-  const [warehouseOptions, setWarehouseOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
+  const [productsOptions, setProductsOptions] = useState<{ value: number; label: string }[]>([]);
+  const [driversOptions, setDriversOptions] = useState<{ value: number; label: string }[]>([]);
+  const [warehouseOptions, setWarehouseOptions] = useState<{ value: number; label: string }[]>([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [transferToDelete, setTransferToDelete] = useState<number | null>(null);
   const [viewType, setViewType] = useState<"table" | "cards">("table");
@@ -106,18 +101,6 @@ const TransferManagement: React.FC = () => {
     quantity: "",
     note: "",
   });
-
- const warehouseService = {
-  getAllWarehouses: async (): Promise<Warehouse[]> => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/warehouse`);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching warehouses:", error);
-      return [];
-    }
-  },
-};
 
   const fetchTransfers = useCallback(async () => {
     setLoading(true);
@@ -149,6 +132,44 @@ const TransferManagement: React.FC = () => {
     }
   }, [filters, searchTerm]);
 
+  const fetchDropdownOptions = useCallback(async () => {
+    try {
+      setProductsLoading(true);
+      setDriversLoading(true);
+
+      // Fetch products
+      const productsResponse = await productService.getAllProducts();
+      const formattedProducts = productsResponse.data.map((product: Product) => ({
+        value: product.id,
+        label: product.name,
+      }));
+      setProductsOptions(formattedProducts);
+
+      // Fetch warehouses
+      const warehousesResponse = await axios.get(`${API_BASE_URL}/warehouse`);
+      const formattedWarehouses = warehousesResponse.data.map((warehouse: Warehouse) => ({
+        value: warehouse.id,
+        label: `${warehouse.name} (${warehouse.location})`,
+      }));
+      setWarehouseOptions(formattedWarehouses);
+
+      // Fetch drivers
+      const driversResponse = await driverService.getAllDrivers();
+      const formattedDrivers = driversResponse.map((driver: Driver) => ({
+        value: driver.id,
+        label: driver.user?.profile?.names || `Driver ${driver.driverId}`,
+      }));
+      setDriversOptions(formattedDrivers);
+
+    } catch (error) {
+      console.error("Error fetching dropdown options:", error);
+      toast.error("Failed to load form options");
+    } finally {
+      setProductsLoading(false);
+      setDriversLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTransfers();
   }, [fetchTransfers]);
@@ -157,76 +178,7 @@ const TransferManagement: React.FC = () => {
     if (showAddForm) {
       fetchDropdownOptions();
     }
-  }, [showAddForm]);
-
-  const fetchDropdownOptions = async () => {
-    try {
-      setProductsLoading(true);
-      setDriversLoading(true);
-
-      const [products, warehouses, drivers] = await Promise.all([
-        productService.getAllProducts(""), // Directly pass empty string instead of productsSearch
-        warehouseService.getAllWarehouses(),
-        driverService.getAllDrivers(""), // Directly pass empty string instead of driversSearch
-      ]);
-
-      setProductsOptions(
-        products.map((product: Product) => ({
-          value: product.id,
-          label: product.name,
-        }))
-      );
-
-      // Transform warehouses to options format for dropdowns
-      setWarehouseOptions(
-        warehouses.map((warehouse: Warehouse) => ({
-          value: warehouse.id,
-          label: warehouse.name,
-        }))
-      );
-
-      setDriversOptions(
-        drivers.map((driver: Driver) => ({
-          value: driver.id,
-          label: driver.user?.profile?.names || "Unknown Driver",
-        }))
-      );
-    } catch (error) {
-      console.error("Error fetching dropdown options:", error);
-      toast.error("Failed to load form options");
-    } finally {
-      setProductsLoading(false);
-      setDriversLoading(false);
-    }
-  };
-
-  const productService = {
-    getAllProducts: async (search = ""): Promise<Product[]> => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/products`, {
-          params: { search },
-        });
-        return response.data || [];
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        return [];
-      }
-    },
-  };
-
-  const driverService = {
-    getAllDrivers: async (search = ""): Promise<Driver[]> => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/drivers`, {
-          params: { search },
-        });
-        return response.data || [];
-      } catch (error) {
-        console.error("Error fetching drivers:", error);
-        return [];
-      }
-    },
-  };
+  }, [showAddForm, fetchDropdownOptions]);
 
   const handleRefresh = () => {
     fetchTransfers();
@@ -647,7 +599,7 @@ const TransferManagement: React.FC = () => {
           driversLoading={driversLoading}
           productsOptions={productsOptions}
           driversOptions={driversOptions}
-          warehouseOptions={warehouseOptions} // Pass the warehouse options to the form
+          warehouseOptions={warehouseOptions}
           onChange={handleFormChange}
           onSelectChange={handleSelectChange}
           onSubmit={handleFormSubmit}

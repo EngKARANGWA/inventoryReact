@@ -13,7 +13,7 @@ import ProductTable from "./ProductTable";
 import ProductCards from "./ProductCards";
 import ProductViewModal from "./ProductViewModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
-import { X } from "lucide-react";
+// import { X } from "lucide-react";
 
 interface ProductFiltersState {
   page: number;
@@ -132,7 +132,7 @@ const ProductManagement: React.FC = () => {
       await productService.deleteProduct(productId);
       toast.success("Product deleted successfully");
       setShowConfirmDelete(null);
-      fetchProducts(); // Refresh the list
+      await fetchProducts(); // Refresh the list after delete
     } catch (err: any) {
       console.error("Error deleting product:", err);
       toast.error(err.message || "Failed to delete product");
@@ -146,7 +146,8 @@ const ProductManagement: React.FC = () => {
 
     try {
       if (editingProduct) {
-        // const updatedProduct = await productService.updateProduct(editingProduct.id, formData);
+        // Fix: Actually call the updateProduct method with editingProduct.id
+        await productService.updateProduct(editingProduct.id, formData);
         toast.success("Product updated successfully");
       } else {
         await productService.createProduct(formData);
@@ -154,10 +155,12 @@ const ProductManagement: React.FC = () => {
       }
 
       setShowAddForm(false);
-      fetchProducts(); // Refresh the list
+      setEditingProduct(null); // Clear editing state
+      await fetchProducts(); // Refresh the list after creating/updating
     } catch (err: any) {
       console.error("Error saving product:", err);
       toast.error(err.message || "Failed to save product");
+      throw err; // Rethrow error to be caught by the form component
     } finally {
       setIsSubmitting(false);
     }
@@ -299,31 +302,15 @@ const ProductManagement: React.FC = () => {
         </main>
       </div>
 
+      {/* Use a single condition to control form visibility */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">
-                {editingProduct ? "Edit Product" : "Create New Product"}
-              </h2>
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="text-gray-500 hover:text-gray-700"
-                disabled={isSubmitting}
-                aria-label="Close"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <ProductForm
-              onSubmit={handleFormSubmit}
-              onClose={() => setShowAddForm(false)}
-              initialData={editingProduct || undefined}
-              isSubmitting={isSubmitting}
-            />
-          </div>
-        </div>
+        <ProductForm
+          onSubmit={handleFormSubmit}
+          onClose={() => setShowAddForm(false)}
+          initialData={editingProduct || undefined}
+          isSubmitting={isSubmitting}
+          onRefresh={fetchProducts}
+        />
       )}
 
       {showViewModal && selectedProduct && (

@@ -317,7 +317,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
                       purchase.status
                     )}`}
                   >
-                    {purchase.status.replace(/_/g, " ")}
+                    {purchase.status === "approved" ? "initiated" : purchase.status.replace(/_/g, " ")}
                   </span>
                 </div>
               </td>
