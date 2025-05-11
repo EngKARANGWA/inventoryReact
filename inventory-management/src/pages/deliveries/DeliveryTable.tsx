@@ -64,6 +64,15 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
     }).format(num);
   };
 
+  const formatCurrency = (amount: string | number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "RWF",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Number(amount));
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -188,7 +197,7 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                 onClick={() => requestSort("quantity")}
               >
                 <div className="flex items-center">
-                  Quantity (Kg)
+                  Quantity
                   {sortConfig?.key === "quantity" && (
                     <span className="ml-1">
                       {sortConfig.direction === "ascending" ? "↑" : "↓"}
@@ -286,7 +295,7 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                       {delivery.deliveryReference}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {new Date(
+                      ID: {delivery.id} | Created: {new Date(
                         delivery.createdAt
                       ).toLocaleDateString()}
                     </div>
@@ -294,6 +303,9 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       {delivery.product?.name || "N/A"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {delivery.product?.type}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -306,17 +318,28 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                     <div className="text-xs text-gray-500 mt-1">
                       {delivery.direction === "in"
                         ? delivery.purchase?.purchaseReference
-                        : delivery.sale?.referenceNumber}
+                        : delivery.sale?.saleReference || delivery.sale?.referenceNumber}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       {formatNumber(Number(delivery.quantity))} Kg
                     </div>
+                    <div className="text-xs text-gray-500">
+                      @ {formatCurrency(delivery.unitPrice || 0)}/Kg
+                    </div>
+                    <div className="text-xs font-medium text-green-600">
+                      Total: {formatCurrency(
+                        Number(delivery.quantity) * Number(delivery.unitPrice || 0)
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       {delivery.driver?.user?.profile?.names || "N/A"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {delivery.driver?.driverId}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -335,6 +358,9 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                           delivery.deliveredAt
                         ).toLocaleDateString()}
                       </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(delivery.deliveredAt).toLocaleTimeString()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

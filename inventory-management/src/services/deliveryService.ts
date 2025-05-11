@@ -13,6 +13,7 @@ export interface Delivery {
   purchaseId: number | null;
   saleId: number | null;
   driverId: number;
+  unitPrice: string;
   productId: number | null;
   warehouseId: number | null;
   createdAt: string;
@@ -31,6 +32,7 @@ export interface Delivery {
   product?: {
     id: number;
     name: string;
+    type: string;
     description: string;
   } | null;
   warehouse?: {

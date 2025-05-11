@@ -11,7 +11,7 @@ import { saleService } from "../../services/saleService";
 // Import the new components
 import { SalesStats } from "./SalesStats";
 import { SalesFilters } from "./SalesFilters";
-import { SalesTable } from "./SalesTable";
+import SalesTable from "./SalesTable";
 import { SaleForm } from "./SaleForm";
 import { SalesCards } from "./SalesCards";
 import { SaleDetailsModal } from "./SaleDetailsModal";
@@ -20,6 +20,36 @@ import { SalesPagination } from "./SalesPagination";
 
 const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
+
+export interface Sale {
+  id: number;
+  saleReference: string | null;
+  quantity: string;
+  unitPrice: string;
+  status: string;
+  expectedDeliveryDate: string;
+  totalPaid: string;
+  totalDelivered: string;
+  note: string;
+  createdAt: string;
+  product: {
+    id: number;
+    name: string;
+    type: string;
+  };
+  saler: {
+    id: number;
+    user: {
+      profile: {
+        names: string;
+      };
+    };
+  };
+  client: {
+    id: number;
+    clientId: string;
+  } | null;
+}
 interface Product {
   id: number;
   name: string;
@@ -41,7 +71,7 @@ interface Blocker {
 }
 
 interface SortConfig {
-  key: string;
+  key: keyof Sale;
   direction: "ascending" | "descending";
 }
 
@@ -322,7 +352,7 @@ const SaleManagement: React.FC = () => {
     }
   };
 
-  const requestSort = (key: string) => {
+  const requestSort = (key: keyof Sale) => {
     let direction: "ascending" | "descending" = "ascending";
     if (
       sortConfig &&
@@ -506,14 +536,16 @@ const SaleManagement: React.FC = () => {
                 currentPage={currentPage}
                 pageSize={pageSize}
                 totalPages={totalPages}
+                totalItems={filteredSales.length}
                 handlePageChange={handlePageChange}
-                handleEditClick={handleEditClick}
-                handleDeleteConfirm={handleDeleteConfirm}
-                setSelectedSale={setSelectedSale}
-                setShowViewModal={setShowViewModal}
+                onView={(sale) => {
+                  setSelectedSale(sale);
+                  setShowViewModal(true);
+                }}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteConfirm}
                 sortConfig={sortConfig}
                 requestSort={requestSort}
-                getStatusBadge={getStatusBadge}
               />
             ) : (
               <SalesCards

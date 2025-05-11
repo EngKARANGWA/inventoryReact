@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import Select from "react-select";
 import { Delivery, deliveryService } from "../../services/deliveryService";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
@@ -14,6 +15,7 @@ interface DeliveryFormProps {
   setDeliveries: React.Dispatch<React.SetStateAction<Delivery[]>>;
   setTotalDeliveries: React.Dispatch<React.SetStateAction<number>>;
   deliveries: Delivery[];
+  onSuccess?: () => void; // Add this new prop
 }
 
 interface Warehouse {
@@ -60,6 +62,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   setDeliveries,
   setTotalDeliveries,
   deliveries,
+  onSuccess,
 }) => {
   const [formData, setFormData] = useState({
     direction: "in" as "in" | "out",
@@ -132,7 +135,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
       setDrivers(driversRes.data?.data || driversRes.data || []);
 
       // Fetch warehouses
-      const warehousesRes = await axios.get(`${API_BASE_URL}/warehouse`); // Changed from /warehouse to /warehouses
+      const warehousesRes = await axios.get(`${API_BASE_URL}/warehouse`);
       setWarehouses(warehousesRes.data?.data || warehousesRes.data || []);
 
       if (formData.direction === "in") {
@@ -164,6 +167,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
       }
     } catch (error) {
       console.error("Error fetching dropdown options:", error);
+      toast.error("Failed to load dropdown options");
     } finally {
       setLoadingDrivers(false);
       setLoadingWarehouses(false);
@@ -219,15 +223,35 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             d.id === editingDelivery.id ? updatedDelivery : d
           )
         );
+        toast.success("Delivery updated successfully");
       } else {
         const newDelivery = await deliveryService.createDelivery(deliveryData);
         setDeliveries([newDelivery, ...deliveries]);
         setTotalDeliveries((prev) => prev + 1);
+        toast.success("Delivery created successfully");
       }
 
       setShowAddForm(false);
+      
+      // Call the onSuccess callback to refresh the list
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err: any) {
       console.error("Error saving delivery:", err);
+      
+      // Handle INSUFFICIENT_STOCK error specifically
+      if (err.response?.data?.code === "INSUFFICIENT_STOCK") {
+        const errorData = err.response.data;
+        toast.error(
+          `Insufficient stock available. Current: ${errorData.message.match(/Current: (\d+\.?\d*)/)?.[1] || 'N/A'} Kg, Required: ${errorData.message.match(/Required: (\d+\.?\d*)/)?.[1] || formData.quantity} Kg`,
+          {
+            autoClose: 7000, // Show for longer time
+          }
+        );
+      } else {
+        toast.error(err.response?.data?.message || err.message || "Failed to save delivery");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -262,7 +286,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
 
         <form onSubmit={handleFormSubmit}>
           <div className="grid grid-cols-1 gap-6">
-            {/* Direction field remains the same */}
+            {/* Direction field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Direction <span className="text-red-500">*</span>
@@ -354,7 +378,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               </div>
             )}
 
-            {/* Quantity field remains the same */}
+            {/* Quantity field */}
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-sm font-medium text-gray-700">
@@ -377,6 +401,11 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 step="0.01"
                 max={remainingQuantity?.toString() || undefined}
               />
+              {remainingQuantity !== null && Number(formData.quantity) > remainingQuantity && (
+                <p className="mt-1 text-sm text-red-600">
+                  Quantity exceeds remaining amount ({remainingQuantity.toLocaleString()} Kg)
+                </p>
+              )}
             </div>
 
             {/* Warehouse selection */}
@@ -445,7 +474,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               )}
             </div>
 
-            {/* Notes field remains the same */}
+            {/* Notes field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Notes
@@ -461,7 +490,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             </div>
           </div>
 
-          {/* Submit buttons remain the same */}
+          {/* Submit buttons */}
           <div className="mt-6 flex justify-end space-x-3">
             <button
               type="button"
@@ -484,7 +513,8 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 !formData.driverId ||
                 !formData.warehouseId ||
                 (formData.direction === "in" && !formData.purchaseId) ||
-                (formData.direction === "out" && !formData.saleId)
+                (formData.direction === "out" && !formData.saleId) ||
+                (remainingQuantity !== null && Number(formData.quantity) > remainingQuantity)
               }
             >
               {isSubmitting ? (

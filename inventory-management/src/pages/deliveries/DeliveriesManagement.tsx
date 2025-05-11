@@ -1,4 +1,3 @@
-// DeliveryManagement.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
@@ -95,6 +94,7 @@ const DeliveryManagement: React.FC = () => {
   };
 
   const handleAddClick = () => {
+    setEditingDelivery(null);
     setShowAddForm(true);
   };
 
@@ -111,13 +111,14 @@ const DeliveryManagement: React.FC = () => {
     try {
       setIsSubmitting(true);
       await deliveryService.deleteDelivery(deliveryId);
-      setDeliveries(deliveries.filter((d) => d.id !== deliveryId));
-      setTotalDeliveries(totalDeliveries - 1);
       toast.success("Delivery deleted successfully");
       setShowConfirmDelete(null);
+      
+      // Refresh the list after deleting
+      fetchDeliveries();
     } catch (err: any) {
       console.error("Error deleting delivery:", err);
-      toast.error(err.message || "Failed to delete delivery");
+      toast.error(err.response?.data?.message || err.message || "Failed to delete delivery");
     } finally {
       setIsSubmitting(false);
     }
@@ -207,6 +208,12 @@ const DeliveryManagement: React.FC = () => {
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+
+  // Handler for successful form submission
+  const handleFormSuccess = () => {
+    fetchDeliveries();
+    setEditingDelivery(null);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -309,6 +316,7 @@ const DeliveryManagement: React.FC = () => {
           setDeliveries={setDeliveries}
           setTotalDeliveries={setTotalDeliveries}
           deliveries={deliveries}
+          onSuccess={handleFormSuccess}
         />
       )}
 
