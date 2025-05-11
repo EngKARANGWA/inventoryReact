@@ -1,5 +1,16 @@
 import React from "react";
-import { Calendar, Eye, Edit2, Trash2, CheckCircle, X, Clock, CreditCard, Truck, AlertTriangle } from "lucide-react";
+import {
+  Calendar,
+  Eye,
+  Edit2,
+  Trash2,
+  CheckCircle,
+  X,
+  Clock,
+  CreditCard,
+  Truck,
+  AlertTriangle,
+} from "lucide-react";
 
 interface Sale {
   id: number;
@@ -103,17 +114,17 @@ const SalesTable: React.FC<SalesTableProps> = ({
   const getDeliveryPercentage = (sale: Sale) => {
     const totalQuantity = parseFloat(sale.quantity);
     const deliveredQuantity = parseFloat(sale.totalDelivered || "0");
-    
+
     if (totalQuantity <= 0) return 0;
     return Math.min(100, Math.round((deliveredQuantity / totalQuantity) * 100));
   };
 
   const getPaymentPercentage = (sale: Sale) => {
     if (!sale.unitPrice) return 0;
-    
+
     const totalValue = parseFloat(sale.quantity) * parseFloat(sale.unitPrice);
     const paidAmount = parseFloat(sale.totalPaid || "0");
-    
+
     if (totalValue <= 0) return 0;
     return Math.min(100, Math.round((paidAmount / totalValue) * 100));
   };
@@ -223,7 +234,9 @@ const SalesTable: React.FC<SalesTableProps> = ({
                   {parseFloat(sale.quantity).toLocaleString()} Kg
                 </div>
                 <div className="text-xs text-gray-500">
-                  Delivered: {parseFloat(sale.totalDelivered || "0").toLocaleString()} Kg ({getDeliveryPercentage(sale)}%)
+                  Delivered:{" "}
+                  {parseFloat(sale.totalDelivered || "0").toLocaleString()} Kg (
+                  {getDeliveryPercentage(sale)}%)
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                   <div
@@ -234,13 +247,21 @@ const SalesTable: React.FC<SalesTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">
-                  {sale.unitPrice ? `${parseFloat(sale.unitPrice).toLocaleString()} RWF/Kg` : "N/A"}
+                  {sale.unitPrice
+                    ? `${parseFloat(sale.unitPrice).toLocaleString()} RWF/Kg`
+                    : "N/A"}
                 </div>
                 <div className="text-xs text-gray-500">
-                  Total Value: {sale.unitPrice ? `${(parseFloat(sale.quantity) * parseFloat(sale.unitPrice)).toLocaleString()} RWF` : "N/A"}
+                  Total Value:{" "}
+                  {sale.unitPrice
+                    ? `${(
+                        parseFloat(sale.quantity) * parseFloat(sale.unitPrice)
+                      ).toLocaleString()} RWF`
+                    : "N/A"}
                 </div>
                 <div className="text-xs text-gray-500">
-                  Paid: {formatCurrency(sale.totalPaid)} ({getPaymentPercentage(sale)}%)
+                  Paid: {formatCurrency(sale.totalPaid)} (
+                  {getPaymentPercentage(sale)}%)
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                   <div
@@ -264,14 +285,26 @@ const SalesTable: React.FC<SalesTableProps> = ({
                       const today = new Date();
                       const deliveryDate = new Date(sale.expectedDeliveryDate);
                       const diffTime = deliveryDate.getTime() - today.getTime();
-                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      const diffDays = Math.ceil(
+                        diffTime / (1000 * 60 * 60 * 24)
+                      );
 
                       if (diffDays > 0) {
-                        return <span className="text-blue-600">{diffDays} days remaining</span>;
+                        return (
+                          <span className="text-blue-600">
+                            {diffDays} days remaining
+                          </span>
+                        );
                       } else if (diffDays < 0) {
-                        return <span className="text-red-600">{Math.abs(diffDays)} days overdue</span>;
+                        return (
+                          <span className="text-red-600">
+                            {Math.abs(diffDays)} days overdue
+                          </span>
+                        );
                       } else {
-                        return <span className="text-green-600">Due today</span>;
+                        return (
+                          <span className="text-green-600">Due today</span>
+                        );
                       }
                     })()}
                   </div>
@@ -281,9 +314,13 @@ const SalesTable: React.FC<SalesTableProps> = ({
                 <div className="flex items-center">
                   {getStatusIcon(sale.status)}
                   <span
-                    className={`ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sale.status)}`}
+                    className={`ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                      sale.status
+                    )}`}
                   >
-                    {sale.status || "N/A"}
+                    {sale.status === "approved"
+                      ? "Initiated"
+                      : sale.status || "N/A"}
                   </span>
                 </div>
               </td>

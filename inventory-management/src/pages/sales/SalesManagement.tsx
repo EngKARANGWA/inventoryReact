@@ -231,7 +231,7 @@ const SaleManagement: React.FC = () => {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+  
     try {
       const saleData = {
         productId: Number(formData.productId),
@@ -244,7 +244,7 @@ const SaleManagement: React.FC = () => {
         ...(formData.clientId && { clientId: Number(formData.clientId) }),
         ...(formData.blockerId && { blockerId: Number(formData.blockerId) }),
       };
-
+  
       if (editingSale) {
         const updatedSale = await saleService.updateSale(editingSale.id, {
           quantity: parseFloat(formData.quantity),
@@ -259,8 +259,9 @@ const SaleManagement: React.FC = () => {
         setTotalSales(totalSales + 1);
         toast.success("Sale created successfully");
       }
-
+  
       setShowAddForm(false);
+      fetchSales(); // Refresh the list after successful operation
     } catch (err: any) {
       console.error("Error saving sale:", err);
       toast.error(err.response?.data?.message || "Failed to save sale");
