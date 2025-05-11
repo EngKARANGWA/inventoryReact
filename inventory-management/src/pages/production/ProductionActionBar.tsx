@@ -52,11 +52,16 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
   onRefresh,
   onAddClick,
   products,
+  warehouses,
   filters,
   onFilterChange,
   onApplyFilters,
   onClearFilters,
 }) => {
+  // Separate products by type for better filtering
+  const finishedProducts = products.filter(p => p.type === 'finished_product');
+  const rawMaterials = products.filter(p => p.type === 'raw_material');
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -152,19 +157,20 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Product Filter */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Finished Product Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Produced Product
+                Finished Product
               </label>
               <select
                 name="productId"
                 value={filters.productId?.toString() || ""}
+                onChange={onFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               >
-                <option value="">All Products</option>
-                {products.map((product) => (
+                <option value="">All Finished Products</option>
+                {finishedProducts.map((product) => (
                   <option key={product.id} value={product.id}>
                     {product.name}
                   </option>
@@ -179,12 +185,12 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
               </label>
               <select
                 name="mainProductId"
-                value={filters.mainProductId || ""}
+                value={filters.mainProductId?.toString() || ""}
                 onChange={onFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="">All Raw Materials</option>
-                {products.map((product) => (
+                {rawMaterials.map((product) => (
                   <option key={product.id} value={product.id}>
                     {product.name}
                   </option>
@@ -195,26 +201,48 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
             {/* Date Range Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date Range
+                Start Date
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  name="startDate"
-                  value={filters.startDate || ""}
-                  onChange={onFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  placeholder="Start Date"
-                />
-                <input
-                  type="date"
-                  name="endDate"
-                  value={filters.endDate || ""}
-                  onChange={onFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  placeholder="End Date"
-                />
-              </div>
+              <input
+                type="date"
+                name="startDate"
+                value={filters.startDate || ""}
+                onChange={onFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                End Date
+              </label>
+              <input
+                type="date"
+                name="endDate"
+                value={filters.endDate || ""}
+                onChange={onFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+
+            {/* Warehouse Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Warehouse
+              </label>
+              <select
+                name="warehouseId"
+                value={filters.warehouseId?.toString() || ""}
+                onChange={onFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                <option value="">All Warehouses</option>
+                {warehouses.map((warehouse) => (
+                  <option key={warehouse.id} value={warehouse.id}>
+                    {warehouse.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

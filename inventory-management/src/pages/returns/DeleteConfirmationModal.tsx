@@ -1,5 +1,7 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
+import { toast } from "react-toastify";
+
 
 interface DeleteConfirmationModalProps {
   returnId: number;
@@ -14,6 +16,15 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   onConfirm,
   isSubmitting,
 }) => {
+  const handleConfirm = async () => {
+    try {
+      await onConfirm(returnId);
+      toast.success("Return deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete return");
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -35,7 +46,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
             Cancel
           </button>
           <button
-            onClick={() => onConfirm(returnId)}
+            onClick={handleConfirm}
             className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
             disabled={isSubmitting}
           >

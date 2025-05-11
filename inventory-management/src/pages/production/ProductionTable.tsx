@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye, Edit2, Trash2, ArrowLeft, ArrowRight } from "lucide-react";
+import { Eye, Edit2, Trash2, ArrowLeft, ArrowRight, Package, AlertTriangle } from "lucide-react";
 import { Production } from "./types";
 import { formatCurrency, formatDate, formatNumber } from "./utils";
 
@@ -36,14 +36,20 @@ const ProductionTable: React.FC<ProductionTableProps> = ({
 }) => {
   const columns = [
     { key: "referenceNumber", label: "Reference", sortable: true },
-    { key: "product", label: "Product", sortable: true },
-    { key: "quantityProduced", label: "Quantity", sortable: true },
+    { key: "product", label: "Product Details", sortable: true },
+    { key: "inputOutput", label: "Input/Output", sortable: false },
+    { key: "efficiency", label: "Efficiency", sortable: true },
+    { key: "packaging", label: "Packaging", sortable: false },
+    { key: "costs", label: "Costs", sortable: false },
     { key: "date", label: "Date", sortable: true },
-    { key: "unitPrice", label: "Unit Price", sortable: true },
     { key: "actions", label: "Actions", sortable: false },
   ];
 
-// 
+  const getEfficiencyColor = (efficiency: number) => {
+    if (efficiency >= 90) return "bg-green-100 text-green-800";
+    if (efficiency >= 70) return "bg-yellow-100 text-yellow-800";
+    return "bg-red-100 text-red-800";
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -54,7 +60,7 @@ const ProductionTable: React.FC<ProductionTableProps> = ({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
                     column.sortable ? "cursor-pointer hover:bg-gray-100" : ""
                   }`}
                   onClick={() => column.sortable && onSort(column.key)}
@@ -73,91 +79,164 @@ const ProductionTable: React.FC<ProductionTableProps> = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
-              // Skeleton rows
-              Array(5).fill(0).map((_, i) => (
-                <tr key={`skeleton-${i}`} className="animate-pulse">
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="h-6 bg-gray-200 rounded w-16 inline-block"></div>
-                  </td>
-                </tr>
-              ))
+              // Improved skeleton loading
+              Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="animate-pulse">
+                    {columns.map((col) => (
+                      <td key={`skeleton-${i}-${col.key}`} className="px-4 py-4">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      </td>
+                    ))}
+                  </tr>
+                ))
             ) : error ? (
               <tr>
                 <td colSpan={columns.length} className="px-6 py-4 text-center">
-                  <div className="flex items-center justify-center text-red-600">
-                    {error}
+                  <div className="flex items-center justify-center space-x-2 text-red-600">
+                    <AlertTriangle size={18} />
+                    <span>{error}</span>
                   </div>
                 </td>
               </tr>
             ) : productions.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-4 text-center text-gray-500">
+                <td
+                  colSpan={columns.length}
+                  className="px-6 py-4 text-center text-gray-500"
+                >
                   No production batches found.
                 </td>
               </tr>
             ) : (
               productions.map((production) => (
-                <tr key={production.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr
+                  key={production.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  {/* Reference Number */}
+                  <td className="px-4 py-4">
                     <div className="text-sm font-medium text-blue-600">
                       {production.referenceNumber}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {formatDate(production.date)}
+                    <div className="text-xs text-gray-500 mt-1">
+                      ID: {production.id}
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* Product Details */}
+                  <td className="px-4 py-4">
                     <div className="text-sm font-medium">
                       {production.product?.name || "N/A"}
                     </div>
+                    <div className="text-xs text-gray-500">
+                      Type: {production.product?.type?.replace('_', ' ') || 'N/A'}
+                    </div>
                     {production.mainProduct && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 mt-1">
                         From: {production.mainProduct.name}
                       </div>
                     )}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium">
-                      {formatNumber(production.quantityProduced)} Kg
-                    </div>
-                    {production.usedQuantity && (
-                      <div className="text-xs text-gray-500">
-                        Used: {formatNumber(production.usedQuantity)} Kg
+                  {/* Input/Output */}
+                  <td className="px-4 py-4">
+                    <div className="flex flex-col space-y-1">
+                      <div className="text-sm">
+                        <span className="font-medium">Input:</span>{" "}
+                        {production.usedQuantity ? `${formatNumber(production.usedQuantity)} kg` : "N/A"}
                       </div>
+                      <div className="text-sm">
+                        <span className="font-medium">Output:</span>{" "}
+                        {formatNumber(production.totalOutcome)} kg
+                      </div>
+                      {production.productionLoss !== undefined &&
+                        production.productionLoss > 0 && (
+                          <div className="text-xs text-red-600 flex items-center">
+                            <AlertTriangle size={12} className="mr-1" />
+                            Loss: {formatNumber(production.productionLoss)} kg
+                          </div>
+                        )}
+                    </div>
+                  </td>
+
+                  {/* Efficiency */}
+                  <td className="px-4 py-4">
+                    {production.efficiency !== null &&
+                      production.efficiency !== undefined && (
+                        <div className="flex flex-col items-start">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEfficiencyColor(
+                              Number(production.efficiency)
+                            )}`}
+                          >
+                            {Number(production.efficiency).toFixed(1)}%
+                          </span>
+                          {production.outcomesSummary && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              <div>Finished: {production.outcomesSummary.finished} kg</div>
+                              <div>Byproducts: {production.outcomesSummary.byproducts} kg</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                  </td>
+
+                  {/* Packaging */}
+                  <td className="px-4 py-4">
+                    {production.packagesSummary?.length ? (
+                      <div className="flex flex-col space-y-1">
+                        {production.packagesSummary.map((pkg, i) => (
+                          <div key={i} className="text-xs flex items-center">
+                            <Package size={12} className="mr-1 text-gray-400" />
+                            {pkg.size}: {pkg.quantity} × {formatNumber(pkg.totalWeight / pkg.quantity)} kg
+                          </div>
+                        ))}
+                        <div className="text-xs font-medium mt-1">
+                          Total: {formatNumber(production.packagesSummary.reduce((sum, pkg) => sum + pkg.totalWeight, 0))} kg
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-400">Not packaged</div>
                     )}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm">
-                      {formatDate(production.date)}
+                  {/* Costs */}
+                  <td className="px-4 py-4">
+                    {production.productionCost?.length ? (
+                      <div className="flex flex-col space-y-1">
+                        {production.productionCost.slice(0, 2).map((cost, i) => (
+                          <div key={i} className="text-xs">
+                            {cost.item}: {formatCurrency(cost.total || 0)}
+                          </div>
+                        ))}
+                        {production.productionCost.length > 2 && (
+                          <div className="text-xs text-gray-500">
+                            +{production.productionCost.length - 2} more...
+                          </div>
+                        )}
+                        {production.productionCost.find(c => c.item === 'Net Production Cost') && (
+                          <div className="text-xs font-medium mt-1">
+                            Net: {formatCurrency(production.productionCost.find(c => c.item === 'Net Production Cost')?.total || 0)}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-400">No cost data</div>
+                    )}
+                  </td>
+
+                  {/* Date */}
+                  <td className="px-4 py-4">
+                    <div className="text-sm">{formatDate(production.date)}</div>
+                    <div className="text-xs text-gray-500">
+                      by {production.createdBy?.profile?.names || production.createdBy?.username || 'Unknown'}
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium">
-                      {production.unitPrice ? formatCurrency(production.unitPrice) : "N/A"}
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  {/* Actions */}
+                  <td className="px-4 py-4 text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => onView(production)}
@@ -226,9 +305,7 @@ const ProductionTable: React.FC<ProductionTableProps> = ({
             <div>
               <p className="text-sm text-gray-700">
                 Showing{" "}
-                <span className="font-medium">
-                  {(page - 1) * pageSize + 1}
-                </span>{" "}
+                <span className="font-medium">{(page - 1) * pageSize + 1}</span>{" "}
                 to{" "}
                 <span className="font-medium">
                   {Math.min(page * pageSize, totalProductions)}

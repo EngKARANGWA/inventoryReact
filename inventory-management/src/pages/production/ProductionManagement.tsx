@@ -2,13 +2,21 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
-import { Calendar, Edit2, Eye, Factory,Plus, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  Edit2,
+  Eye,
+  Factory,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { productionService } from "../../services/productionServices";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { Production, Product, Warehouse, FilterParams } from "./types";
-import { formatDate, formatNumber, formatCurrency } from "./utils"
+import { formatDate, formatNumber, formatCurrency } from "./utils";
 import ProductionForm from "./ProductionForm";
 import ProductionViewModal from "./ProductionViewModal";
 import ProductionTable from "./ProductionTable";
@@ -31,12 +39,20 @@ const ProductionManagement: React.FC = () => {
   const [filters, setFilters] = useState<FilterParams>({});
   const [showAddForm, setShowAddForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedProduction, setSelectedProduction] = useState<Production | null>(null);
-  const [editingProduction, setEditingProduction] = useState<Production | null>(null);
+  const [selectedProduction, setSelectedProduction] =
+    useState<Production | null>(null);
+  const [editingProduction, setEditingProduction] = useState<Production | null>(
+    null
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState<number | null>(null);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<number | null>(
+    null
+  );
   const [viewType, setViewType] = useState<"table" | "cards">("table");
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "ascending" | "descending" } | null>({
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "ascending" | "descending";
+  } | null>({
     key: "date",
     direction: "descending",
   });
@@ -122,11 +138,14 @@ const ProductionManagement: React.FC = () => {
     toast.success("Data refreshed successfully");
   }, [fetchProductions]);
 
-  const handlePageChange = useCallback((newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
-  }, [totalPages]);
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      if (newPage >= 1 && newPage <= totalPages) {
+        setPage(newPage);
+      }
+    },
+    [totalPages]
+  );
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -202,16 +221,19 @@ const ProductionManagement: React.FC = () => {
   const handleFormSubmit = useCallback(
     async (productionData: any) => {
       setIsSubmitting(true);
-  
+
       try {
         if (editingProduction) {
-          await productionService.updateProduction(editingProduction.id, productionData);
+          await productionService.updateProduction(
+            editingProduction.id,
+            productionData
+          );
           toast.success("Production batch updated successfully");
         } else {
           await productionService.createProduction(productionData);
           toast.success("Production batch created successfully");
         }
-  
+
         setShowAddForm(false);
         fetchProductions();
       } catch (err: any) {
@@ -224,13 +246,16 @@ const ProductionManagement: React.FC = () => {
     [editingProduction, fetchProductions]
   );
 
-  const requestSort = useCallback((key: string) => {
-    let direction: "ascending" | "descending" = "ascending";
-    if (sortConfig?.key === key && sortConfig.direction === "ascending") {
-      direction = "descending";
-    }
-    setSortConfig({ key, direction });
-  }, [sortConfig]);
+  const requestSort = useCallback(
+    (key: string) => {
+      let direction: "ascending" | "descending" = "ascending";
+      if (sortConfig?.key === key && sortConfig.direction === "ascending") {
+        direction = "descending";
+      }
+      setSortConfig({ key, direction });
+    },
+    [sortConfig]
+  );
 
   const sortedProductions = React.useMemo(() => {
     if (!sortConfig) return productions;
@@ -244,6 +269,12 @@ const ProductionManagement: React.FC = () => {
       } else if (sortConfig.key === "date") {
         aValue = new Date(a.date);
         bValue = new Date(b.date);
+      } else if (sortConfig.key === "totalOutcome") {
+        aValue = a.totalOutcome || 0;
+        bValue = b.totalOutcome || 0;
+      } else if (sortConfig.key === "efficiency") {
+        aValue = a.efficiency || 0;
+        bValue = b.efficiency || 0;
       } else {
         aValue = a[sortConfig.key as keyof Production] ?? "";
         bValue = b[sortConfig.key as keyof Production] ?? "";
@@ -273,24 +304,15 @@ const ProductionManagement: React.FC = () => {
                 Production Batch Management
               </h1>
               <p className="text-gray-600">
-                Track and manage all production batches, raw material usage, and costs
+                Track and manage all production batches, raw material usage, and
+                costs
               </p>
             </div>
 
-            <ProductionSummaryCards 
+            <ProductionSummaryCards
               loading={loading}
               totalProductions={totalProductions}
-              totalQuantity={productions.reduce((sum, p) => sum + Number(p.quantityProduced || 0), 0)}
-              totalCost={productions.reduce((sum, p) => {
-                const productionCosts = p.productionCost?.reduce(
-                  (sum, cost) => sum + (cost.cost || cost.amount || cost.price || 0),
-                  0
-                ) || 0;
-                const materialCost = p.mainProduct && p.usedQuantity
-                  ? (p.unitPrice || 0) * p.usedQuantity
-                  : 0;
-                return sum + productionCosts + materialCost;
-              }, 0)}
+              productions={productions}
             />
 
             <ProductionActionBar
@@ -300,7 +322,9 @@ const ProductionManagement: React.FC = () => {
               showFilters={showFilters}
               onToggleFilters={() => setShowFilters(!showFilters)}
               viewType={viewType}
-              onToggleViewType={() => setViewType(prev => prev === "table" ? "cards" : "table")}
+              onToggleViewType={() =>
+                setViewType((prev) => (prev === "table" ? "cards" : "table"))
+              }
               onRefresh={handleRefresh}
               onAddClick={handleAddClick}
               products={products}
@@ -313,7 +337,10 @@ const ProductionManagement: React.FC = () => {
 
             {viewType === "table" ? (
               <ProductionTable
-                productions={sortedProductions.slice((page - 1) * pageSize, page * pageSize)}
+                productions={sortedProductions.slice(
+                  (page - 1) * pageSize,
+                  page * pageSize
+                )}
                 loading={loading}
                 error={error}
                 page={page}
@@ -330,26 +357,33 @@ const ProductionManagement: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {loading ? (
-                  Array(6).fill(0).map((_, i) => (
-                    <div key={`card-skeleton-${i}`} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 animate-pulse">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-                      <div className="flex justify-between mb-3">
-                        <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-                        <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                  Array(6)
+                    .fill(0)
+                    .map((_, i) => (
+                      <div
+                        key={`card-skeleton-${i}`}
+                        className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 animate-pulse"
+                      >
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div className="flex justify-between mb-3">
+                          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                        </div>
+                        <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                        <div className="flex justify-between">
+                          <div className="h-10 bg-gray-200 rounded w-2/3"></div>
+                          <div className="h-10 bg-gray-200 rounded w-1/4"></div>
+                        </div>
                       </div>
-                      <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
-                      <div className="flex justify-between">
-                        <div className="h-10 bg-gray-200 rounded w-2/3"></div>
-                        <div className="h-10 bg-gray-200 rounded w-1/4"></div>
-                      </div>
-                    </div>
-                  ))
+                    ))
                 ) : error ? (
                   <div className="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
                     <div className="h-12 w-12 text-red-500 mx-auto mb-4"></div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Error Loading Data
+                    </h3>
                     <p className="text-gray-500 mb-4">{error}</p>
                     <button
                       onClick={handleRefresh}
@@ -362,9 +396,13 @@ const ProductionManagement: React.FC = () => {
                 ) : sortedProductions.length === 0 ? (
                   <div className="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
                     <div className="h-12 w-12 text-gray-400 mx-auto mb-4"></div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No productions found</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No productions found
+                    </h3>
                     <p className="text-gray-500 mb-4">
-                      {searchTerm ? `No productions matching "${searchTerm}" were found.` : "There are no productions to display."}
+                      {searchTerm
+                        ? `No productions matching "${searchTerm}" were found.`
+                        : "There are no productions to display."}
                     </p>
                     <button
                       onClick={handleAddClick}
@@ -398,42 +436,63 @@ const ProductionManagement: React.FC = () => {
                           </div>
 
                           <div className="mb-3">
-                            <p className="text-sm font-medium text-gray-700">
-                              Quantity Produced
-                            </p>
-                            <p className="text-lg font-semibold text-gray-900">
-                              {formatNumber(production.quantityProduced)} Kg
-                            </p>
+                            <div className="flex justify-between items-center">
+                              <p className="text-sm font-medium text-gray-700">
+                                Total Outcome
+                              </p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                {formatNumber(production.totalOutcome)} Kg
+                              </p>
+                            </div>
                             {production.usedQuantity && (
                               <p className="text-xs text-gray-500">
-                                Used: {formatNumber(production.usedQuantity)} Kg
+                                Input: {formatNumber(production.usedQuantity)}{" "}
+                                Kg
                               </p>
                             )}
                           </div>
 
+                          {/* Efficiency Badge */}
+                          {production.efficiency !== null &&
+                            production.efficiency !== undefined && (
+                              <div className="mb-3">
+                                <div
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    Number(production.efficiency) >= 90
+                                      ? "bg-green-100 text-green-800"
+                                      : Number(production.efficiency) >= 70
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  Efficiency:{" "}
+                                  {Number(production.efficiency).toFixed(1)}%
+                                </div>
+                              </div>
+                            )}
+
                           <div className="grid grid-cols-2 gap-3 mb-3">
                             <div>
                               <p className="text-sm font-medium text-gray-700">
-                                Unit Price
+                                Unit Cost
                               </p>
                               <p className="text-sm text-gray-900">
-                                {production.unitPrice ? formatCurrency(production.unitPrice) : "N/A"}
+                                {production.mainProductUnitCost
+                                  ? formatCurrency(
+                                      production.mainProductUnitCost
+                                    )
+                                  : "N/A"}
                               </p>
                             </div>
                             <div>
                               <p className="text-sm font-medium text-gray-700">
-                                Total Cost
+                                Loss
                               </p>
-                              <p className="text-sm text-gray-900">
-                                {formatCurrency(
-                                  (production.productionCost?.reduce(
-                                    (sum, cost) => sum + (cost.cost || cost.amount || cost.price || 0),
-                                    0
-                                  ) || 0) + 
-                                  (production.mainProduct && production.usedQuantity
-                                    ? (production.unitPrice || 0) * production.usedQuantity
-                                    : 0)
-                                )}
+                              <p className="text-sm text-red-600">
+                                {production.productionLoss
+                                  ? formatNumber(production.productionLoss) +
+                                    " Kg"
+                                  : "N/A"}
                               </p>
                             </div>
                           </div>
@@ -473,7 +532,9 @@ const ProductionManagement: React.FC = () => {
                               </button>
 
                               <button
-                                onClick={() => handleDeleteConfirm(production.id)}
+                                onClick={() =>
+                                  handleDeleteConfirm(production.id)
+                                }
                                 className="p-1.5 text-red-600 hover:bg-red-50 rounded-full"
                                 title="Delete"
                               >

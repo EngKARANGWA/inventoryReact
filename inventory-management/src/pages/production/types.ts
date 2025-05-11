@@ -1,9 +1,13 @@
 export interface ProductionCost {
+  item?: string;
   name?: string;
   description?: string;
   cost?: number;
   amount?: number;
   price?: number;
+  total?: number;
+  quantity?: number;
+  unitPrice?: number;
 }
 
 export interface Product {
@@ -28,6 +32,58 @@ export interface Warehouse {
   id: number;
   name: string;
   location?: string;
+  capacity?: number;
+  currentOccupancy?: number;
+  status?: string;
+  managerId?: number;
+}
+
+export interface StockMovement {
+  id: number;
+  referenceNumber: string;
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  direction: 'in' | 'out';
+  warehouseId: number;
+  sourceType: string;
+  productionId?: number;
+  movementDate: string;
+  userId: number;
+  notes?: string;
+  product?: Product;
+  warehouse?: Warehouse;
+  productionOutcome?: ProductionOutcome;
+}
+
+export interface ProductionOutcome {
+  id?: number;
+  productionId?: number;
+  outcomeType: 'finished_product' | 'byproduct' | 'loss';
+  name: string;
+  quantity: number;
+  unit: string;
+  productId?: number;
+  unitPrice?: number;
+  warehouseId?: number;
+  notes?: string;
+  product?: Product;
+  warehouse?: Warehouse;
+  stockMovement?: StockMovement;
+}
+
+export interface PackageSummary {
+  size?: string;        // Backend expects 'size'
+  packageSize?: string; // Frontend uses 'packageSize'
+  quantity: number;
+  totalWeight: number;
+  unit?: string;
+}
+
+export interface OutcomesSummary {
+  finished: number;
+  byproducts: number;
+  loss: number;
 }
 
 export interface Production {
@@ -35,9 +91,14 @@ export interface Production {
   referenceNumber: string;
   productId: number;
   quantityProduced: number;
-  unitPrice: number | null;
+  totalOutcome: number;    
   mainProductId?: number | null;
   usedQuantity?: number | null;
+  mainProductUnitCost?: number | null;
+  packagesSummary?: PackageSummary[];
+  outcomesSummary?: OutcomesSummary;
+  productionLoss?: number;
+  efficiency?: number | null;
   date: string;
   productionCost: ProductionCost[];
   userId: number;
@@ -47,15 +108,20 @@ export interface Production {
   createdBy?: User;
   warehouseId?: number | null;
   warehouse?: Warehouse | null;
+  outcomes?: ProductionOutcome[];
+  stockMovements?: StockMovement[];
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
 
-
 export interface FilterParams {
-  productId?: string;
+  productId?: string | number;
   warehouseId?: string | number;
   dateFrom?: string;
   dateTo?: string;
+  startDate?: string;
+  endDate?: string;
+  mainProductId?: string | number;
   status?: string;
 }

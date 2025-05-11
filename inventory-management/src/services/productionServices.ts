@@ -6,22 +6,40 @@ export interface Product {
   id: number;
   name: string;
   description?: string;
+  type?: string;
+  unit?: string;
 }
 
 export interface User {
   id: number;
   username: string;
   email?: string;
+  profile?: {
+    names?: string;
+    phoneNumber?: string;
+  };
 }
 
 export interface Warehouse {
   id: number;
   name: string;
+  location?: string;
+  capacity?: number;
+  currentOccupancy?: number;
+  status?: string;
+  managerId?: number;
 }
 
 export interface ProductionCost {
-  description: string;
-  amount: number;
+  item?: string;
+  name?: string;
+  description?: string;
+  total?: number;
+  cost?: number;
+  amount?: number;
+  price?: number;
+  quantity?: number;
+  unitPrice?: number;
 }
 
 export interface DailyPrice {
@@ -29,13 +47,63 @@ export interface DailyPrice {
   sellingUnitPrice: number;
 }
 
+export interface ProductionOutcome {
+  id?: number;
+  productionId?: number;
+  outcomeType: 'finished_product' | 'byproduct' | 'loss';
+  name: string;
+  quantity: number;
+  unit: string;
+  productId?: number;
+  unitPrice?: number;
+  warehouseId?: number;
+  notes?: string;
+  product?: Product;
+  warehouse?: Warehouse;
+  stockMovement?: any;
+}
+
+export interface PackageSummary {
+  size?: string;        // Backend expects 'size'
+  packageSize?: string; // Frontend uses 'packageSize'
+  quantity: number;
+  totalWeight: number;
+  unit?: string;
+}
+
+export interface OutcomesSummary {
+  finished: number;
+  byproducts: number;
+  loss: number;
+}
+
+export interface StockMovement {
+  id: number;
+  referenceNumber: string;
+  productId: number;
+  quantity: string;
+  unitPrice: string;
+  direction: 'in' | 'out';
+  warehouseId: number;
+  sourceType: string;
+  productionId?: number;
+  movementDate: string;
+  userId: number;
+  notes?: string;
+  product?: Product;
+  warehouse?: Warehouse;
+  productionOutcome?: ProductionOutcome;
+}
+
 export interface Production {
   id: number;
   referenceNumber: string;
   productId: number;
   quantityProduced: number;
+  totalOutcome: number;
   mainProductId?: number | null;
   usedQuantity?: number | null;
+  mainProductUnitCost?: number | null;
   date: string;
   productionCost: ProductionCost[];
   userId: number;
@@ -48,49 +116,120 @@ export interface Production {
   dailyPrice?: DailyPrice | null;
   efficiency?: number;
   wastePercentage?: number;
+  productionLoss?: number;
+  outcomes?: ProductionOutcome[];
+  packagesSummary?: PackageSummary[];
+  outcomesSummary?: OutcomesSummary;
+  stockMovements?: StockMovement[];
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 interface FilterParams {
   productId?: string;
   startDate?: string;
   endDate?: string;
+  mainProductId?: string;
+  warehouseId?: string;
 }
 
-// Updated to make all fields consistent with what's being passed in handleFormSubmit
+// Create production data interface
 interface CreateProductionData {
   productId: number;
+  productName?: string;
   quantityProduced: number;
+  totalOutcome: number;
   mainProductId?: number;
   usedQuantity?: number;
+  mainProductUnitCost?: number;
   warehouseId?: number;
   notes?: string;
   productionCost?: ProductionCost[];
-  efficiency?: number;
-  wastePercentage?: number;
+  outcomes?: ProductionOutcome[];
+  packagesSummary?: PackageSummary[];
+  date?: string;
 }
 
-// Make UpdateProductionData consistent with CreateProductionData
+// Update production data interface
 interface UpdateProductionData {
   productId?: number;
+  productName?: string;
   quantityProduced?: number;
+  totalOutcome?: number;
   mainProductId?: number;
   usedQuantity?: number;
+  mainProductUnitCost?: number;
   warehouseId?: number;
   notes?: string;
   productionCost?: ProductionCost[];
-  efficiency?: number;
-  wastePercentage?: number;
+  outcomes?: ProductionOutcome[];
+  packagesSummary?: PackageSummary[];
+  date?: string;
 }
 
 export const productionService = {
   createProduction: async (data: CreateProductionData): Promise<Production> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/production`, data);
-      return response.data;
+      // Format the data to match backend expectations
+      const formattedData = {
+        ...data,
+        // Ensure outcomes are properly formatted
+        outcomes: data.outcomes?.map(outcome => ({
+          outcomeType: outcome.outcomeType,
+          ...(outcome.outcomeType === 'byproduct' && outcome.productId 
+            ? { productId: Number(outcome.productId) }
+            : {}),
+          name: outcome.name || 'Processing Loss',
+          quantity: Number(outcome.quantity),
+          unit: outcome.unit || 'kg',
+          ...(outcome.outcomeType === 'byproduct' && outcome.unitPrice !== undefined
+            ? { unitPrice: Number(outcome.unitPrice) }
+            : {}),
+          ...(outcome.warehouseId
+            ? { warehouseId: Number(outcome.warehouseId) }
+            : {}),
+          ...(outcome.notes ? { notes: outcome.notes } : {})
+        })),
+        // Map packageSize to size for backend
+        packagesSummary: data.packagesSummary?.map(pkg => ({
+          size: pkg.packageSize || pkg.size,
+          quantity: Number(pkg.quantity),
+          totalWeight: Number(pkg.totalWeight),
+          unit: pkg.unit || 'kg'
+        })),
+        // Format production costs
+        productionCost: data.productionCost?.map(cost => ({
+          item: cost.item || cost.name || cost.description || '',
+          total: Number(cost.total || cost.cost || cost.amount || cost.price || 0)
+        }))
+      };
+
+      const response = await axios.post(`${API_BASE_URL}/production`, formattedData);
+      
+      // Handle different response structures
+      const responseData = response.data.data || response.data;
+      
+      // Ensure the response has all expected fields
+      return {
+        ...responseData,
+        totalOutcome: responseData.totalOutcome || responseData.quantityProduced,
+        quantityProduced: responseData.quantityProduced || responseData.totalOutcome,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        console.error('Production creation error:', error.response?.data);
+        
+        // Handle validation errors
+        if (error.response?.data?.errors) {
+          const validationError = error.response.data.errors[0];
+          throw new Error(validationError.msg || "Validation error");
+        }
+        
         throw new Error(
-          error.response?.data?.message || "Failed to create production"
+          error.response?.data?.message || 
+          error.response?.data?.error ||
+          "Failed to create production"
         );
       }
       throw new Error("Failed to create production");
@@ -115,8 +254,16 @@ export const productionService = {
           ...filters,
         },
       });
+      
+      // Map the response data to ensure compatibility
+      const productions = (response.data.data || []).map((prod: any) => ({
+        ...prod,
+        totalOutcome: prod.totalOutcome || prod.quantityProduced,
+        quantityProduced: prod.quantityProduced || prod.totalOutcome,
+      }));
+      
       return {
-        rows: response.data.data || [],
+        rows: productions,
         count: response.data.pagination?.total || 0,
       };
     } catch (error) {
@@ -132,7 +279,14 @@ export const productionService = {
   getProductionById: async (id: number): Promise<Production> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/production/${id}`);
-      return response.data;
+      const responseData = response.data.data || response.data;
+      
+      // Ensure compatibility
+      return {
+        ...responseData,
+        totalOutcome: responseData.totalOutcome || responseData.quantityProduced,
+        quantityProduced: responseData.quantityProduced || responseData.totalOutcome,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -148,13 +302,61 @@ export const productionService = {
     data: UpdateProductionData
   ): Promise<Production> => {
     try {
+      // Format the data similar to create
+      const formattedData = {
+        ...data,
+        // Ensure quantityProduced is included if totalOutcome is provided
+        ...(data.totalOutcome ? { quantityProduced: data.totalOutcome } : {}),
+        outcomes: data.outcomes?.map(outcome => ({
+          outcomeType: outcome.outcomeType,
+          ...(outcome.outcomeType === 'byproduct' && outcome.productId 
+            ? { productId: Number(outcome.productId) }
+            : {}),
+          name: outcome.name || 'Processing Loss',
+          quantity: Number(outcome.quantity),
+          unit: outcome.unit || 'kg',
+          ...(outcome.outcomeType === 'byproduct' && outcome.unitPrice !== undefined
+            ? { unitPrice: Number(outcome.unitPrice) }
+            : {}),
+          ...(outcome.warehouseId
+            ? { warehouseId: Number(outcome.warehouseId) }
+            : {}),
+          ...(outcome.notes ? { notes: outcome.notes } : {})
+        })),
+        packagesSummary: data.packagesSummary?.map(pkg => ({
+          size: pkg.packageSize || pkg.size,
+          quantity: Number(pkg.quantity),
+          totalWeight: Number(pkg.totalWeight),
+          unit: pkg.unit || 'kg'
+        })),
+        productionCost: data.productionCost?.map(cost => ({
+          item: cost.item || cost.name || cost.description || '',
+          total: Number(cost.total || cost.cost || cost.amount || cost.price || 0)
+        }))
+      };
+
       const response = await axios.put(
         `${API_BASE_URL}/production/${id}`,
-        data
+        formattedData
       );
-      return response.data;
+      
+      const responseData = response.data.data || response.data;
+      
+      return {
+        ...responseData,
+        totalOutcome: responseData.totalOutcome || responseData.quantityProduced,
+        quantityProduced: responseData.quantityProduced || responseData.totalOutcome,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        console.error('Production update error:', error.response?.data);
+        
+        // Handle validation errors
+        if (error.response?.data?.errors) {
+          const validationError = error.response.data.errors[0];
+          throw new Error(validationError.msg || "Validation error");
+        }
+        
         throw new Error(
           error.response?.data?.message || "Failed to update production"
         );
@@ -174,5 +376,78 @@ export const productionService = {
       }
       throw new Error("Failed to delete production");
     }
+  },
+
+  restoreProduction: async (id: number): Promise<Production> => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/production/${id}/restore`);
+      const responseData = response.data.data || response.data;
+      
+      return {
+        ...responseData,
+        totalOutcome: responseData.totalOutcome || responseData.quantityProduced,
+        quantityProduced: responseData.quantityProduced || responseData.totalOutcome,
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message || "Failed to restore production"
+        );
+      }
+      throw new Error("Failed to restore production");
+    }
+  },
+
+  getProductionStats: async (params?: {
+    startDate?: string;
+    endDate?: string;
+    productId?: number;
+  }): Promise<{
+    totalProductions: number;
+    totalQuantity: number;
+    productionByProduct: any[];
+    efficiency: any;
+    outcomeBreakdown: any[];
+  }> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/production/stats`, {
+        params,
+      });
+      
+      return response.data.data || response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch production statistics"
+        );
+      }
+      throw new Error("Failed to fetch production statistics");
+    }
+  },
+
+  // Helper function to transform backend data to frontend format
+  transformBackendData: (data: any): Production => {
+    return {
+      ...data,
+      totalOutcome: data.totalOutcome || data.quantityProduced,
+      quantityProduced: data.quantityProduced || data.totalOutcome,
+      // Map backend package structure to frontend
+      packagesSummary: data.packagesSummary?.map((pkg: any) => ({
+        ...pkg,
+        packageSize: pkg.size, // Map backend 'size' to frontend 'packageSize'
+      })),
+    };
+  },
+
+  // Helper function to transform frontend data to backend format
+  transformFrontendData: (data: any): any => {
+    return {
+      ...data,
+      quantityProduced: data.totalOutcome || data.quantityProduced,
+      packagesSummary: data.packagesSummary?.map((pkg: any) => ({
+        ...pkg,
+        size: pkg.packageSize, // Map frontend 'packageSize' to backend 'size'
+      })),
+    };
   },
 };

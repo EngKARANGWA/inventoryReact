@@ -6,6 +6,7 @@ import {
   Return,
   returnsService,
 } from "../../services/returnsService";
+import { toast } from "react-toastify";
 
 interface ReturnFormData {
   saleId: number;
@@ -152,7 +153,7 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+  
     try {
       const submitData: CreateReturnData = {
         saleId: formData.saleId,
@@ -160,16 +161,19 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
         note: formData.note || undefined,
         status: formData.status,
       };
-
+  
       if (returnToEdit) {
         await returnsService.updateReturn(returnToEdit.id, submitData);
+        toast.success("Return updated successfully");
       } else {
         await returnsService.createReturn(submitData);
+        toast.success("Return created successfully");
       }
       onSubmitSuccess();
     } catch (err: any) {
       console.error("Error submitting return:", err);
       setError(err.message || "Failed to save return. Please try again.");
+      toast.error(err.message || "Failed to save return");
     } finally {
       setLoading(false);
     }
