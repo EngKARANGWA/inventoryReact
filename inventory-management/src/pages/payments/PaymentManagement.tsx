@@ -11,7 +11,6 @@ import {
   Check,
   Clock,
   RefreshCw,
-  DollarSign,
   FileText,
   Download,
   ArrowLeft,
@@ -84,7 +83,7 @@ const PaymentManagement: React.FC = () => {
           return payment;
         })
       );
-      
+
       setPayments(paymentsWithDetails);
       setTotalPayments(response.pagination?.totalItems || 0);
     } catch (err) {
@@ -289,15 +288,15 @@ const PaymentManagement: React.FC = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Total Payments
+                      Total value
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
-                      {loading ? "..." : totalPayments}
+                      {loading ? "..." : `${formatNumber(totalAmount)} RWF`}
                     </p>
                   </div>
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -305,8 +304,7 @@ const PaymentManagement: React.FC = () => {
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
-                  Total value:{" "}
-                  {loading ? "..." : `${formatNumber(totalAmount)} RWF`}
+                  Total Payments: {loading ? "..." : totalPayments}
                 </div>
               </div>
 
@@ -354,23 +352,6 @@ const PaymentManagement: React.FC = () => {
                         1
                       )}% of total`}
                 </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Total Amount
-                    </p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-800">
-                      {loading ? "..." : formatNumber(totalAmount)}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-gray-500">Amount in RWF</div>
               </div>
             </div>
 

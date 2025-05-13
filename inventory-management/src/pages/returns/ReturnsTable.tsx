@@ -106,6 +106,9 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
         <td className="px-6 py-4">
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
         </td>
+        <td className="px-6 py-4">
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </td>
         <td className="px-6 py-4 text-right">
           <div className="h-6 bg-gray-200 rounded w-16 inline-block"></div>
         </td>
@@ -142,6 +145,19 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
                 <div className="flex items-center">
                   Sale Reference
                   {sortConfig?.key === "saleId" && (
+                    <span className="ml-1">
+                      {sortConfig.direction === "ascending" ? "↑" : "↓"}
+                    </span>
+                  )}
+                </div>
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort("saleItemId")}
+              >
+                <div className="flex items-center">
+                  Sale Item
+                  {sortConfig?.key === "saleItemId" && (
                     <span className="ml-1">
                       {sortConfig.direction === "ascending" ? "↑" : "↓"}
                     </span>
@@ -210,7 +226,7 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
               renderSkeleton()
             ) : error ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center">
+                <td colSpan={8} className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center text-red-600">
                     <AlertCircle className="w-5 h-5 mr-2" />
                     {error}
@@ -219,7 +235,7 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
               </tr>
             ) : returns.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                   No returns found.
                 </td>
               </tr>
@@ -241,6 +257,16 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
+                      {ret.saleItem?.id || `Item #${ret.saleItemId}`}
+                    </div>
+                    {ret.saleItem?.unitPrice && (
+                      <div className="text-xs text-gray-500">
+                        ${parseFloat(ret.saleItem.unitPrice).toFixed(2)}/KG
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
                       {ret.product?.name || `Product #${ret.productId}`}
                     </div>
                   </td>
@@ -248,6 +274,11 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
                     <div className="text-sm text-gray-900">
                       {formatNumber(parseFloat(ret.returnedQuantity))} KG
                     </div>
+                    {ret.saleItem && (
+                      <div className="text-xs text-gray-500">
+                        {(parseFloat(ret.returnedQuantity) / parseFloat(ret.saleItem.quantity) * 100).toFixed(1)}% of item
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">

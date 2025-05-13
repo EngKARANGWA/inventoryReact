@@ -9,6 +9,7 @@ export interface Return {
   returnedQuantity: string;
   note: string | null;
   saleId: number;
+  saleItemId: number; // Added this field
   productId: number;
   warehouseId: number;
   createdAt: string;
@@ -18,12 +19,29 @@ export interface Return {
   sale?: {
     id: number;
     referenceNumber: string;
-    quantity: string;
     status: string;
     expectedDeliveryDate: string;
     totalPaid: string;
     totalDelivered: string;
     date: string;
+    items?: Array<{
+      id: number;
+      quantity: string;
+      unitPrice: string;
+      productId: number;
+      product?: {
+        id: number;
+        name: string;
+        description: string;
+      };
+    }>;
+  };
+  saleItem?: { // Added this field
+    id: number;
+    quantity: string;
+    unitPrice: string;
+    totalDelivered: string;
+    note: string | null;
     productId: number;
   };
   product?: {
@@ -49,12 +67,12 @@ export interface Return {
 }
 
 export interface CreateReturnData {
-  referenceNumber?: string; // Added this field
-  productId?: number; // Added this field
-  status?: string; // Added this field
   saleId: number;
+  saleItemId: number; // Added this field as required
   returnedQuantity: number;
   note?: string;
+  status?: string;
+  warehouseId?: number; // Optional warehouse specification
 }
 
 interface GetReturnsOptions {
@@ -62,6 +80,8 @@ interface GetReturnsOptions {
   pageSize?: number;
   search?: string;
   saleId?: number;
+  saleItemId?: number; // Added this field
+  productId?: number;
   includeDeleted?: boolean;
 }
 
@@ -89,6 +109,11 @@ export const returnsService = {
   // Create a new return
   createReturn: async (returnData: CreateReturnData): Promise<Return> => {
     try {
+      // Validate required fields
+      if (!returnData.saleItemId) {
+        throw new Error("Sale item ID is required");
+      }
+      
       const response = await axios.post(`${API_BASE_URL}/returns`, returnData);
       return handleResponse(response);
     } catch (error) {
@@ -105,6 +130,11 @@ export const returnsService = {
       // Ensure id is a valid number
       if (!id || isNaN(Number(id))) {
         throw new Error("Invalid return ID for update");
+      }
+      
+      // Validate required fields for update
+      if (returnData.saleItemId === undefined || returnData.saleItemId === null) {
+        console.warn("Sale item ID should be provided for update");
       }
       
       const response = await axios.put(
@@ -143,6 +173,8 @@ export const returnsService = {
         includeDeleted: options.includeDeleted ? "true" : "false",
         search: options.search,
         saleId: options.saleId,
+        saleItemId: options.saleItemId,
+        productId: options.productId,
       };
 
       const response = await axios.get(`${API_BASE_URL}/returns`, { params });
@@ -168,7 +200,11 @@ export const returnsService = {
 
   getSales: async (): Promise<{ data: any[] }> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/sales`);
+      const response = await axios.get(`${API_BASE_URL}/sales`, {
+        params: {
+          include: "items,products" // Request to include items and their products
+        }
+      });
       return {
         data: response.data?.data || []
       };

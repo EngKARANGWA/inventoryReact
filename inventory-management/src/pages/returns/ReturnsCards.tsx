@@ -11,7 +11,8 @@ import {
   X,
   Info,
   Package,
-  AlertCircle
+  AlertCircle,
+  Tag
 } from "lucide-react";
 import { Return } from "../../services/returnsService";
 
@@ -144,24 +145,51 @@ const ReturnsCards: React.FC<ReturnsCardsProps> = ({
                 </p>
               </div>
               
+              {/* Sale and Item Information */}
+              <div className="p-3 bg-gray-50 rounded-lg mb-3">
+                <div className="flex items-center mb-2">
+                  <Tag className="w-4 h-4 text-blue-500 mr-1" />
+                  <p className="text-sm font-medium text-blue-700">Sale Item</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Sale</p>
+                    <p className="text-sm text-gray-900 truncate">
+                      {ret.sale?.referenceNumber || `Sale #${ret.saleId}`}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Item ID</p>
+                    <p className="text-sm text-gray-900">
+                      {ret.saleItem?.id || `#${ret.saleItemId}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <p className="text-sm font-medium text-gray-700">Quantity</p>
                   <p className="text-sm text-gray-900">
                     {formatNumber(parseFloat(ret.returnedQuantity))} KG
                   </p>
+                  {ret.saleItem && (
+                    <p className="text-xs text-gray-500">
+                      {(parseFloat(ret.returnedQuantity) / parseFloat(ret.saleItem.quantity) * 100).toFixed(1)}% of item
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Sale Reference</p>
+                  <p className="text-sm font-medium text-gray-700">Unit Price</p>
                   <p className="text-sm text-gray-900">
-                    {ret.sale?.referenceNumber || `Sale #${ret.saleId}`}
+                    {ret.saleItem?.unitPrice ? `$${formatNumber(parseFloat(ret.saleItem.unitPrice))}/KG` : "N/A"}
                   </p>
                 </div>
               </div>
               
               <div className="mb-4">
                 <p className="text-sm font-medium text-gray-700">Notes</p>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-gray-900 line-clamp-2">
                   {ret.note || "No notes provided"}
                 </p>
               </div>
