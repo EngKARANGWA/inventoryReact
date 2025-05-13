@@ -116,7 +116,7 @@ const ProductionSummaryCards: React.FC<ProductionSummaryCardsProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs md:text-sm font-medium text-gray-500">
-              Net Cost
+              Total Production Cost
             </p>
             <p className="text-xl md:text-2xl font-bold text-gray-800">
               {loading ? (

@@ -6,8 +6,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { saleService } from "../../services/saleService";
-import { Sale, SaleItem, Product, FormItem, Saler, Client, Blocker, SortConfig } from './sale';
-
+import { Sale, Product, Saler, Client, Blocker, SortConfig } from "./sale";
 
 // Import the new components
 import { SalesStats } from "./SalesStats";
@@ -19,9 +18,7 @@ import { SaleDetailsModal } from "./SaleDetailsModal";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { SalesPagination } from "./SalesPagination";
 
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 
 const SaleManagement: React.FC = () => {
   const [sales, setSales] = useState<any[]>([]);
@@ -68,7 +65,7 @@ const SaleManagement: React.FC = () => {
     expectedDeliveryDate: "",
     items: [
       {
-        id: undefined,
+        id: undefined as number | undefined,
         productId: "",
         quantity: "",
         unitPrice: "",
@@ -184,17 +181,17 @@ const SaleManagement: React.FC = () => {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-  
+
     try {
       // Prepare items data - convert strings to numbers
       const items = formData.items.map((item) => ({
-        ...(item.id && { id: Number(item.id) }),
+        ...(item.id ? { id: Number(item.id) } : {}),
         productId: Number(item.productId),
         quantity: parseFloat(item.quantity),
         unitPrice: parseFloat(item.unitPrice),
         note: item.note || undefined,
       }));
-  
+
       if (editingSale) {
         // For update, we don't need to provide salerId if it's not changing
         const updateData = {
@@ -204,7 +201,7 @@ const SaleManagement: React.FC = () => {
           note: formData.note || undefined,
           expectedDeliveryDate: formData.expectedDeliveryDate || undefined,
         };
-  
+
         await saleService.updateSale(editingSale.id, updateData);
         toast.success("Sale updated successfully");
       } else {
@@ -214,7 +211,7 @@ const SaleManagement: React.FC = () => {
           setIsSubmitting(false);
           return;
         }
-  
+
         const createData = {
           salerId: Number(formData.salerId),
           ...(formData.clientId && { clientId: Number(formData.clientId) }),
@@ -223,11 +220,11 @@ const SaleManagement: React.FC = () => {
           note: formData.note || undefined,
           expectedDeliveryDate: formData.expectedDeliveryDate || undefined,
         };
-  
+
         await saleService.createSale(createData);
         toast.success("Sale created successfully");
       }
-  
+
       setShowAddForm(false);
       fetchSales(); // Refresh the list after successful operation
     } catch (err: any) {
@@ -264,6 +261,7 @@ const SaleManagement: React.FC = () => {
       expectedDeliveryDate: "",
       items: [
         {
+          id: undefined,
           productId: "",
           quantity: "",
           unitPrice: "",
@@ -383,25 +381,6 @@ const SaleManagement: React.FC = () => {
     });
   }, [sortedSales, filters.search]);
 
-  const pendingSales = sales.filter((s) => {
-    const unitPrice = s.unitPrice ? parseFloat(s.unitPrice) : 0;
-    return parseFloat(s.totalPaid) < unitPrice * s.quantity;
-  }).length;
-
-  const completedSales = sales.filter((s) => {
-    const unitPrice = s.unitPrice ? parseFloat(s.unitPrice) : 0;
-    return parseFloat(s.totalPaid) >= unitPrice * s.quantity;
-  }).length;
-
-  const totalRevenue = sales.reduce((sum, s) => {
-    const unitPrice = s.unitPrice ? parseFloat(s.unitPrice) : 0;
-    return sum + unitPrice * s.quantity;
-  }, 0);
-
-  const totalPaid = sales.reduce(
-    (sum, s) => sum + parseFloat(s.totalPaid || "0"),
-    0
-  );
 
   const getStatusBadge = (sale: any) => {
     const unitPrice = sale.unitPrice ? parseFloat(sale.unitPrice) : 0;
@@ -445,6 +424,35 @@ const SaleManagement: React.FC = () => {
     setViewType((prev) => (prev === "table" ? "cards" : "table"));
   };
 
+  const { totalRevenue, totalPaid, pendingSalesCount, completedSalesCount } =
+    React.useMemo(() => {
+      let revenue = 0;
+      let paid = 0;
+      let pending = 0;
+      let completed = 0;
+
+      sales.forEach((sale) => {
+        const saleAmount = sale.items.reduce((sum, item) => {
+          return sum + parseFloat(item.quantity) * parseFloat(item.unitPrice);
+        }, 0);
+
+        revenue += saleAmount;
+        paid += parseFloat(sale.totalPaid || "0");
+
+        if (parseFloat(sale.totalPaid || "0") >= saleAmount) {
+          completed++;
+        } else {
+          pending++;
+        }
+      });
+
+      return {
+        totalRevenue: revenue,
+        totalPaid: paid,
+        pendingSalesCount: pending,
+        completedSalesCount: completed,
+      };
+    }, [sales]);
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar />
@@ -464,9 +472,9 @@ const SaleManagement: React.FC = () => {
 
             <SalesStats
               loading={loading}
-              totalSales={totalSales}
-              completedSales={completedSales}
-              pendingSales={pendingSales}
+              totalSales={sales.length}
+              completedSales={completedSalesCount}
+              pendingSales={pendingSalesCount}
               totalPaid={totalPaid}
               totalRevenue={totalRevenue}
               formatNumber={formatNumber}

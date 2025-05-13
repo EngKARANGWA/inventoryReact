@@ -70,6 +70,6 @@ export interface Blocker {
 }
 
 export interface SortConfig {
-  key: keyof Sale;
+  key: string;
   direction: "ascending" | "descending";
 }

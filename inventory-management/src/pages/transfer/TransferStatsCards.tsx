@@ -1,6 +1,6 @@
 import React from "react";
-import { Truck, Check, Clock, Package } from "lucide-react";
-import { formatNumber } from "../../utils/formatUtils";
+import { Truck } from "lucide-react";
+// import { formatNumber } from "../../utils/formatUtils";
 
 interface TransferStatsCardsProps {
   loading: boolean;
@@ -13,12 +13,12 @@ interface TransferStatsCardsProps {
 const TransferStatsCards: React.FC<TransferStatsCardsProps> = ({
   loading,
   totalTransfers,
-  completedTransfers,
-  pendingTransfers,
-  totalQuantity,
+  // completedTransfers,
+  // pendingTransfers,
+  // totalQuantity,
 }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 md:gap-6 mb-6 md:mb-8">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -31,12 +31,12 @@ const TransferStatsCards: React.FC<TransferStatsCardsProps> = ({
             <Truck className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
           </div>
         </div>
-        <div className="mt-2 text-xs text-gray-500">
+        {/* <div className="mt-2 text-xs text-gray-500">
           Total quantity: {loading ? "..." : `${formatNumber(totalQuantity)} Kg`}
-        </div>
+        </div> */}
       </div>
       
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
+      {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs md:text-sm font-medium text-gray-500">Completed Transfers</p>
@@ -83,7 +83,7 @@ const TransferStatsCards: React.FC<TransferStatsCardsProps> = ({
           </div>
         </div>
         <div className="mt-2 text-xs text-gray-500">Quantity in Kg</div>
-      </div>
+      </div> */}
     </div>
   );
 };

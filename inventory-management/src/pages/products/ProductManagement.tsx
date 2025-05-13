@@ -13,6 +13,7 @@ import ProductTable from "./ProductTable";
 import ProductCards from "./ProductCards";
 import ProductViewModal from "./ProductViewModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import ProductStats from "./ProductStats";
 // import { X } from "lucide-react";
 
 interface ProductFiltersState {
@@ -43,7 +44,9 @@ const ProductManagement: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState<number | null>(null);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<number | null>(
+    null
+  );
   const [viewType, setViewType] = useState<"table" | "cards">("table");
 
   const [sortConfig, setSortConfig] = useState<{
@@ -73,7 +76,8 @@ const ProductManagement: React.FC = () => {
         includeDeleted: filters.includeDeleted || undefined,
       };
 
-      const { data, pagination: paginationData } = await productService.getAllProducts(queryParams);
+      const { data, pagination: paginationData } =
+        await productService.getAllProducts(queryParams);
       setProducts(data);
       setPagination(paginationData);
     } catch (err) {
@@ -81,7 +85,7 @@ const ProductManagement: React.FC = () => {
       setError("Failed to fetch products. Please try again later.");
       toast.error("Failed to load products");
       setProducts([]);
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
         totalItems: 0,
         totalPages: 1,
@@ -106,7 +110,7 @@ const ProductManagement: React.FC = () => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       page: 1, // Reset to first page when searching
     }));
@@ -141,7 +145,9 @@ const ProductManagement: React.FC = () => {
     }
   };
 
-  const handleFormSubmit = async (formData: Omit<Product, "id" | "createdAt" | "updatedAt" | "deletedAt">) => {
+  const handleFormSubmit = async (
+    formData: Omit<Product, "id" | "createdAt" | "updatedAt" | "deletedAt">
+  ) => {
     setIsSubmitting(true);
 
     try {
@@ -177,33 +183,34 @@ const ProductManagement: React.FC = () => {
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > pagination.totalPages) return;
-    
-    setFilters(prev => ({
+
+    setFilters((prev) => ({
       ...prev,
       page: newPage,
     }));
-    
+
     // Scroll to top of the table
-    const tableElement = document.getElementById('products-table-container');
+    const tableElement = document.getElementById("products-table-container");
     if (tableElement) {
-      tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      tableElement.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
   const requestSort = (key: keyof Product) => {
     let direction: "ascending" | "descending" = "ascending";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "ascending") {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "ascending"
+    ) {
       direction = "descending";
     }
     setSortConfig({ key, direction });
   };
 
-  // Calculate summary statistics
-  // const activeProducts = products.filter(p => !p.deletedAt).length;
-  // const inactiveProducts = products.filter(p => p.deletedAt).length;
-  // const lastUpdated = products.length > 0 
-    // ? new Date(Math.max(...products.map(p => new Date(p.updatedAt).getTime())))
-    // : null;
+  const lastUpdated = products.length > 0 
+  ? new Date(Math.max(...products.map(p => new Date(p.updatedAt).getTime())))
+  : null;
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -221,13 +228,16 @@ const ProductManagement: React.FC = () => {
               </p>
             </div>
 
-            {/* <ProductStats
+            <ProductStats
               loading={loading}
-              totalProducts={pagination.totalItems}
-              activeProducts={activeProducts}
-              inactiveProducts={inactiveProducts}
+              rawMaterialCount={
+                products.filter((p) => p.type === "raw_material").length
+              }
+              finishedProductCount={
+                products.filter((p) => p.type === "finished_product").length
+              }
               lastUpdated={lastUpdated}
-            /> */}
+            />
 
             <ProductControls
               searchTerm={searchTerm}
@@ -236,12 +246,14 @@ const ProductManagement: React.FC = () => {
               onSearchChange={handleSearch}
               onSearchSubmit={handleSearchSubmit}
               onToggleFilters={() => setShowFilters(!showFilters)}
-              onToggleViewType={() => setViewType(prev => prev === "table" ? "cards" : "table")}
+              onToggleViewType={() =>
+                setViewType((prev) => (prev === "table" ? "cards" : "table"))
+              }
               onExportData={() => toast.info("Export feature coming soon!")}
               onRefresh={handleRefresh}
               onAddClick={handleAddClick}
             />
-{/* 
+            {/* 
             <ProductFilters
               showFilters={showFilters}
               filters={{
