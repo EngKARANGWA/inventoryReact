@@ -10,6 +10,16 @@ interface PaymentFormProps {
   onSubmit: (payment: Payment) => void;
 }
 
+
+const formatNumber = (num: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "decimal",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  }).format(num);
+};
+
 const PaymentForm: React.FC<PaymentFormProps> = ({
   payment,
   onClose,
@@ -30,7 +40,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     { value: number; label: string; totalPaid: number; weight: number; unitPrice: number }[]
   >([]);
   const [salesOptions, setSalesOptions] = useState<
-    { value: number; label: string; totalPaid: number; quantity: number; unitPrice: number }[]
+    { value: number; label: string; totalPaid: number; totalAmount: number }[]
   >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [remainingAmount, setRemainingAmount] = useState<number | null>(null);
@@ -71,15 +81,13 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         (s) => s.value.toString() === formData.saleId
       );
       if (selectedSale) {
-        const totalAmount = selectedSale.quantity * selectedSale.unitPrice;
-        const remaining = totalAmount - selectedSale.totalPaid;
+        const remaining = selectedSale.totalAmount - selectedSale.totalPaid;
         setRemainingAmount(remaining > 0 ? remaining : 0);
       }
     } else {
       setRemainingAmount(null);
     }
   }, [formData.purchaseId, formData.saleId, purchasesOptions, salesOptions]);
-
 
   const fetchPurchases = async () => {
     setPurchasesLoading(true);
@@ -93,9 +101,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       setPurchasesOptions(
         filteredPurchases.map((purchase: any) => ({
           value: purchase.id,
-          label: `${purchase.purchaseReference} - ${
-            purchase.supplier?.user?.profile?.names || "Unknown"
-          } (${purchase.description})`,
+          label: `${purchase.purchaseReference} (${purchase.description})`,
           totalPaid: parseFloat(purchase.totalPaid) || 0,
           weight: parseFloat(purchase.weight) || 0,
           unitPrice: parseFloat(purchase.unitPrice) || 0
@@ -111,7 +117,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const fetchSales = async () => {
     setSalesLoading(true);
     try {
-      const response = await paymentService.getSales("");
+      const response = await paymentService.getSalesWithItems("");
       const sales = response || [];
       const filteredSales = sales.filter(
         (s: any) => s.status !== "completed" && s.status !== "payment_complete"
@@ -122,10 +128,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           value: sale.id,
           label: `${sale.saleReference} - ${
             sale.client?.user?.profile?.names || "Unknown"
-          }`,
+          } (Total: ${formatNumber(sale.totalAmount)} RWF, Paid: ${formatNumber(sale.totalPaid)} RWF)`,
           totalPaid: parseFloat(sale.totalPaid) || 0,
-          quantity: parseFloat(sale.quantity) || 0,
-          unitPrice: parseFloat(sale.unitPrice) || 0
+          totalAmount: parseFloat(sale.totalAmount) || 0
         }))
       );
     } catch (error) {
@@ -226,7 +231,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
               </label>
               {remainingAmount !== null && (
                 <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm">
-                  Remaining: {remainingAmount.toLocaleString()} RWF
+                  Remaining: {formatNumber(remainingAmount)} RWF
                 </div>
               )}
             </div>

@@ -32,6 +32,7 @@ interface PriceData {
     name: string;
   };
 }
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface PriceTrendsChartProps {
   filterProductId?: number;
@@ -48,7 +49,7 @@ const PriceTrendsChart: React.FC<PriceTrendsChartProps> = ({ filterProductId }) 
         setIsLoading(true);
         setError(null);
         
-        let url = 'https://test.gvibyequ.a2hosted.com/api/daily-price';
+        let url = `${API_BASE_URL}/daily-price`;
         if (filterProductId) {
           url += `?productId=${filterProductId}`;
         }

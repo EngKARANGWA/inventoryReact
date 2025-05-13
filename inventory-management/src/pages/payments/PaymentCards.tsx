@@ -121,6 +121,11 @@ const PaymentCards: React.FC<PaymentCardsProps> = ({
                         {payment.sale.client.user.profile.names}
                       </span>
                     )}
+                    {payment.sale?.totalAmount && (
+                      <span className="text-xs text-gray-500 block">
+                        Total: {formatNumber(payment.sale.totalAmount)} RWF
+                      </span>
+                    )}
                   </>
                 )}
               </p>

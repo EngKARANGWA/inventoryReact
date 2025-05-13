@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Payment } from "../../services/paymentService";
-import { paymentService } from "../../services/paymentService";
+import { Payment, paymentService } from "../../services/paymentService";
 import { formatNumber } from "../../utils/formatUtils";
 import {
   Check,
@@ -292,6 +291,67 @@ const PaymentViewModal: React.FC<PaymentViewModalProps> = ({
                     {payment.sale?.client?.user?.profile?.names || "Unknown"}
                   </p>
                 </div>
+                <div>
+                  <p className="text-sm text-gray-500">Total Amount</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {payment.sale?.totalAmount
+                      ? formatNumber(payment.sale.totalAmount) + " RWF"
+                      : "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Total Paid</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {payment.sale?.totalPaid
+                      ? formatNumber(payment.sale.totalPaid) + " RWF"
+                      : "N/A"}
+                  </p>
+                </div>
+                {payment.sale?.items && payment.sale.items.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Items
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Product
+                            </th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Quantity
+                            </th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Unit Price
+                            </th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {payment.sale.items.map((item) => (
+                            <tr key={item.id}>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                                {item.product?.name || "N/A"}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                                {formatNumber(item.quantity)}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                                {formatNumber(item.unitPrice)} RWF
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                                {formatNumber(item.quantity * item.unitPrice)} RWF
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

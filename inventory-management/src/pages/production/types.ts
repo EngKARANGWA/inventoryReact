@@ -117,11 +117,11 @@ export interface Production {
 
 export interface FilterParams {
   productId?: string | number;
+  mainProductId?: string | number;
   warehouseId?: string | number;
-  dateFrom?: string;
-  dateTo?: string;
   startDate?: string;
   endDate?: string;
-  mainProductId?: string | number;
+  dateFrom?: string;
+  dateTo?: string;
   status?: string;
 }

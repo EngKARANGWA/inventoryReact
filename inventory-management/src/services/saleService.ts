@@ -1,105 +1,84 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+export interface SaleItem {
+  id?: number;
+  productId: number;
+  quantity: string;
+  unitPrice: string;
+  totalDelivered?: string;
+  note?: string;
+  product?: {
+    id: number;
+    name: string;
+    type?: string;
+  };
+}
 
 export interface Sale {
   id: number;
   saleReference: string | null;
-  quantity: number;
+  totalAmount: string;
   status: string;
-  expectedDeliveryDate: string | null;
+  expectedDeliveryDate: string;
   totalPaid: string;
-  totalDelivered: string;
-  note: string | null;
-  dailyPriceId: number | null;
+  note: string;
+  createdAt: string;
   salerId: number;
-  clientId: number | null;
-  productId: number;
-  blockerId: number | null;
-  blocker: {
+  clientId?: number;
+  blockerId?: number;
+  items: SaleItem[];
+  saler: {
     id: number;
-    userId: number;
     user: {
-      id: number;
       profile: {
         names: string;
       };
     };
+  };
+  client?: {
+    id: number;
+    clientId?: string;
+    user?: {
+      profile?: {
+        names: string;
+      };
+    };
   } | null;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  product: Product;
-  saler: Saler;
-  dailyPrice: DailyPrice | null;
-  client: any | null;
 }
 
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
-
-interface Saler {
-  id: number;
-  salerId: string;
-  tinNumber: string | null;
-  userId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  user: User;
-}
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  profile: UserProfile;
-}
-
-interface UserProfile {
-  id: number;
-  names: string;
-  phoneNumber: string;
-  address: string;
-  status: string;
-  userId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
-
-interface DailyPrice {
-  id: number;
-  buyingUnitPrice: string;
-  sellingUnitPrice: string;
-  date: string;
+interface CreateSaleItem {
   productId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  product: Product;
+  quantity: number;
+  unitPrice: number;
+  note?: string;
 }
 
 interface CreateSaleData {
-  productId: number;
-  quantity: number;
   salerId: number;
-  priceId?: number;
   clientId?: number;
+  blockerId?: number;
+  items: CreateSaleItem[];
+  expectedDeliveryDate?: string;
   note?: string;
-  date?: string;
+  status?: string;
 }
 
 interface UpdateSaleData {
-  quantity?: number;
-  unitPrice?: number;
+  salerId?: number;
+  clientId?: number;
+  blockerId?: number;
+  items?: {
+    id?: number;
+    productId?: number;
+    quantity?: number;
+    unitPrice?: number;
+    note?: string;
+  }[];
+  expectedDeliveryDate?: string;
   note?: string;
+  status?: string;
 }
 
 interface SaleResponse {
@@ -114,14 +93,22 @@ interface SaleResponse {
 }
 
 export const saleService = {
-  getAllSales: async (): Promise<SaleResponse> => {
+  getAllSales: async (params?: any): Promise<SaleResponse> => {
     try {
-
-
-      const response = await axios.get(`${API_BASE_URL}/sales`);
+      const response = await axios.get(`${API_BASE_URL}/sales`, { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching sales:", error);
+      throw error;
+    }
+  },
+
+  getSaleById: async (id: number): Promise<Sale> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/sales/${id}`);
+      return response.data.data;
+    } catch (error) {
+      console.error(`Error fetching sale ${id}:`, error);
       throw error;
     }
   },

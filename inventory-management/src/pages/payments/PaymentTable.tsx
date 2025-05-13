@@ -149,14 +149,21 @@ const PaymentTable: React.FC<PaymentTableProps> = ({
                       )}
                     </div>
                   ) : (
-                    <div className="flex items-center">
-                      <span className="mr-1">Sale:</span>
-                      {payment.sale?.saleReference || "N/A"}
-                      {payment.sale?.client?.user?.profile?.names && (
-                        <>
-                          <span className="mx-1">-</span>
-                          {payment.sale.client.user.profile.names}
-                        </>
+                    <div className="flex flex-col">
+                      <div className="flex items-center">
+                        <span className="mr-1">Sale:</span>
+                        {payment.sale?.saleReference || "N/A"}
+                        {payment.sale?.client?.user?.profile?.names && (
+                          <>
+                            <span className="mx-1">-</span>
+                            {payment.sale.client.user.profile.names}
+                          </>
+                        )}
+                      </div>
+                      {payment.sale?.totalAmount && (
+                        <div className="text-xs text-gray-500">
+                          Total: {formatNumber(payment.sale.totalAmount)} RWF
+                        </div>
                       )}
                     </div>
                   )}

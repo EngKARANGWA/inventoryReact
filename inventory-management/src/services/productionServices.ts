@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export interface Product {
   id: number;
@@ -126,12 +126,15 @@ export interface Production {
   deletedAt?: string | null;
 }
 
-interface FilterParams {
-  productId?: string;
+export interface FilterParams {
+  productId?: string | number;
+  mainProductId?: string | number;
   startDate?: string;
   endDate?: string;
-  mainProductId?: string;
-  warehouseId?: string;
+  warehouseId?: string | number;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 // Create production data interface
@@ -246,12 +249,45 @@ export const productionService = {
     count: number;
   }> => {
     try {
+      // Process filters to ensure backend compatibility
+      const processedFilters: Record<string, any> = {};
+      
+      // Handle string or number values consistently
+      if (filters.productId !== undefined) {
+        processedFilters.productId = filters.productId.toString();
+      }
+      
+      if (filters.mainProductId !== undefined) {
+        processedFilters.mainProductId = filters.mainProductId.toString();
+      }
+      
+      if (filters.warehouseId !== undefined) {
+        processedFilters.warehouseId = filters.warehouseId.toString();
+      }
+      
+      // Handle date filters - support both naming conventions
+      if (filters.startDate) {
+        processedFilters.startDate = filters.startDate;
+      } else if (filters.dateFrom) {
+        processedFilters.startDate = filters.dateFrom;
+      }
+      
+      if (filters.endDate) {
+        processedFilters.endDate = filters.endDate;
+      } else if (filters.dateTo) {
+        processedFilters.endDate = filters.dateTo;
+      }
+      
+      if (filters.status) {
+        processedFilters.status = filters.status;
+      }
+      
       const response = await axios.get(`${API_BASE_URL}/production`, {
         params: {
           page,
           pageSize,
           search,
-          ...filters,
+          ...processedFilters,
         },
       });
       

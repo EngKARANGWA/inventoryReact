@@ -6,7 +6,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { saleService } from "../../services/saleService";
-// import Select from "react-select";
+import { Sale, SaleItem, Product, FormItem, Saler, Client, Blocker, SortConfig } from './sale';
+
 
 // Import the new components
 import { SalesStats } from "./SalesStats";
@@ -18,62 +19,9 @@ import { SaleDetailsModal } from "./SaleDetailsModal";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { SalesPagination } from "./SalesPagination";
 
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export interface Sale {
-  id: number;
-  saleReference: string | null;
-  quantity: string;
-  unitPrice: string;
-  status: string;
-  expectedDeliveryDate: string;
-  totalPaid: string;
-  totalDelivered: string;
-  note: string;
-  createdAt: string;
-  product: {
-    id: number;
-    name: string;
-    type: string;
-  };
-  saler: {
-    id: number;
-    user: {
-      profile: {
-        names: string;
-      };
-    };
-  };
-  client: {
-    id: number;
-    clientId: string;
-  } | null;
-}
-interface Product {
-  id: number;
-  name: string;
-}
-
-interface Saler {
-  id: number;
-  name: string;
-}
-
-interface Client {
-  id: number;
-  name: string;
-}
-
-interface Blocker {
-  id: number;
-  name: string;
-}
-
-interface SortConfig {
-  key: keyof Sale;
-  direction: "ascending" | "descending";
-}
 
 const SaleManagement: React.FC = () => {
   const [sales, setSales] = useState<any[]>([]);
@@ -113,15 +61,20 @@ const SaleManagement: React.FC = () => {
   });
 
   const [formData, setFormData] = useState({
-    productId: "",
     salerId: "",
     clientId: "",
     blockerId: "",
-    quantity: "",
-    unitPrice: "",
     note: "",
-    date: new Date().toISOString().split("T")[0],
     expectedDeliveryDate: "",
+    items: [
+      {
+        id: undefined,
+        productId: "",
+        quantity: "",
+        unitPrice: "",
+        note: "",
+      },
+    ],
   });
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -233,30 +186,45 @@ const SaleManagement: React.FC = () => {
     setIsSubmitting(true);
   
     try {
-      const saleData = {
-        productId: Number(formData.productId),
-        salerId: Number(formData.salerId),
-        quantity: parseFloat(formData.quantity),
-        unitPrice: parseFloat(formData.unitPrice),
-        note: formData.note,
-        date: formData.date,
-        expectedDeliveryDate: formData.expectedDeliveryDate,
-        ...(formData.clientId && { clientId: Number(formData.clientId) }),
-        ...(formData.blockerId && { blockerId: Number(formData.blockerId) }),
-      };
+      // Prepare items data - convert strings to numbers
+      const items = formData.items.map((item) => ({
+        ...(item.id && { id: Number(item.id) }),
+        productId: Number(item.productId),
+        quantity: parseFloat(item.quantity),
+        unitPrice: parseFloat(item.unitPrice),
+        note: item.note || undefined,
+      }));
   
       if (editingSale) {
-        const updatedSale = await saleService.updateSale(editingSale.id, {
-          quantity: parseFloat(formData.quantity),
-          unitPrice: parseFloat(formData.unitPrice),
-          note: formData.note,
-        });
-        setSales(sales.map((s) => (s.id === editingSale.id ? updatedSale : s)));
+        // For update, we don't need to provide salerId if it's not changing
+        const updateData = {
+          ...(formData.clientId && { clientId: Number(formData.clientId) }),
+          ...(formData.blockerId && { blockerId: Number(formData.blockerId) }),
+          items,
+          note: formData.note || undefined,
+          expectedDeliveryDate: formData.expectedDeliveryDate || undefined,
+        };
+  
+        await saleService.updateSale(editingSale.id, updateData);
         toast.success("Sale updated successfully");
       } else {
-        const newSale = await saleService.createSale(saleData);
-        setSales([newSale, ...sales]);
-        setTotalSales(totalSales + 1);
+        // For create, salerId is required
+        if (!formData.salerId) {
+          toast.error("Saler is required");
+          setIsSubmitting(false);
+          return;
+        }
+  
+        const createData = {
+          salerId: Number(formData.salerId),
+          ...(formData.clientId && { clientId: Number(formData.clientId) }),
+          ...(formData.blockerId && { blockerId: Number(formData.blockerId) }),
+          items,
+          note: formData.note || undefined,
+          expectedDeliveryDate: formData.expectedDeliveryDate || undefined,
+        };
+  
+        await saleService.createSale(createData);
         toast.success("Sale created successfully");
       }
   
@@ -289,32 +257,48 @@ const SaleManagement: React.FC = () => {
   const handleAddClick = () => {
     setEditingSale(null);
     setFormData({
-      productId: "",
       salerId: "",
       clientId: "",
       blockerId: "",
-      quantity: "",
-      unitPrice: "",
       note: "",
-      date: new Date().toISOString().split("T")[0],
       expectedDeliveryDate: "",
+      items: [
+        {
+          productId: "",
+          quantity: "",
+          unitPrice: "",
+          note: "",
+        },
+      ],
     });
     setShowAddForm(true);
   };
 
   const handleEditClick = (sale: any) => {
     setEditingSale(sale);
+
+    // Map sale items to form format
+    const items =
+      sale.items?.map((item: any) => ({
+        id: item.id,
+        productId: String(item.productId),
+        quantity: item.quantity.toString(),
+        unitPrice: item.unitPrice ? item.unitPrice.toString() : "",
+        note: item.note || "",
+      })) || [];
+
     setFormData({
-      productId: String(sale.productId),
       salerId: String(sale.salerId),
       clientId: sale.clientId ? String(sale.clientId) : "",
       blockerId: sale.blockerId ? String(sale.blockerId) : "",
-      quantity: sale.quantity.toString(),
-      unitPrice: sale.unitPrice ? sale.unitPrice.toString() : "",
       note: sale.note || "",
-      date: sale.createdAt.split("T")[0],
       expectedDeliveryDate: sale.expectedDeliveryDate?.split("T")[0] || "",
+      items:
+        items.length > 0
+          ? items
+          : [{ productId: "", quantity: "", unitPrice: "", note: "" }],
     });
+
     setShowAddForm(true);
   };
 

@@ -49,7 +49,7 @@ interface WarehouseFilters {
   pageSize: number;
   status: string;
 }
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const WarehouseManagement: React.FC = () => {
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);

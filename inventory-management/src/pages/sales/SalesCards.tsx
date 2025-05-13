@@ -1,5 +1,5 @@
 import React from "react";
-import { Package, Calendar, Eye, Edit2, Trash2, RefreshCw } from "lucide-react";
+import { Package, Calendar, Eye, Edit2, Trash2, RefreshCw, ShoppingCart } from "lucide-react";
 
 interface SalesCardsProps {
   loading: boolean;
@@ -48,6 +48,21 @@ export const SalesCards: React.FC<SalesCardsProps> = ({
     ));
   };
 
+  // Function to calculate total quantity and amount for a sale
+  const calculateSaleTotals = (sale: any) => {
+    let totalQuantity = 0;
+    let totalAmount = 0;
+    
+    if (sale.items && sale.items.length > 0) {
+      sale.items.forEach((item: any) => {
+        totalQuantity += parseFloat(item.quantity || 0);
+        totalAmount += parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0);
+      });
+    }
+    
+    return { totalQuantity, totalAmount };
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
       {loading ? (
@@ -74,99 +89,114 @@ export const SalesCards: React.FC<SalesCardsProps> = ({
           </p>
         </div>
       ) : (
-        sales.map((sale) => (
-          <div 
-            key={sale.id} 
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md"
-          >
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1 truncate">
-                    {sale.saleReference || "N/A"}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Created on {new Date(sale.createdAt).toLocaleDateString()}
-                  </p>
+        sales.map((sale) => {
+          const { totalQuantity, totalAmount } = calculateSaleTotals(sale);
+          
+          return (
+            <div 
+              key={sale.id} 
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md"
+            >
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1 truncate">
+                      {sale.saleReference || "N/A"}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      Created on {new Date(sale.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {getStatusBadge(sale)}
                 </div>
-                {getStatusBadge(sale)}
-              </div>
-              
-              <div className="mb-3">
-                <p className="text-sm font-medium text-gray-700">Product</p>
-                <p className="text-sm font-semibold text-gray-900">
-                  {sale.product?.name || "N/A"}
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Quantity</p>
-                  <p className="text-sm text-gray-900 flex items-center">
-                    <Package className="w-4 h-4 mr-1" />
-                    {sale.quantity} Kg
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Unit Price</p>
-                  <p className="text-sm text-gray-900">
-                    {sale.unitPrice ? parseFloat(sale.unitPrice).toFixed(2) : "N/A"} RWF/Kg
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700">Total Amount</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {sale.unitPrice ? (parseFloat(sale.unitPrice) * sale.quantity).toFixed(2) : "N/A"} RWF
-                </p>
-              </div>
-              
-              <div className="mb-3">
-                <p className="text-sm font-medium text-gray-700">Saler</p>
-                <p className="text-sm text-gray-900">
-                  {sale.saler?.user?.profile?.names || "N/A"}
-                </p>
-              </div>
-              
-              <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                <p className="text-xs text-gray-500 flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {new Date(sale.createdAt).toLocaleDateString()}
-                </p>
                 
-                <div className="flex space-x-1">
-                  <button
-                    onClick={() => {
-                      setSelectedSale(sale);
-                      setShowViewModal(true);
-                    }}
-                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-full"
-                    title="View Details"
-                  >
-                    <Eye size={18} />
-                  </button>
+                <div className="mb-3">
+                  <p className="text-sm font-medium text-gray-700">Products</p>
+                  {sale.items && sale.items.length > 0 ? (
+                    <>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {sale.items[0].product?.name}
+                        {sale.items.length > 1 && ` + ${sale.items.length - 1} more`}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {sale.items.length} {sale.items.length === 1 ? 'item' : 'items'}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm font-semibold text-gray-900">No items</p>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Quantity</p>
+                    <p className="text-sm text-gray-900 flex items-center">
+                      <Package className="w-4 h-4 mr-1" />
+                      {totalQuantity.toLocaleString()} Kg
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Items</p>
+                    <p className="text-sm text-gray-900 flex items-center">
+                      <ShoppingCart className="w-4 h-4 mr-1" />
+                      {sale.items?.length || 0}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700">Total Amount</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {totalAmount.toLocaleString()} RWF
+                  </p>
+                </div>
+                
+                <div className="mb-3">
+                  <p className="text-sm font-medium text-gray-700">Saler</p>
+                  <p className="text-sm text-gray-900">
+                    {sale.saler?.user?.profile?.names || "N/A"}
+                  </p>
+                </div>
+                
+                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 flex items-center">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    {new Date(sale.createdAt).toLocaleDateString()}
+                  </p>
                   
-                  <button
-                    onClick={() => handleEditClick(sale)}
-                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full"
-                    title="Edit Sale"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                  
-                  <button
-                    onClick={() => handleDeleteConfirm(sale.id)}
-                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-full"
-                    title="Delete Sale"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={() => {
+                        setSelectedSale(sale);
+                        setShowViewModal(true);
+                      }}
+                      className="p-1.5 text-green-600 hover:bg-green-50 rounded-full"
+                      title="View Details"
+                    >
+                      <Eye size={18} />
+                    </button>
+                    
+                    <button
+                      onClick={() => handleEditClick(sale)}
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full"
+                      title="Edit Sale"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    
+                    <button
+                      onClick={() => handleDeleteConfirm(sale.id)}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-full"
+                      title="Delete Sale"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))
+          );
+        })
       )}
       
       {totalPages > 1 && (

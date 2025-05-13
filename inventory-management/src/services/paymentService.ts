@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export interface Payment {
   id: number;
@@ -33,6 +33,9 @@ export interface Payment {
   sale?: {
     id: number;
     saleReference: string;
+    totalAmount: number;
+    totalPaid: number;
+    status: string;
     client?: {
       id: number;
       user?: {
@@ -41,6 +44,7 @@ export interface Payment {
         };
       };
     };
+    items?: SaleItem[];
   };
 }
 
@@ -63,9 +67,10 @@ export interface Purchase {
 
 export interface Sale {
   id: number;
-  referenceNumber: string;
-  quantity: number;
+  saleReference: string;
+  totalAmount: number;
   totalPaid: number;
+  status: string;
   client?: {
     id: number;
     user?: {
@@ -73,6 +78,17 @@ export interface Sale {
         names: string;
       };
     };
+  };
+  items?: SaleItem[];
+}
+
+export interface SaleItem {
+  id: number;
+  quantity: number;
+  unitPrice: number;
+  product?: {
+    id: number;
+    name: string;
   };
 }
 
@@ -91,8 +107,6 @@ interface UpdatePaymentData {
   transactionReference?: string;
 }
 
-
-
 interface PaymentResponse {
   success: boolean;
   data: Payment[];
@@ -103,7 +117,6 @@ interface PaymentResponse {
     totalPages: number;
   };
 }
-
 
 export const paymentService = {
   createPayment: async (
@@ -135,24 +148,24 @@ export const paymentService = {
     }
   },
 
-getAllPayments: async (): Promise<PaymentResponse> => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/payments`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching payments:", error);
-    return {
-      success: false,
-      data: [],
-      pagination: {
-        totalItems: 0,
-        currentPage: 1,
-        pageSize: 10,
-        totalPages: 1,
-      },
-    };
-  }
-},
+  getAllPayments: async (): Promise<PaymentResponse> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/payments`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      return {
+        success: false,
+        data: [],
+        pagination: {
+          totalItems: 0,
+          currentPage: 1,
+          pageSize: 10,
+          totalPages: 1,
+        },
+      };
+    }
+  },
 
   getPaymentById: async (
     id: number,
@@ -176,7 +189,6 @@ getAllPayments: async (): Promise<PaymentResponse> => {
   ): Promise<Payment> => {
     const formData = new FormData();
 
-    // Append all payment data fields
     Object.entries(paymentData).forEach(([key, value]) => {
       if (value !== undefined) {
         formData.append(key, value.toString());
@@ -247,6 +259,22 @@ getAllPayments: async (): Promise<PaymentResponse> => {
       return [];
     }
   },
+
+  getSalesWithItems: async (search: string = ""): Promise<Sale[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/sales`, {
+        params: { 
+          search,
+          includeItems: "true" 
+        },
+      });
+      return response.data.data || [];
+    } catch (error) {
+      console.error("Error fetching sales with items:", error);
+      return [];
+    }
+  },
+
   getPaymentFile: async (filename: string): Promise<Blob> => {
     try {
       const response = await axios.get(

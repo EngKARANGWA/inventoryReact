@@ -40,6 +40,7 @@ interface StockSnapshot {
     name: string;
   };
 }
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface StockTrendsChartProps {
   filterType?: 'all' | 'product' | 'warehouse';
@@ -56,7 +57,7 @@ const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ filterType = 'all',
       try {
         setIsLoading(true);
         setError(null);
-        let url = 'https://test.gvibyequ.a2hosted.com/api/stock-snapshot';
+        let url = `${API_BASE_URL}/stock-snapshot`;
         
         if (filterType === 'product' && filterId) {
           url += `/product/${filterId}`;

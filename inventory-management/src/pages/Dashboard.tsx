@@ -24,6 +24,8 @@ import StockTrendsChart from "../components/ui/StockTrendsChart";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // Summary card component with improved styling
 const SummaryCard: React.FC<{
   title: string;
@@ -146,8 +148,8 @@ const Dashboard: React.FC = () => {
       try {
         setIsLoading(true);
         const [productsRes, warehousesRes] = await Promise.all([
-          fetch("https://test.gvibyequ.a2hosted.com/api/products"),
-          fetch("https://test.gvibyequ.a2hosted.com/api/warehouse"),
+          fetch(`${API_BASE_URL}/products`),
+          fetch(`${API_BASE_URL}/warehouse`),
         ]);
 
         if (!productsRes.ok || !warehousesRes.ok) {

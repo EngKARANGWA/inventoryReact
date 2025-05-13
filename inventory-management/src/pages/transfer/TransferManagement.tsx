@@ -21,7 +21,7 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import Pagination from "./Pagination";
 import TransferCard from "./TransferCard";
 
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface Product {
   id: number;

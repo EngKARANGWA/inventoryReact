@@ -1,6 +1,14 @@
-import React from 'react';
+// import React, { useState } from 'react';
 import Select from 'react-select';
-import { X } from 'lucide-react';
+import { X, Plus, Trash } from 'lucide-react';
+
+interface SaleItem {
+  id?: number;
+  productId: string;
+  quantity: string;
+  unitPrice: string;
+  note?: string;
+}
 
 interface SaleFormProps {
   showAddForm: boolean;
@@ -47,9 +55,45 @@ export const SaleForm: React.FC<SaleFormProps> = ({
     }));
   };
 
+  const handleItemChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    const items = [...formData.items];
+    items[index] = { ...items[index], [name]: value };
+    setFormData((prev: any) => ({ ...prev, items }));
+  };
+
+  const handleProductSelect = (index: number, selectedOption: any) => {
+    const items = [...formData.items];
+    items[index] = { ...items[index], productId: selectedOption?.value.toString() || "" };
+    setFormData((prev: any) => ({ ...prev, items }));
+  };
+
+  const addItem = () => {
+    setFormData((prev: any) => ({
+      ...prev,
+      items: [...prev.items, { productId: "", quantity: "", unitPrice: "", note: "" }]
+    }));
+  };
+
+  const removeItem = (index: number) => {
+    const items = [...formData.items];
+    items.splice(index, 1);
+    setFormData((prev: any) => ({ ...prev, items }));
+  };
+
+  // Calculate total amount from all items
+  const calculateTotal = () => {
+    return formData.items.reduce((total: number, item: SaleItem) => {
+      if (item.quantity && item.unitPrice) {
+        return total + (parseFloat(item.quantity) * parseFloat(item.unitPrice));
+      }
+      return total;
+    }, 0);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">
             {editingSale ? "Edit Sale" : "Create New Sale"}
@@ -65,36 +109,7 @@ export const SaleForm: React.FC<SaleFormProps> = ({
         </div>
 
         <form onSubmit={handleFormSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Product Select */}
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product <span className="text-red-500">*</span>
-              </label>
-              <Select
-                id="productId"
-                name="productId"
-                options={products.map(p => ({ value: p.id, label: p.name }))}
-                isLoading={!products.length}
-                onInputChange={(value) => setProductsSearch(value)}
-                onChange={(selectedOption) => {
-                  setFormData((prev: any) => ({
-                    ...prev,
-                    productId: selectedOption?.value.toString() || ""
-                  }));
-                }}
-                value={products
-                  .filter(p => p.id.toString() === formData.productId)
-                  .map(p => ({ value: p.id, label: p.name }))[0]}
-                placeholder="Search and select product..."
-                className="basic-single"
-                classNamePrefix="select"
-                isClearable
-                required
-                isDisabled={isSubmitting || !!editingSale}
-              />
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Saler Select */}
             <div className="col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -180,61 +195,6 @@ export const SaleForm: React.FC<SaleFormProps> = ({
               />
             </div>
 
-            {/* Quantity Input */}
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quantity (Kg) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                id="quantity"
-                name="quantity"
-                value={formData.quantity}
-                onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                min="0.01"
-                step="0.01"
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* Unit Price Input */}
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Unit Price (RWF) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                id="unitPrice"
-                name="unitPrice"
-                value={formData.unitPrice}
-                onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                min="0.01"
-                step="0.01"
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* Date Input */}
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                id="date"
-                name="date"
-                value={formData.date}
-                onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                disabled={isSubmitting}
-              />
-            </div>
-
             {/* Expected Delivery Date Input */}
             <div className="col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -250,22 +210,155 @@ export const SaleForm: React.FC<SaleFormProps> = ({
                 disabled={isSubmitting}
               />
             </div>
+          </div>
 
-            {/* Notes */}
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notes
-              </label>
-              <textarea
-                id="note"
-                name="note"
-                value={formData.note}
-                onChange={handleFormChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          {/* Items Section */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium text-gray-900">Sale Items</h3>
+              <button
+                type="button"
+                onClick={addItem}
                 disabled={isSubmitting}
-              />
+                className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <Plus size={16} className="mr-1" /> Add Item
+              </button>
             </div>
+
+            {formData.items.length === 0 ? (
+              <div className="text-center py-4 border border-dashed border-gray-300 rounded-md bg-gray-50">
+                <p className="text-gray-500">No items added. Click "Add Item" to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {formData.items.map((item: SaleItem, index: number) => (
+                  <div key={index} className="p-4 border border-gray-200 rounded-md bg-gray-50">
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="text-sm font-medium text-gray-700">Item #{index + 1}</h4>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index)}
+                        disabled={isSubmitting || formData.items.length === 1}
+                        className="inline-flex items-center p-1 border border-transparent text-sm font-medium rounded-md text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Product Select */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Product <span className="text-red-500">*</span>
+                        </label>
+                        <Select
+                          options={products.map(p => ({ value: p.id, label: p.name }))}
+                          isLoading={!products.length}
+                          onInputChange={setProductsSearch}
+                          onChange={(option) => handleProductSelect(index, option)}
+                          value={products
+                            .filter(p => p.id.toString() === item.productId)
+                            .map(p => ({ value: p.id, label: p.name }))[0]}
+                          placeholder="Select product..."
+                          className="basic-single"
+                          classNamePrefix="select"
+                          isClearable
+                          required
+                          isDisabled={isSubmitting || (!!editingSale && !!item.id)}
+                        />
+                      </div>
+
+                      {/* Quantity Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Quantity (Kg) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          name="quantity"
+                          value={item.quantity}
+                          onChange={(e) => handleItemChange(index, e)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                          min="0.01"
+                          step="0.01"
+                          disabled={isSubmitting}
+                        />
+                      </div>
+
+                      {/* Unit Price Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Unit Price (RWF) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          name="unitPrice"
+                          value={item.unitPrice}
+                          onChange={(e) => handleItemChange(index, e)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                          min="0.01"
+                          step="0.01"
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Item Note */}
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Item Note (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        name="note"
+                        value={item.note || ""}
+                        onChange={(e) => handleItemChange(index, e)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+
+                    {/* Item Total */}
+                    {item.quantity && item.unitPrice && (
+                      <div className="mt-2 text-right">
+                        <p className="text-sm font-medium text-gray-700">
+                          Subtotal: {(parseFloat(item.quantity) * parseFloat(item.unitPrice)).toLocaleString()} RWF
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Total Amount */}
+                <div className="p-3 bg-gray-100 rounded-md mt-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-gray-700 font-medium">Total Amount:</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {calculateTotal().toLocaleString()} RWF
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              General Notes
+            </label>
+            <textarea
+              id="note"
+              name="note"
+              value={formData.note}
+              onChange={handleFormChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* Form buttons */}
@@ -283,11 +376,11 @@ export const SaleForm: React.FC<SaleFormProps> = ({
               className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               disabled={
                 isSubmitting ||
-                !formData.productId ||
                 !formData.salerId ||
-                !formData.quantity ||
-                !formData.unitPrice ||
-                !formData.date
+                formData.items.length === 0 ||
+                !formData.items.every((item: SaleItem) => 
+                  item.productId && item.quantity && item.unitPrice
+                )
               }
             >
               {isSubmitting ? (

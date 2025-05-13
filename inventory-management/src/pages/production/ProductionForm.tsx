@@ -8,6 +8,8 @@ import {
   PackageSummary,
 } from "./types";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface ProductionFormProps {
   show: boolean;
   onClose: () => void;
@@ -157,7 +159,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
       }
 
       const response = await fetch(
-        `https://test.gvibyequ.a2hosted.com/api/stoke-movements/average-price/${productId}`
+        `${API_BASE_URL}/stoke-movements/average-price/${productId}`
       );
       const data = await response.json();
 

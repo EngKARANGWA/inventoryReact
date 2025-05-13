@@ -39,7 +39,6 @@ const PaymentManagement: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalPayments, setTotalPayments] = useState(0);
   const [loading, setLoading] = useState(true);
-  // const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -69,24 +68,34 @@ const PaymentManagement: React.FC = () => {
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
-    // setError(null);
-
     try {
-      // Call without any parameters
       const response = await paymentService.getAllPayments();
-
-      setPayments(response.data || []);
+      const paymentsWithDetails = await Promise.all(
+        (response.data || []).map(async (payment: Payment) => {
+          if (payment.payableType === "sale" && payment.saleId) {
+            const saleDetails = await paymentService.getSalesWithItems(
+              payment.saleId.toString()
+            );
+            return {
+              ...payment,
+              sale: saleDetails.find((s) => s.id === payment.saleId),
+            };
+          }
+          return payment;
+        })
+      );
+      
+      setPayments(paymentsWithDetails);
       setTotalPayments(response.pagination?.totalItems || 0);
     } catch (err) {
       console.error("Error fetching payments:", err);
       toast.error("Failed to load payments. Please try again later.");
-      toast.error("Failed to load payments");
       setPayments([]);
       setTotalPayments(0);
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependency array since we're not using any external values
+  }, []);
 
   useEffect(() => {
     fetchPayments();

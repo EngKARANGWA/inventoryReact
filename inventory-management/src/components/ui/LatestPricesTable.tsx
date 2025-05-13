@@ -9,6 +9,7 @@ interface PriceData {
   priceDate: string;
   priceId: number;
 }
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const LatestPricesTable: React.FC = () => {
   const [prices, setPrices] = useState<PriceData[]>([]);
@@ -20,7 +21,7 @@ const LatestPricesTable: React.FC = () => {
       try {
         setIsLoading(true);
         const response = await fetch(
-          "https://test.gvibyequ.a2hosted.com/api/daily-price/latest-price"
+          `${API_BASE_URL}/daily-price/latest-price`
         );
         if (!response.ok) throw new Error("Failed to fetch prices");
 

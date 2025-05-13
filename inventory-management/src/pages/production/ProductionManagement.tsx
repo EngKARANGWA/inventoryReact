@@ -23,7 +23,7 @@ import ProductionTable from "./ProductionTable";
 import ProductionSummaryCards from "./ProductionSummaryCards";
 import ProductionActionBar from "./ProductionActionBar";
 
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const ProductionManagement: React.FC = () => {
   const [productions, setProductions] = useState<Production[]>([]);

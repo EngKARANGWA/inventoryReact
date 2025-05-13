@@ -19,6 +19,9 @@ ChartJS.register(
   Legend
 );
 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface Product {
   id: number;
   name: string;
@@ -67,9 +70,9 @@ export const StockMovementChart: React.FC<StockMovementChartProps> = ({
         
         // Fetch all data in parallel
         const [movementsRes, productsRes, warehousesRes] = await Promise.all([
-          fetch('https://test.gvibyequ.a2hosted.com/api/stoke-movements'),
-          fetch('https://test.gvibyequ.a2hosted.com/api/products'),
-          fetch('https://test.gvibyequ.a2hosted.com/api/warehouse')
+          fetch(`${API_BASE_URL}/stoke-movements`),
+          fetch(`${API_BASE_URL}/products`),
+          fetch(`${API_BASE_URL}/warehouse`)
         ]);
 
         if (!movementsRes.ok || !productsRes.ok || !warehousesRes.ok) {
