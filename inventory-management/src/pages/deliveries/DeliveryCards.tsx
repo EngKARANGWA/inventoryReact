@@ -18,38 +18,38 @@ import {
 import { Delivery } from "../../services/deliveryService";
 
 interface DeliveryCardsProps {
-    loading: boolean;
-    error: string | null;
-    paginatedDeliveries: Delivery[];
-    currentPage: number;
-    totalPages: number;
-    filteredDeliveries: Delivery[];
-    handlePageChange: (newPage: number) => void;
-    setSelectedDelivery: React.Dispatch<React.SetStateAction<Delivery | null>>;
-    setShowViewModal: React.Dispatch<React.SetStateAction<boolean>>;
-    handleEditClick: (delivery: Delivery) => void;
-    handleDeleteConfirm: (deliveryId: number) => void;
-    searchTerm: string;
-    handleRefresh: () => void;
-    pageSize: number;
-  }
+  loading: boolean;
+  error: string | null;
+  paginatedDeliveries: Delivery[];
+  currentPage: number;
+  totalPages: number;
+  filteredDeliveries: Delivery[];
+  handlePageChange: (newPage: number) => void;
+  setSelectedDelivery: React.Dispatch<React.SetStateAction<Delivery | null>>;
+  setShowViewModal: React.Dispatch<React.SetStateAction<boolean>>;
+  handleEditClick: (delivery: Delivery) => void;
+  handleDeleteConfirm: (deliveryId: number) => void;
+  searchTerm: string;
+  handleRefresh: () => void;
+  pageSize: number;
+}
 
-  const DeliveryCards: React.FC<DeliveryCardsProps> = ({
-    loading,
-    error,
-    paginatedDeliveries,
-    currentPage,
-    totalPages,
-    filteredDeliveries,
-    handlePageChange,
-    setSelectedDelivery,
-    setShowViewModal,
-    handleEditClick,
-    handleDeleteConfirm,
-    searchTerm,
-    handleRefresh,
-    pageSize,
-  }) => {
+const DeliveryCards: React.FC<DeliveryCardsProps> = ({
+  loading,
+  error,
+  paginatedDeliveries,
+  currentPage,
+  totalPages,
+  filteredDeliveries,
+  handlePageChange,
+  setSelectedDelivery,
+  setShowViewModal,
+  handleEditClick,
+  handleDeleteConfirm,
+  searchTerm,
+  handleRefresh,
+  pageSize,
+}) => {
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "decimal",
@@ -158,9 +158,7 @@ interface DeliveryCardsProps {
                   </h3>
                   <p className="text-xs text-gray-500">
                     Created on{" "}
-                    {new Date(
-                      delivery.createdAt
-                    ).toLocaleDateString()}
+                    {new Date(delivery.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 <span
@@ -174,9 +172,7 @@ interface DeliveryCardsProps {
               </div>
 
               <div className="mb-3">
-                <p className="text-sm font-medium text-gray-700">
-                  Quantity
-                </p>
+                <p className="text-sm font-medium text-gray-700">Quantity</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {formatNumber(Number(delivery.quantity))} Kg
                 </p>
@@ -184,9 +180,7 @@ interface DeliveryCardsProps {
 
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    Direction
-                  </p>
+                  <p className="text-sm font-medium text-gray-700">Direction</p>
                   <p className="text-sm text-gray-900 flex items-center">
                     {getDirectionIcon(delivery.direction)}
                     <span className="ml-1 capitalize">
@@ -195,26 +189,38 @@ interface DeliveryCardsProps {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    Product
-                  </p>
+                  <p className="text-sm font-medium text-gray-700">Product</p>
                   <p className="text-sm text-gray-900">
                     {delivery.product?.name || "N/A"}
                   </p>
                 </div>
               </div>
 
-              <div className="mb-4">
+              <div className="mb-3">
                 <p className="text-sm font-medium text-gray-700">
                   {delivery.direction === "in" ? "Purchase" : "Sale"}
                 </p>
                 <p className="text-sm text-gray-900">
                   {delivery.direction === "in" ? (
-                    <>
-                      {delivery.purchase?.purchaseReference || "N/A"}
-                    </>
+                    <>{delivery.purchase?.purchaseReference || "N/A"}</>
                   ) : (
-                    <>{delivery.sale?.referenceNumber || "N/A"}</>
+                    <>
+                      {delivery.saleItemId ? (
+                        <span className="flex flex-col">
+                          <span>
+                            Item: {delivery.saleItem?.product?.name || "N/A"}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            Sale:{" "}
+                            {delivery.saleItem?.sale?.saleReference ||
+                              delivery.sale?.saleReference ||
+                              "N/A"}
+                          </span>
+                        </span>
+                      ) : (
+                        delivery.sale?.saleReference || "N/A"
+                      )}
+                    </>
                   )}
                 </p>
               </div>
@@ -222,9 +228,7 @@ interface DeliveryCardsProps {
               <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                 <p className="text-xs text-gray-500 flex items-center">
                   <Calendar className="h-3 w-3 mr-1" />
-                  {new Date(
-                    delivery.deliveredAt
-                  ).toLocaleDateString()}
+                  {new Date(delivery.deliveredAt).toLocaleDateString()}
                 </p>
 
                 <div className="flex space-x-1">
@@ -282,11 +286,8 @@ interface DeliveryCardsProps {
               <span className="hidden sm:inline">
                 {" "}
                 • Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                {Math.min(
-                  currentPage * pageSize,
-                  filteredDeliveries.length
-                )}{" "}
-                of {filteredDeliveries.length}
+                {Math.min(currentPage * pageSize, filteredDeliveries.length)} of{" "}
+                {filteredDeliveries.length}
               </span>
             </span>
 

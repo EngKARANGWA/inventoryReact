@@ -2,6 +2,31 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+export interface SaleItem {
+  id: number;
+  quantity: string;
+  unitPrice: string;
+  totalDelivered: string;
+  note?: string;
+  saleId: number;
+  productId: number;
+  product?: {
+    id: number;
+    name: string;
+    type?: string;
+    description?: string;
+  };
+  sale?: {
+    id: number;
+    saleReference: string;
+    referenceNumber?: string;
+    status?: string;
+    client?: {
+      name?: string;
+    };
+  };
+}
+
 export interface Delivery {
   id: number;
   deliveryReference: string;
@@ -12,6 +37,7 @@ export interface Delivery {
   quantity: string;
   purchaseId: number | null;
   saleId: number | null;
+  saleItemId: number | null; 
   driverId: number;
   unitPrice: string;
   productId: number | null;
@@ -63,14 +89,15 @@ export interface Delivery {
   sale?: {
     id: number;
     referenceNumber: string;
-    saleReference?: string; // Add this to match the response
-    quantity: string;
-    status?: string;
+    saleReference?: string;
     note?: string;
+    status?: string;
     client?: {
       name?: string;
     };
+    items?: SaleItem[];
   } | null;
+  saleItem?: SaleItem | null; // Updated to use the SaleItem interface
 }
 
 export interface CreateDeliveryData {
@@ -79,6 +106,7 @@ export interface CreateDeliveryData {
   driverId: number;
   warehouseId: number;
   saleId?: number;
+  saleItemId?: number;
   purchaseId?: number;
   notes?: string;
 }
@@ -128,20 +156,6 @@ export const deliveryService = {
   getAllDeliveries: async (
   ): Promise<DeliveryResponse> => {
     try {
-      // const params = {
-      //   page: options.page || 1,
-      //   pageSize: options.pageSize || 10,
-      //   includeDeleted: options.includeDeleted ? "true" : "false",
-      //   search: options.search,
-      //   status: options.status,
-      //   direction: options.direction,
-      //   productId: options.productId,
-      //   warehouseId: options.warehouseId,
-      //   driverId: options.driverId,
-      //   dateFrom: options.dateFrom,
-      //   dateTo: options.dateTo,
-      // };
-
       const response = await axios.get(`${API_BASE_URL}/deliveries`);
       return response.data;
     } catch (error) {

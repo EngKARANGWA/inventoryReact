@@ -156,7 +156,9 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                 <div>
                   <p className="text-xs text-gray-500">Product</p>
                   <p className="text-sm font-medium">
-                    {selectedDelivery.product?.name || "N/A"}
+                    {selectedDelivery.product?.name || 
+                     selectedDelivery.saleItem?.product?.name || 
+                     "N/A"}
                     {selectedDelivery.product?.description && (
                       <span className="block text-xs text-gray-500 mt-1">
                         {selectedDelivery.product.description}
@@ -242,38 +244,85 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-xs text-gray-500">Reference</p>
+                    <p className="text-xs text-gray-500">Sale Reference</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.sale?.saleReference || "N/A"}
+                      {selectedDelivery.sale?.saleReference || 
+                       selectedDelivery.saleItem?.sale?.saleReference || 
+                       "N/A"}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Client</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.sale?.client?.name || "N/A"}
+                      {selectedDelivery.sale?.client?.name || 
+                       selectedDelivery.saleItem?.sale?.client?.name || 
+                       "N/A"}
                     </p>
                   </div>
                 </div>
+                
+                {/* Add sale item specific information if available */}
+                {selectedDelivery.saleItem && (
+                  <div className="bg-blue-50 p-3 rounded-md">
+                    <h4 className="text-sm font-medium text-blue-700 mb-2">Sale Item Details</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-xs text-gray-500">Product</p>
+                        <p className="text-sm font-medium">
+                          {selectedDelivery.saleItem.product?.name || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Quantity</p>
+                        <p className="text-sm font-medium">
+                          {selectedDelivery.saleItem.quantity 
+                            ? `${selectedDelivery.saleItem.quantity} Kg`
+                            : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Unit Price</p>
+                        <p className="text-sm font-medium">
+                          {selectedDelivery.saleItem.unitPrice 
+                            ? `${selectedDelivery.saleItem.unitPrice} RWF/Kg`
+                            : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Delivered</p>
+                        <p className="text-sm font-medium">
+                          {selectedDelivery.saleItem.totalDelivered 
+                            ? `${selectedDelivery.saleItem.totalDelivered} Kg`
+                            : "0 Kg"}
+                        </p>
+                      </div>
+                    </div>
+                    {selectedDelivery.saleItem.note && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-500">Note</p>
+                        <p className="text-sm">{selectedDelivery.saleItem.note}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-xs text-gray-500">Quantity</p>
+                    <p className="text-xs text-gray-500">Sale Status</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.sale?.quantity
-                        ? `${selectedDelivery.sale.quantity} Kg`
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Status</p>
-                    <p className="text-sm font-medium">
-                      {selectedDelivery.sale?.status || "N/A"}
+                      {selectedDelivery.sale?.status || 
+                       selectedDelivery.saleItem?.sale?.status || 
+                       "N/A"}
                     </p>
                   </div>
                 </div>
+
                 <div>
                   <p className="text-xs text-gray-500">Notes</p>
                   <p className="text-sm font-medium">
-                    {selectedDelivery.sale?.note || "N/A"}
+                    {selectedDelivery.sale?.note || 
+                     selectedDelivery.saleItem?.note || 
+                     "N/A"}
                   </p>
                 </div>
               </div>

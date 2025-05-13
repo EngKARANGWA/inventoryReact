@@ -276,10 +276,7 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
               </tr>
             ) : filteredDeliveries.length === 0 ? (
               <tr>
-                <td
-                  colSpan={9}
-                  className="px-6 py-4 text-center text-gray-500"
-                >
+                <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
                   No deliveries found.{" "}
                   {searchTerm && "Try a different search term."}
                 </td>
@@ -295,9 +292,8 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                       {delivery.deliveryReference}
                     </div>
                     <div className="text-xs text-gray-500">
-                      ID: {delivery.id} | Created: {new Date(
-                        delivery.createdAt
-                      ).toLocaleDateString()}
+                      ID: {delivery.id} | Created:{" "}
+                      {new Date(delivery.createdAt).toLocaleDateString()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -317,9 +313,21 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
                       {delivery.direction === "in"
-                        ? delivery.purchase?.purchaseReference
-                        : delivery.sale?.saleReference || delivery.sale?.referenceNumber}
+                        ? delivery.purchase?.purchaseReference || "N/A"
+                        : delivery.saleItemId
+                        ? `Item: ${delivery.saleItem?.product?.name || "N/A"}`
+                        : delivery.sale?.saleReference ||
+                          delivery.sale?.referenceNumber ||
+                          "N/A"}
                     </div>
+                    {delivery.saleItemId && (
+                      <div className="text-xs text-gray-500">
+                        Sale:{" "}
+                        {delivery.saleItem?.sale?.saleReference ||
+                          delivery.sale?.saleReference ||
+                          "N/A"}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
@@ -329,8 +337,10 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                       @ {formatCurrency(delivery.unitPrice || 0)}/Kg
                     </div>
                     <div className="text-xs font-medium text-green-600">
-                      Total: {formatCurrency(
-                        Number(delivery.quantity) * Number(delivery.unitPrice || 0)
+                      Total:{" "}
+                      {formatCurrency(
+                        Number(delivery.quantity) *
+                          Number(delivery.unitPrice || 0)
                       )}
                     </div>
                   </td>
@@ -354,9 +364,7 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                     <div className="flex items-center">
                       <Calendar className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
                       <div className="text-sm text-gray-900">
-                        {new Date(
-                          delivery.deliveredAt
-                        ).toLocaleDateString()}
+                        {new Date(delivery.deliveredAt).toLocaleDateString()}
                       </div>
                     </div>
                     <div className="text-xs text-gray-500">
@@ -397,9 +405,7 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                       </button>
 
                       <button
-                        onClick={() =>
-                          handleDeleteConfirm(delivery.id)
-                        }
+                        onClick={() => handleDeleteConfirm(delivery.id)}
                         className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
                         title="Delete Delivery"
                       >
@@ -454,15 +460,10 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                 </span>{" "}
                 to{" "}
                 <span className="font-medium">
-                  {Math.min(
-                    currentPage * pageSize,
-                    filteredDeliveries.length
-                  )}
+                  {Math.min(currentPage * pageSize, filteredDeliveries.length)}
                 </span>{" "}
                 of{" "}
-                <span className="font-medium">
-                  {filteredDeliveries.length}
-                </span>{" "}
+                <span className="font-medium">{filteredDeliveries.length}</span>{" "}
                 results
               </p>
             </div>
@@ -484,34 +485,31 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                   <ArrowLeft className="h-5 w-5" aria-hidden="true" />
                 </button>
 
-                {Array.from(
-                  { length: Math.min(5, totalPages) },
-                  (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === pageNum
-                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
                   }
-                )}
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        currentPage === pageNum
+                          ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
 
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
@@ -523,10 +521,7 @@ const DeliveryTable: React.FC<DeliveryTableProps> = ({
                   }`}
                 >
                   <span className="sr-only">Next</span>
-                  <ArrowRight
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                  />
+                  <ArrowRight className="h-5 w-5" aria-hidden="true" />
                 </button>
               </nav>
             </div>

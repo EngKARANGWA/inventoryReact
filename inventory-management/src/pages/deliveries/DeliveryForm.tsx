@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import Select from "react-select";
-import { Delivery, deliveryService } from "../../services/deliveryService";
+import { Delivery, deliveryService, SaleItem } from "../../services/deliveryService";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -15,7 +15,7 @@ interface DeliveryFormProps {
   setDeliveries: React.Dispatch<React.SetStateAction<Delivery[]>>;
   setTotalDeliveries: React.Dispatch<React.SetStateAction<number>>;
   deliveries: Delivery[];
-  onSuccess?: () => void; // Add this new prop
+  onSuccess?: () => void;
 }
 
 interface Warehouse {
@@ -48,10 +48,9 @@ interface Purchase {
 interface Sale {
   id: number;
   saleReference: string;
-  product?: { name: string };
-  quantity: string;
-  totalDelivered: string;
+  totalAmount: string;
   status?: string;
+  items?: SaleItem[];
 }
 
 const DeliveryForm: React.FC<DeliveryFormProps> = ({
@@ -71,6 +70,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     warehouseId: "",
     purchaseId: "",
     saleId: "",
+    saleItemId: "", // Add saleItemId
     notes: "",
   });
 
@@ -85,6 +85,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [remainingQuantity, setRemainingQuantity] = useState<number | null>(null);
 
   useEffect(() => {
@@ -96,11 +97,13 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         warehouseId: editingDelivery.warehouseId?.toString() || "",
         purchaseId: editingDelivery.purchaseId?.toString() || "",
         saleId: editingDelivery.saleId?.toString() || "",
+        saleItemId: editingDelivery.saleItemId?.toString() || "", // Add saleItemId
         notes: editingDelivery.notes || "",
       });
     }
   }, [editingDelivery]);
 
+  // Update to check for the remaining quantity based on the correct relationship
   useEffect(() => {
     if (formData.direction === "in" && formData.purchaseId) {
       const selectedPurchase = purchases.find(p => p.id.toString() === formData.purchaseId);
@@ -110,18 +113,51 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         const remaining = totalWeight - totalDelivered;
         setRemainingQuantity(remaining > 0 ? remaining : 0);
       }
-    } else if (formData.direction === "out" && formData.saleId) {
-      const selectedSale = sales.find(s => s.id.toString() === formData.saleId);
-      if (selectedSale) {
-        const totalQuantity = parseFloat(selectedSale.quantity);
-        const totalDelivered = parseFloat(selectedSale.totalDelivered || "0");
+    } else if (formData.direction === "out" && formData.saleItemId) {
+      // If a sale item is selected, calculate remaining quantity based on that specific item
+      const selectedSaleItem = saleItems.find(item => item.id.toString() === formData.saleItemId);
+      if (selectedSaleItem) {
+        const totalQuantity = parseFloat(selectedSaleItem.quantity);
+        const totalDelivered = parseFloat(selectedSaleItem.totalDelivered || "0");
         const remaining = totalQuantity - totalDelivered;
         setRemainingQuantity(remaining > 0 ? remaining : 0);
       }
     } else {
       setRemainingQuantity(null);
     }
-  }, [formData.purchaseId, formData.saleId, purchases, sales]);
+  }, [formData.purchaseId, formData.saleItemId, purchases, saleItems]);
+
+  // Update to load sale items when a sale is selected
+  useEffect(() => {
+    if (formData.saleId) {
+      const selectedSale = sales.find(s => s.id.toString() === formData.saleId);
+      if (selectedSale && selectedSale.items) {
+        setSaleItems(selectedSale.items);
+      } else {
+        loadSaleItems(formData.saleId);
+      }
+    } else {
+      setSaleItems([]);
+    }
+  }, [formData.saleId, sales]);
+
+  // Function to load sale items for a specific sale
+  const loadSaleItems = async (saleId: string) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/sales/${saleId}`, {
+        params: { include: "items.product" }
+      });
+      
+      if (response.data?.items) {
+        setSaleItems(response.data.items);
+      } else {
+        setSaleItems([]);
+      }
+    } catch (error) {
+      console.error("Error loading sale items:", error);
+      setSaleItems([]);
+    }
+  };
 
   const fetchDropdownOptions = async () => {
     try {
@@ -151,19 +187,21 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
           (p: Purchase) => p.status !== "delivery_complete" && p.status !== "completed"
         );
         setPurchases(filteredPurchases);
+        setLoadingPurchases(false);
       } else if (formData.direction === "out") {
         setLoadingSales(true);
         const salesRes = await axios.get(`${API_BASE_URL}/sales`, {
           params: { 
-            include: "product",
+            include: "items.product",
             search: salesSearch
           },
         });
         const data = salesRes.data?.data || salesRes.data || [];
         const filteredSales = data.filter(
-          (s: Sale) => s.status !== "completed" && s.status !== "payment_complete"
+          (s: Sale) => s.status !== "completed" && s.status !== "all_completed"
         );
         setSales(filteredSales);
+        setLoadingSales(false);
       }
     } catch (error) {
       console.error("Error fetching dropdown options:", error);
@@ -171,8 +209,6 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     } finally {
       setLoadingDrivers(false);
       setLoadingWarehouses(false);
-      setLoadingPurchases(false);
-      setLoadingSales(false);
     }
   };
 
@@ -190,6 +226,10 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
       ...(name === "direction" && {
         purchaseId: "",
         saleId: "",
+        saleItemId: "",
+      }),
+      ...(name === "saleId" && {
+        saleItemId: "",
       }),
     }));
   };
@@ -208,7 +248,10 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         ...(formData.direction === "in" && formData.purchaseId
           ? { purchaseId: Number(formData.purchaseId) }
           : {}),
-        ...(formData.direction === "out" && formData.saleId
+        ...(formData.direction === "out" && formData.saleItemId
+          ? { saleItemId: Number(formData.saleItemId) }
+          : {}),
+        ...(formData.direction === "out" && formData.saleId && !formData.saleItemId
           ? { saleId: Number(formData.saleId) }
           : {}),
       };
@@ -249,6 +292,10 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             autoClose: 7000, // Show for longer time
           }
         );
+      } else if (err.response?.data?.code === "QUANTITY_EXCEEDS_REMAINING") {
+        toast.error(err.response.data.message, {
+          autoClose: 7000,
+        });
       } else {
         toast.error(err.response?.data?.message || err.message || "Failed to save delivery");
       }
@@ -259,7 +306,12 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
 
   const salesOptions = sales.map((sale) => ({
     value: sale.id,
-    label: `${sale.saleReference} (${sale.product?.name || "Unknown Product"})`,
+    label: `${sale.saleReference} (Total: ${sale.totalAmount || '0'})`,
+  }));
+
+  const saleItemOptions = saleItems.map((item) => ({
+    value: item.id,
+    label: `${item.product?.name || 'Product'} - ${item.quantity} Kg (Delivered: ${item.totalDelivered || '0'} Kg)`,
   }));
 
   const purchasesOptions = purchases.map((purchase) => ({
@@ -342,40 +394,77 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 )}
               </div>
             ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sale <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  id="saleId"
-                  name="saleId"
-                  options={salesOptions}
-                  isLoading={loadingSales}
-                  onInputChange={(value) => {
-                    setSalesSearch(value);
-                  }}
-                  onChange={(selectedOption) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      saleId: selectedOption?.value.toString() || "",
-                    }));
-                  }}
-                  value={salesOptions.find(
-                    (option) => option.value.toString() === formData.saleId
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sale <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    id="saleId"
+                    name="saleId"
+                    options={salesOptions}
+                    isLoading={loadingSales}
+                    onInputChange={(value) => {
+                      setSalesSearch(value);
+                    }}
+                    onChange={(selectedOption) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        saleId: selectedOption?.value.toString() || "",
+                        saleItemId: "", // Clear sale item when sale changes
+                      }));
+                    }}
+                    value={salesOptions.find(
+                      (option) => option.value.toString() === formData.saleId
+                    )}
+                    placeholder="Search and select sale..."
+                    className="basic-single"
+                    classNamePrefix="select"
+                    isClearable
+                    required
+                    isDisabled={isSubmitting}
+                  />
+                  {!loadingSales && salesOptions.length === 0 && (
+                    <p className="mt-1 text-sm text-red-600">
+                      No sales available or all sales are already completed.
+                    </p>
                   )}
-                  placeholder="Search and select sale..."
-                  className="basic-single"
-                  classNamePrefix="select"
-                  isClearable
-                  required
-                  isDisabled={isSubmitting}
-                />
-                {!loadingSales && salesOptions.length === 0 && (
-                  <p className="mt-1 text-sm text-red-600">
-                    No sales available or all sales are already completed.
-                  </p>
+                </div>
+
+                {/* Sale Item selection - only show when a sale is selected */}
+                {formData.saleId && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Sale Item <span className="text-red-500">*</span>
+                    </label>
+                    <Select
+                      id="saleItemId"
+                      name="saleItemId"
+                      options={saleItemOptions}
+                      onChange={(selectedOption) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          saleItemId: selectedOption?.value.toString() || "",
+                        }));
+                      }}
+                      value={saleItemOptions.find(
+                        (option) => option.value.toString() === formData.saleItemId
+                      )}
+                      placeholder="Select sale item..."
+                      className="basic-single"
+                      classNamePrefix="select"
+                      isClearable
+                      required
+                      isDisabled={isSubmitting || !formData.saleId}
+                    />
+                    {formData.saleId && saleItemOptions.length === 0 && (
+                      <p className="mt-1 text-sm text-red-600">
+                        No items available for this sale or all items are already delivered.
+                      </p>
+                    )}
+                  </div>
                 )}
-              </div>
+              </>
             )}
 
             {/* Quantity field */}
@@ -514,6 +603,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 !formData.warehouseId ||
                 (formData.direction === "in" && !formData.purchaseId) ||
                 (formData.direction === "out" && !formData.saleId) ||
+                (formData.direction === "out" && formData.saleId && !formData.saleItemId) ||
                 (remainingQuantity !== null && Number(formData.quantity) > remainingQuantity)
               }
             >
