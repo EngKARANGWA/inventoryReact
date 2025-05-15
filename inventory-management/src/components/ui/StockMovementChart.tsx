@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import api from "../../services/authService";
 
 ChartJS.register(
   CategoryScale,
@@ -18,9 +19,6 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface Product {
   id: number;
@@ -38,7 +36,7 @@ interface StockMovement {
   direction: "in" | "out";
   sourceType: string;
   product: Product;
-  warehouse: Warehouse | null; // Updated to allow null
+  warehouse: Warehouse | null;
 }
 
 interface StockMovementChartProps {
@@ -68,23 +66,15 @@ export const StockMovementChart: React.FC<StockMovementChartProps> = ({
       try {
         setIsLoading(true);
         
-        // Fetch all data in parallel
+        // Fetch all data in parallel using axios
         const [movementsRes, productsRes, warehousesRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/stoke-movements`),
-          fetch(`${API_BASE_URL}/products`),
-          fetch(`${API_BASE_URL}/warehouse`)
+          api.get("/stoke-movements"),
+          api.get("/products"),
+          api.get("/warehouse")
         ]);
 
-        if (!movementsRes.ok || !productsRes.ok || !warehousesRes.ok) {
-          throw new Error('Failed to fetch data');
-        }
-
-        const movementsData = await movementsRes.json();
-        const productsData = await productsRes.json();
-        const warehousesData = await warehousesRes.json();
-
         // Transform movements data to match our interface
-        const transformedMovements = movementsData.data.map((movement: any) => ({
+        const transformedMovements = movementsRes.data.data.map((movement: any) => ({
           id: movement.id,
           quantity: movement.quantity,
           direction: movement.direction,
@@ -93,19 +83,18 @@ export const StockMovementChart: React.FC<StockMovementChartProps> = ({
             id: movement.product.id,
             name: movement.product.name
           },
-          // Handle null warehouse case
           warehouse: movement.warehouse ? {
             id: movement.warehouse.id,
             name: movement.warehouse.name
           } : null
-        })).filter((movement: StockMovement) => movement.warehouse !== null); // Filter out movements with null warehouses
+        })).filter((movement: StockMovement) => movement.warehouse !== null);
 
         setMovements(transformedMovements);
-        setProducts(productsData);
-        setWarehouses(warehousesData);
+        setProducts(productsRes.data);
+        setWarehouses(warehousesRes.data);
         setIsLoading(false);
-      } catch (err) {
-        setError('Failed to load data. Please try again later.');
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to load data. Please try again later.');
         setIsLoading(false);
         console.error('Error fetching data:', err);
       }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "../components/ui/sidebar";
 import { Header } from "../components/ui/header";
+import api from '../services/authService';
 import {
   ShoppingCart,
   Package,
@@ -12,10 +13,7 @@ import {
   ArrowRightLeft,
   ChartArea,
   RefreshCw,
-  Download,
   Filter,
-  ChevronDown,
-  ChevronUp,
   Clock,
 } from "lucide-react";
 import { StockMovementChart } from "../components/ui/StockMovementChart";
@@ -24,19 +22,7 @@ import StockTrendsChart from "../components/ui/StockTrendsChart";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-
-// interface SummaryCardProps {
-//   title: string;
-//   value: string;
-//   icon: React.ElementType;
-//   trend?: "up" | "neutral" | "down";
-//   change?: string;
-//   alertCount?: number;
-//   onClick?: () => void;
-//   isLoading?: boolean;
-// }
 
 
 
@@ -131,20 +117,15 @@ const Dashboard: React.FC = () => {
   const fetchStatsData = async (startDate?: string, endDate?: string) => {
     try {
       setIsLoading(true);
-      let url = `${API_BASE_URL}/stats`;
+      let url = '/stats';
       
       // Add date filters if provided
       if (startDate && endDate) {
         url += `?startDate=${startDate}&endDate=${endDate}`;
       }
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Failed to fetch statistics data");
-      }
-
-      const data = await response.json();
-      setStatsData(data.data);
+  
+      const response = await api.get(url);
+      setStatsData(response.data.data);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching statistics:", err);
@@ -160,20 +141,16 @@ const Dashboard: React.FC = () => {
       try {
         setIsLoading(true);
         const [productsRes, warehousesRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/products`),
-          fetch(`${API_BASE_URL}/warehouse`),
+          api.get('/products'),
+          api.get('/warehouse'),
         ]);
-
-        if (!productsRes.ok || !warehousesRes.ok) {
-          throw new Error("Failed to fetch filter data");
-        }
-
-        const productsData = await productsRes.json();
-        const warehousesData = await warehousesRes.json();
-
+  
+        const productsData = productsRes.data;
+        const warehousesData = warehousesRes.data;
+  
         setProducts(productsData);
         setWarehouses(warehousesData);
-        await fetchStatsData(); // Fetch stats data after other data
+        await fetchStatsData();
       } catch (err) {
         console.error("Error fetching filter data:", err);
         toast.error("Failed to load filter data");
@@ -181,7 +158,7 @@ const Dashboard: React.FC = () => {
         setIsLoading(false);
       }
     };
-
+  
     fetchData();
   }, [refreshKey]);
 
@@ -196,9 +173,7 @@ const Dashboard: React.FC = () => {
     toast.info("Data refreshed");
   };
 
-  const handleExportData = () => {
-    toast.info("Export feature will be implemented soon!");
-  };
+  
 
   // Summary data using API stats
   const summaryData = [
@@ -288,29 +263,6 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-                    aria-expanded={showFilters}
-                    aria-controls="filters-panel"
-                  >
-                    <Filter size={16} className="mr-1 md:mr-2" />
-                    <span>Filters</span>
-                    {showFilters ? (
-                      <ChevronUp size={16} className="ml-1" />
-                    ) : (
-                      <ChevronDown size={16} className="ml-1" />
-                    )}
-                  </button>
-
-                  <button
-                    onClick={handleExportData}
-                    className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-                    title="Export data"
-                  >
-                    <Download size={16} className="mr-1" />
-                    <span>Export</span>
-                  </button>
 
                   <button
                     onClick={handleRefresh}
@@ -533,8 +485,6 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
-                <div className="h-80">
                   <StockTrendsChart
                     filterType={stockFilterType}
                     filterId={
@@ -545,12 +495,9 @@ const Dashboard: React.FC = () => {
                         : undefined
                     }
                   />
-                </div>
-              </div>
             </div>
             
             {/* Stock Movement Analysis Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <ArrowRightLeft className="w-6 h-6 text-blue-600 mr-2" />
@@ -572,7 +519,6 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             </div>
-          </div>
         </main>
       </div>
 

@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import api from '../../services/authService';
 
 ChartJS.register(
   CategoryScale,
@@ -40,7 +41,6 @@ interface StockSnapshot {
     name: string;
   };
 }
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface StockTrendsChartProps {
   filterType?: 'all' | 'product' | 'warehouse';
@@ -57,7 +57,7 @@ const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ filterType = 'all',
       try {
         setIsLoading(true);
         setError(null);
-        let url = `${API_BASE_URL}/stock-snapshot`;
+        let url = '/stock-snapshot';
         
         if (filterType === 'product' && filterId) {
           url += `/product/${filterId}`;
@@ -65,22 +65,26 @@ const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ filterType = 'all',
           url += `/warehouse/${filterId}`;
         }
 
-        const response = await fetch(url);
+        const response = await api.get(url);
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          if (errorData.message === "No snapshots found for this warehouse") {
-            setStockData([]);
-            setError('No stock data available for the selected filter');
-            return;
-          }
-          throw new Error(errorData.message || 'Failed to fetch stock data');
+        // Axios wraps the response data in a data property
+        const responseData = response.data.data || response.data;
+        
+        if (!responseData) {
+          setStockData([]);
+          setError('No stock data available for the selected filter');
+          return;
         }
 
-        const data = await response.json();
-        setStockData(data.data || data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load stock trends');
+        setStockData(responseData);
+      } catch (err: any) {
+        if (err.response?.data?.message === "No snapshots found for this warehouse") {
+          setStockData([]);
+          setError('No stock data available for the selected filter');
+          return;
+        }
+        
+        setError(err.response?.data?.message || err.message || 'Failed to load stock trends');
         console.error('Error fetching stock data:', err);
       } finally {
         setIsLoading(false);
