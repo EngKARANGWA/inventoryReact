@@ -6,7 +6,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { saleService } from "../../services/saleService";
-import { Sale, Product, Saler, Client, Blocker, SortConfig } from "./sale";
+import { Product, Saler, Client, Blocker, SortConfig } from "./sale";
 
 // Import the new components
 import { SalesStats } from "./SalesStats";
@@ -335,7 +335,7 @@ const SaleManagement: React.FC = () => {
     }
   };
 
-  const requestSort = (key: keyof Sale) => {
+  const requestSort = (key: string) => {
     let direction: "ascending" | "descending" = "ascending";
     if (
       sortConfig &&
@@ -432,7 +432,7 @@ const SaleManagement: React.FC = () => {
       let completed = 0;
 
       sales.forEach((sale) => {
-        const saleAmount = sale.items.reduce((sum, item) => {
+        const saleAmount = sale.items.reduce((sum: number, item: any) => {
           return sum + parseFloat(item.quantity) * parseFloat(item.unitPrice);
         }, 0);
 

@@ -25,7 +25,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
         </div>
         
         <p className="mb-6 text-gray-600">
-          Are you sure you want to delete this purchase? This action cannot be undone.
+          Are you sure you want to delete this item? This action cannot be undone.
         </p>
         
         <div className="flex justify-end space-x-3">
@@ -66,7 +66,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
                 Deleting...
               </>
             ) : (
-              "Delete Purchase"
+              "Delete Item"
             )}
           </button>
         </div>

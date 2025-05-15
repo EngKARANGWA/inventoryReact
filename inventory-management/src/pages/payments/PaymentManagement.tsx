@@ -8,13 +8,13 @@ import {
   ChevronUp,
   Plus,
   CreditCard,
-  Check,
-  Clock,
   RefreshCw,
   FileText,
   Download,
   ArrowLeft,
   ArrowRight,
+  ArrowDownCircle,
+  ArrowUpCircle,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -245,10 +245,17 @@ const PaymentManagement: React.FC = () => {
     });
   }, [sortedPayments, searchTerm]);
 
-  const completedPayments = payments.filter(
-    (p) => p.status === "completed"
-  ).length;
-  const pendingPayments = payments.filter((p) => p.status === "pending").length;
+  const inPayments = payments.filter(p => p.payableType === "sale").length;
+  const outPayments = payments.filter(p => p.payableType === "purchase").length;
+  
+  const inPaymentsAmount = payments
+    .filter(p => p.payableType === "sale")
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  
+  const outPaymentsAmount = payments
+    .filter(p => p.payableType === "purchase")
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  
   const totalAmount = payments.reduce((sum, p) => {
     const amount = Number(p.amount) || 0;
     return sum + amount;
@@ -312,22 +319,20 @@ const PaymentManagement: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Completed Payments
+                      In Payments
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
-                      {loading ? "..." : completedPayments}
+                      {loading ? "..." : `${formatNumber(inPaymentsAmount)} RWF`}
                     </p>
                   </div>
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <Check className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+                    <ArrowDownCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
                   {loading
                     ? "..."
-                    : `${(
-                        (completedPayments / totalPayments) * 100 || 0
-                      ).toFixed(1)}% of total`}
+                    : `(${((inPayments / totalPayments) * 100 || 0).toFixed(1)}% of total)`}
                 </div>
               </div>
 
@@ -335,22 +340,20 @@ const PaymentManagement: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Pending Payments
+                      Out Payments
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
-                      {loading ? "..." : pendingPayments}
+                      {loading ? "..." : `${formatNumber(outPaymentsAmount)} RWF`}
                     </p>
                   </div>
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                    <Clock className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <ArrowUpCircle className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
                   {loading
                     ? "..."
-                    : `${((pendingPayments / totalPayments) * 100 || 0).toFixed(
-                        1
-                      )}% of total`}
+                    : `(${((outPayments / totalPayments) * 100 || 0).toFixed(1)}% of total)`}
                 </div>
               </div>
             </div>

@@ -24,9 +24,22 @@ import StockTrendsChart from "../components/ui/StockTrendsChart";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-// Summary card component with improved styling
+
+
+// interface SummaryCardProps {
+//   title: string;
+//   value: string;
+//   icon: React.ElementType;
+//   trend?: "up" | "neutral" | "down";
+//   change?: string;
+//   alertCount?: number;
+//   onClick?: () => void;
+//   isLoading?: boolean;
+// }
+
+
+
 const SummaryCard: React.FC<{
   title: string;
   value: string;
@@ -35,7 +48,8 @@ const SummaryCard: React.FC<{
   change?: string;
   alertCount?: number;
   onClick?: () => void;
-}> = ({ title, value, icon: Icon, trend, change, alertCount = 0, onClick }) => {
+  isLoading?: boolean;
+}> = ({ title, value, icon: Icon, trend, change, alertCount = 0, onClick, isLoading }) => {
   return (
     <div
       className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md cursor-pointer"
@@ -46,10 +60,14 @@ const SummaryCard: React.FC<{
           <p className="text-xs md:text-sm font-medium text-gray-500">
             {title}
           </p>
-          <p className="text-xl md:text-2xl font-bold text-gray-800 mt-1">
-            {value}
-          </p>
-          {trend && change && (
+          {isLoading ? (
+            <div className="animate-pulse h-8 w-3/4 bg-gray-200 rounded mt-1"></div>
+          ) : (
+            <p className="text-xl md:text-2xl font-bold text-gray-800 mt-1">
+              {value}
+            </p>
+          )}
+          {!isLoading && trend && change && (
             <div className="flex items-center mt-2">
               {trend === "up" ? (
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
@@ -76,7 +94,7 @@ const SummaryCard: React.FC<{
           <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center">
             <Icon className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
           </div>
-          {alertCount > 0 && (
+          {!isLoading && alertCount > 0 && (
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
               <span className="text-xs text-white font-bold">{alertCount}</span>
             </div>
@@ -105,42 +123,36 @@ const Dashboard: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [statsData, setStatsData] = useState<any>(null);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
-  // Sample data for the dashboard with improved formatting
-  const summaryData = [
-    {
-      title: "Total Sales",
-      value: "RWF 2,450,000",
-      icon: ShoppingCart,
-      trend: "up" as const,
-      change: "+12.5%",
-      alertCount: 0,
-    },
-    {
-      title: "Inventory Items",
-      value: "1,234",
-      icon: Package,
-      trend: "up" as const,
-      change: "+3.2%",
-      alertCount: 5,
-    },
-    {
-      title: "Pending Orders",
-      value: "42",
-      icon: Tag,
-      trend: "down" as const,
-      change: "-8.1%",
-      alertCount: 0,
-    },
-    {
-      title: "Cash Flow",
-      value: "RWF 1,850,000",
-      icon: Wallet,
-      trend: "up" as const,
-      change: "+5.7%",
-      alertCount: 2,
-    },
-  ];
+  // Fetch stats data
+  const fetchStatsData = async (startDate?: string, endDate?: string) => {
+    try {
+      setIsLoading(true);
+      let url = `${API_BASE_URL}/stats`;
+      
+      // Add date filters if provided
+      if (startDate && endDate) {
+        url += `?startDate=${startDate}&endDate=${endDate}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch statistics data");
+      }
+
+      const data = await response.json();
+      setStatsData(data.data);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Error fetching statistics:", err);
+      toast.error("Failed to load statistics data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Fetch products and warehouses for filters
   useEffect(() => {
@@ -161,7 +173,7 @@ const Dashboard: React.FC = () => {
 
         setProducts(productsData);
         setWarehouses(warehousesData);
-        setLastUpdated(new Date());
+        await fetchStatsData(); // Fetch stats data after other data
       } catch (err) {
         console.error("Error fetching filter data:", err);
         toast.error("Failed to load filter data");
@@ -171,7 +183,6 @@ const Dashboard: React.FC = () => {
     };
 
     fetchData();
-    // Using refreshKey in the dependency array means this useEffect will run when refreshKey changes
   }, [refreshKey]);
 
   const handlePriceAdded = () => {
@@ -180,6 +191,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleRefresh = () => {
+    fetchStatsData(startDate, endDate);
     setRefreshKey((prev) => prev + 1);
     toast.info("Data refreshed");
   };
@@ -187,6 +199,42 @@ const Dashboard: React.FC = () => {
   const handleExportData = () => {
     toast.info("Export feature will be implemented soon!");
   };
+
+  // Summary data using API stats
+  const summaryData = [
+    {
+      title: "Total Sales",
+      value: statsData ? `RWF ${parseFloat(statsData.totalSales).toLocaleString()}` : "Loading...",
+      icon: ShoppingCart,
+      trend: "up" as const,
+      change: "+12.5%",
+      alertCount: 0,
+    },
+    {
+      title: "Inventory Value",
+      value: statsData ? `RWF ${parseFloat(statsData.totalStockValue).toLocaleString()}` : "Loading...",
+      icon: Package,
+      trend: "neutral" as const,
+      change: "0%",
+      alertCount: 5,
+    },
+    {
+      title: "Total Purchases",
+      value: statsData ? `RWF ${parseFloat(statsData.totalPurchases).toLocaleString()}` : "Loading...",
+      icon: Tag,
+      trend: "down" as const,
+      change: "-8.1%",
+      alertCount: 0,
+    },
+    {
+      title: "Profit/Loss",
+      value: statsData ? `RWF ${parseFloat(statsData.profitLoss).toLocaleString()}` : "Loading...",
+      icon: Wallet,
+      trend: (parseFloat(statsData?.profitLoss || "0") >= 0 ? "up" : "down") as "up" | "down",
+      change: parseFloat(statsData?.profitLoss || "0") >= 0 ? "+5.7%" : "-5.7%",
+      alertCount: 2,
+    },
+  ];
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -224,6 +272,7 @@ const Dashboard: React.FC = () => {
                   trend={item.trend}
                   change={item.change}
                   alertCount={item.alertCount}
+                  isLoading={isLoading || !statsData}
                 />
               ))}
             </div>
@@ -284,7 +333,37 @@ const Dashboard: React.FC = () => {
                     <Filter size={16} className="mr-2" />
                     Dashboard Filters
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => fetchStatsData(startDate, endDate)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      >
+                        Apply Date Filter
+                      </button>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Price Trends Filter
@@ -380,7 +459,6 @@ const Dashboard: React.FC = () => {
               )}
             </div>
 
-
             {/* Stock Trends Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
@@ -466,11 +544,11 @@ const Dashboard: React.FC = () => {
                         ? selectedStockWarehouse || undefined
                         : undefined
                     }
-                    // Remove refreshKey prop which was causing the TypeScript error
                   />
                 </div>
               </div>
             </div>
+            
             {/* Stock Movement Analysis Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
               <div className="flex items-center justify-between mb-4">
@@ -491,7 +569,6 @@ const Dashboard: React.FC = () => {
                   onFilterChange={(filter) => {
                     console.log("Filter changed:", filter);
                   }}
-                  // Remove refreshKey prop which was causing the TypeScript error
                 />
               </div>
             </div>

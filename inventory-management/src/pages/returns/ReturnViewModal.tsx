@@ -148,9 +148,13 @@ const ReturnViewModal: React.FC<ReturnViewModalProps> = ({ returnData, onClose }
   // Use fullReturn if available, otherwise fall back to returnData
   const displayData = fullReturn || returnData;
 
+  // Find the sale item associated with this return
+  const saleItem = displayData.saleItem || 
+                  (displayData.sale?.items?.find(item => item.id === displayData.saleItemId));
+
   // Calculate return percentage
-  const returnPercentage = displayData.sale && displayData.returnedQuantity && displayData.sale.quantity
-    ? (parseFloat(displayData.returnedQuantity) / parseFloat(displayData.sale.quantity)) * 100
+  const returnPercentage = displayData.returnedQuantity && saleItem?.quantity
+    ? (parseFloat(displayData.returnedQuantity) / parseFloat(saleItem.quantity)) * 100
     : null;
 
   return (
@@ -312,7 +316,7 @@ const ReturnViewModal: React.FC<ReturnViewModalProps> = ({ returnData, onClose }
                       <div>
                         <p className="text-sm text-gray-500">Original Quantity</p>
                         <p className="text-sm font-medium text-gray-900">
-                          {displayData.sale?.quantity ? formatNumber(displayData.sale.quantity) + ' KG' : "N/A"}
+                          {saleItem?.quantity ? formatNumber(saleItem.quantity) + ' KG' : "N/A"}
                         </p>
                       </div>
                       <div>

@@ -11,6 +11,9 @@ import {
   Truck,
   AlertTriangle,
   ShoppingCart,
+  User,
+  Package,
+  FileText,
 } from "lucide-react";
 
 interface Sale {
@@ -22,12 +25,17 @@ interface Sale {
   totalPaid: string;
   note: string;
   createdAt: string;
+  updatedAt: string;
+  salerId: number;
+  clientId: number | null;
+  blockerId: number | null;
   items: Array<{
     id: number;
     productId: number;
     quantity: string;
     unitPrice: string;
     totalDelivered: string;
+    note: string;
     product?: {
       id: number;
       name: string;
@@ -36,14 +44,17 @@ interface Sale {
   }>;
   saler: {
     id: number;
-    user: {
-      profile: {
+    salerId: string;
+    tinNumber: string;
+    user?: {
+      profile?: {
         names: string;
       };
     };
   };
   client: {
     id: number;
+    clientId: string;
     user?: {
       profile?: {
         names: string;
@@ -121,7 +132,6 @@ const SalesTable: React.FC<SalesTableProps> = ({
     }
   };
 
-  // Calculate totals for a sale
   const calculateSaleTotals = (sale: Sale) => {
     let totalQuantity = 0;
     let totalDelivered = 0;
@@ -159,6 +169,11 @@ const SalesTable: React.FC<SalesTableProps> = ({
     return `${value.toLocaleString()} RWF`;
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -178,10 +193,10 @@ const SalesTable: React.FC<SalesTableProps> = ({
               </div>
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Client
+              Saler & Client
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Products
+              Products & Items
             </th>
             <th
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -242,13 +257,42 @@ const SalesTable: React.FC<SalesTableProps> = ({
                     {sale.saleReference || "N/A"}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {new Date(sale.createdAt).toLocaleDateString()}
+                    Created: {formatDate(sale.createdAt)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Updated: {formatDate(sale.updatedAt)}
+                  </div>
+                  <div className="text-xs mt-1">
+                    <span className="inline-block bg-gray-100 rounded-full px-2 py-1 text-xs font-semibold text-gray-700">
+                      ID: {sale.id}
+                    </span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {sale.client?.user?.profile?.names || "N/A"}
+                  <div className="flex items-center mb-2">
+                    <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {sale.saler?.user?.profile?.names || "N/A"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {sale.saler?.salerId || "N/A"} | {sale.saler?.tinNumber || "No TIN"}
+                      </div>
+                    </div>
                   </div>
+                  {sale.client && (
+                    <div className="flex items-center">
+                      <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
+                      <div>
+                        <div className="text-sm text-gray-900">
+                          {sale.client?.user?.profile?.names || "N/A"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {sale.client?.clientId || "N/A"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {sale.items && sale.items.length > 0 ? (
@@ -261,18 +305,32 @@ const SalesTable: React.FC<SalesTableProps> = ({
                         <ShoppingCart className="w-3 h-3 mr-1" />
                         {sale.items.length} {sale.items.length === 1 ? "item" : "items"}
                       </div>
+                      {sale.items[0].note && (
+                        <div className="text-xs text-gray-500 mt-1 flex items-start">
+                          <FileText className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
+                          <span className="truncate max-w-xs">{sale.items[0].note}</span>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div className="text-sm text-gray-900">No items</div>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {totalQuantity.toLocaleString()} Kg
+                  <div className="flex items-center mb-1">
+                    <Package className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
+                    <div className="text-sm text-gray-900">
+                      {totalQuantity.toLocaleString()} Kg
+                    </div>
                   </div>
                   <div className="text-sm font-medium text-gray-900">
                     {formatCurrency(totalValue)}
                   </div>
+                  {sale.totalAmount && (
+                    <div className="text-xs text-gray-500">
+                      API Total: {formatCurrency(sale.totalAmount)}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-xs text-gray-500">
@@ -300,7 +358,7 @@ const SalesTable: React.FC<SalesTableProps> = ({
                     <Calendar className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
                     <div className="text-sm text-gray-900">
                       {sale.expectedDeliveryDate
-                        ? new Date(sale.expectedDeliveryDate).toLocaleDateString()
+                        ? formatDate(sale.expectedDeliveryDate)
                         : "Not set"}
                     </div>
                   </div>
@@ -348,6 +406,11 @@ const SalesTable: React.FC<SalesTableProps> = ({
                         : sale.status?.replace(/_/g, " ") || "N/A"}
                     </span>
                   </div>
+                  {sale.note && (
+                    <div className="text-xs text-gray-500 mt-1 truncate max-w-xs">
+                      {sale.note}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">

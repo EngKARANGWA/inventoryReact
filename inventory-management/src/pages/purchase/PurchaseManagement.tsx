@@ -9,12 +9,12 @@ import {
   Plus,
   RefreshCw,
   ShoppingCart,
-  DollarSign,
   Download,
   ArrowLeft,
   ArrowRight,
   FileText,
-  TruckIcon,
+  CreditCard,
+  AlertTriangle,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -382,18 +382,21 @@ const PurchaseManagement: React.FC = () => {
   }, [sortedPurchases, searchTerm]);
 
   // Calculate summary statistics
-  // const approvedPurchases = purchases.filter(
-  //   (p) => p.status === "approved"
-  // ).length;
-  // const totalWeight = purchases.reduce(
-  //   (sum, p) => sum + parseFloat(p.weight || "0"),
-  //   0
-  // );
   const totalAmount = purchases.reduce(
-    (sum, p) =>
-      sum + parseFloat(p.weight || "0") * parseFloat(p.unitPrice || "0"),
+    (sum, p) => {
+      const weight = parseFloat(p.weight || "0");
+      const unitPrice = parseFloat(p.unitPrice || "0");
+      return sum + (weight * unitPrice);
+    },
     0
   );
+
+  const totalPaid = purchases.reduce(
+    (sum, p) => sum + parseFloat(p.totalPaid || "0"),
+    0
+  );
+
+  const totalUnpaid = totalAmount - totalPaid;
 
   const currentPage = filters.page || 1;
   const pageSize = filters.pageSize || 10;
@@ -429,7 +432,7 @@ const PurchaseManagement: React.FC = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
@@ -440,7 +443,7 @@ const PurchaseManagement: React.FC = () => {
                       {loading ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        totalPurchases
+                        `${totalAmount.toLocaleString()} RWF`
                       )}
                     </p>
                   </div>
@@ -448,93 +451,59 @@ const PurchaseManagement: React.FC = () => {
                     <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
                   </div>
                 </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  {loading ? "..." : `${totalPurchases} purchase records`}
+                </div>
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Completed Deliveries
+                      Total Unpaid
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
                       {loading ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        purchases.filter(
-                          (p) => p.status === "delivery_complete"
-                        ).length
+                        `${totalUnpaid.toLocaleString()} RWF`
                       )}
                     </p>
                   </div>
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
                   {loading
                     ? "..."
-                    : `${(
-                        (purchases.filter(
-                          (p) => p.status === "delivery_complete"
-                        ).length /
-                          totalPurchases) *
-                          100 || 0
-                      ).toFixed(1)}% of total`}
+                    : `${((totalUnpaid / totalAmount) * 100 || 0).toFixed(1)}% of total outstanding`}
                 </div>
               </div>
-
-              {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Paid Purchases Weight
-                    </p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-800">
-                      {loading ? (
-                        <span className="animate-pulse">...</span>
-                      ) : (
-                        purchases
-                          .filter(
-                            (p) =>
-                              p.status === "payment_completed" ||
-                              p.status === "all_completed"
-                          )
-                          .reduce(
-                            (sum, p) => sum + parseFloat(p.weight || "0"),
-                            0
-                          )
-                          .toLocaleString()
-                      )}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Scale className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-gray-500">
-                  Measured in kilograms (Kg)
-                </div>
-              </div> */}
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Total Amount Paid
+                      Total Paid
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
                       {loading ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        `${totalAmount.toLocaleString()} RWF`
+                        `${totalPaid.toLocaleString()} RWF`
                       )}
                     </p>
                   </div>
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                   </div>
                 </div>
-                <div className="mt-2 text-xs text-gray-500">Amount in RWF</div>
+                <div className="mt-2 text-xs text-gray-500">
+                  {loading
+                    ? "..."
+                    : `${((totalPaid / totalAmount) * 100 || 0).toFixed(1)}% of total paid`}
+                </div>
               </div>
             </div>
 
