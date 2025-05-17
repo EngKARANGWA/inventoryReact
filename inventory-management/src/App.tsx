@@ -23,7 +23,7 @@ import PaymentManagement from "./pages/payments/PaymentManagement";
 import { isAuthenticated, getCurrentUser } from "./services/authService";
 import UnauthorizedPage from "./pages/errors/UnauthorizedPage";
 import NotFoundPage from "./pages/errors/NotFoundPage";
-import AuthPage from "./pages/AuthPage";
+import AuthPage from "./pages/auth/AuthPage";
 
 // Role constants for better maintainability
 const ROLES = {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Card, CardContent } from '../components/ui/card';
-import { LoginForm } from '../app/Landingpage/LoginForm';
-import { ForgotPasswordForm } from '../app/Landingpage/ForgotPasswordForm';
+import { Card, CardContent } from '../../components/ui/card';
+import { LoginForm } from './LoginForm';
+import { ForgotPasswordForm } from './ForgotPasswordForm';
 import { useNavigate } from 'react-router-dom';
 
 type AuthView = 'login' | 'forgot';

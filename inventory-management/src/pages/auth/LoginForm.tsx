@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
-import { InputField } from './InputField';
-import { PasswordField } from './PasswordField';
+import { InputField } from '../../components/ui/InputField';
+import { PasswordField } from '../../components/ui/PasswordField';
 import { login } from '../../services/authService';
 import { toast } from '../../components/ui/toast';
 

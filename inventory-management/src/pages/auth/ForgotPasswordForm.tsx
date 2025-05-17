@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/button';
-import { InputField } from './InputField';
+import { InputField } from '../../components/ui/InputField';
 import { requestPasswordReset } from '../../services/authService';
 import { toast } from '../../components/ui/toast';
 
