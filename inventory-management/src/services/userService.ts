@@ -223,23 +223,23 @@ export const userService = {
       let endpoint = "/auth/register"; // default endpoint for user registration
 
       if (role === "cashier") {
-        endpoint = "/cashiers";
+        endpoint = "/cashier";
       } else if (role === "blocker") {
         endpoint = "/blockers";
       } else if (role === "saler") {
-        endpoint = "/salers";
+        endpoint = "/saler";
       } else if (role === "driver") {
         endpoint = "/drivers";
       } else if (role === "client") {
         endpoint = "/clients";
       } else if (role === "scalemonitor") {
-        endpoint = "/scale-monitors";
+        endpoint = "/sm";
       } else if (role === "stockkeeper") {
         endpoint = "/stock-keepers";
       } else if (role === "supplier") {
-        endpoint = "/suppliers";
+        endpoint = "/supplier";
       } else if (role === "productionmanager") {
-        endpoint = "/production-managers";
+        endpoint = "/pm";
       } else if (role === "admin") {
         endpoint = "/admins";
       }
@@ -306,7 +306,7 @@ export const userService = {
         // Now construct the endpoint
         switch (roleKey) {
           case "cashier":
-            endpoint = `${API_BASE_URL}/cashiers/${idToUse}`;
+            endpoint = `${API_BASE_URL}/cashier/${idToUse}`;
             break;
           case "blocker":
             endpoint = `${API_BASE_URL}/blockers/${idToUse}`;
@@ -315,22 +315,22 @@ export const userService = {
             endpoint = `${API_BASE_URL}/drivers/${idToUse}`;
             break;
           case "supplier":
-            endpoint = `${API_BASE_URL}/suppliers/${idToUse}`;
+            endpoint = `${API_BASE_URL}/supplier/${idToUse}`;
             break;
           case "client":
             endpoint = `${API_BASE_URL}/clients/${idToUse}`;
             break;
           case "saler":
-            endpoint = `${API_BASE_URL}/salers/${idToUse}`;
+            endpoint = `${API_BASE_URL}/saler/${idToUse}`;
             break;
           case "stockkeeper":
             endpoint = `${API_BASE_URL}/stock-keepers/${idToUse}`;
             break;
           case "scalemonitor":
-            endpoint = `${API_BASE_URL}/scale-monitors/${idToUse}`;
+            endpoint = `${API_BASE_URL}/sm/${idToUse}`;
             break;
           case "productionmanager":
-            endpoint = `${API_BASE_URL}/production-managers/${idToUse}`;
+            endpoint = `${API_BASE_URL}/pm/${idToUse}`;
             break;
           default:
             endpoint = `${API_BASE_URL}/users/${idToUse}`;
@@ -361,7 +361,7 @@ export const userService = {
       if (role) {
         switch (role.toLowerCase()) {
           case "cashier":
-            endpoint = `${API_BASE_URL}/cashiers/${userId}`;
+            endpoint = `${API_BASE_URL}/cashier/${userId}`;
             break;
           case "blocker":
             endpoint = `${API_BASE_URL}/blockers/${userId}`;
@@ -370,22 +370,22 @@ export const userService = {
             endpoint = `${API_BASE_URL}/drivers/${userId}`;
             break;
           case "supplier":
-            endpoint = `${API_BASE_URL}/suppliers/${userId}`;
+            endpoint = `${API_BASE_URL}/supplier/${userId}`;
             break;
           case "client":
             endpoint = `${API_BASE_URL}/clients/${userId}`;
             break;
           case "saler":
-            endpoint = `${API_BASE_URL}/salers/${userId}`;
+            endpoint = `${API_BASE_URL}/saler/${userId}`;
             break;
           case "stockkeeper":
             endpoint = `${API_BASE_URL}/stock-keepers/${userId}`;
             break;
           case "scalemonitor":
-            endpoint = `${API_BASE_URL}/scale-monitors/${userId}`;
+            endpoint = `${API_BASE_URL}/sm/${userId}`;
             break;
           case "productionmanager":
-            endpoint = `${API_BASE_URL}/production-managers/${userId}`;
+            endpoint = `${API_BASE_URL}/pm/${userId}`;
             break;
           default:
             endpoint = `${API_BASE_URL}/users/${userId}`;
@@ -409,7 +409,7 @@ export const userService = {
 
       switch (role.toLowerCase()) {
         case "cashier":
-          endpoint = `${API_BASE_URL}/cashiers`;
+          endpoint = `${API_BASE_URL}/cashier`;
           break;
         case "blocker":
           endpoint = `${API_BASE_URL}/blockers`;
@@ -418,22 +418,22 @@ export const userService = {
           endpoint = `${API_BASE_URL}/drivers`;
           break;
         case "supplier":
-          endpoint = `${API_BASE_URL}/suppliers`;
+          endpoint = `${API_BASE_URL}/supplier`;
           break;
         case "client":
           endpoint = `${API_BASE_URL}/clients`;
           break;
         case "saler":
-          endpoint = `${API_BASE_URL}/salers`;
+          endpoint = `${API_BASE_URL}/saler`;
           break;
         case "stockkeeper":
           endpoint = `${API_BASE_URL}/stock-keepers`;
           break;
         case "scalemonitor":
-          endpoint = `${API_BASE_URL}/scale-monitors`;
+          endpoint = `${API_BASE_URL}/sm`;
           break;
         case "productionmanager":
-          endpoint = `${API_BASE_URL}/production-managers`;
+          endpoint = `${API_BASE_URL}/pm`;
           break;
         default:
           endpoint = `${API_BASE_URL}/users/role/${role}`;
@@ -580,7 +580,7 @@ export const userService = {
   // Get all cashiers
   getAllCashiers: async () => {
     try {
-      const response = await api.get(`${API_BASE_URL}/cashiers`);
+      const response = await api.get(`${API_BASE_URL}/cashier`);
       return extractData(response);
     } catch (error) {
       console.error("Error fetching cashiers:", error);
@@ -591,7 +591,7 @@ export const userService = {
   // Get a single cashier by ID
   getCashierById: async (cashierId: string | number) => {
     try {
-      const response = await api.get(`${API_BASE_URL}/cashiers/${cashierId}`);
+      const response = await api.get(`${API_BASE_URL}/cashier/${cashierId}`);
       return extractData(response);
     } catch (error) {
       console.error(`Error fetching cashier ${cashierId}:`, error);
@@ -607,7 +607,7 @@ export const userService = {
     >
   ) => {
     try {
-      const response = await api.post(`${API_BASE_URL}/cashiers`, cashierData);
+      const response = await api.post(`${API_BASE_URL}/cashier`, cashierData);
       return extractData(response);
     } catch (error) {
       console.error("Error creating cashier:", error);
@@ -622,7 +622,7 @@ export const userService = {
   ) => {
     try {
       const response = await api.put(
-        `${API_BASE_URL}/cashiers/${cashierId}`,
+        `${API_BASE_URL}/cashier/${cashierId}`,
         cashierData
       );
       return extractData(response);
@@ -636,7 +636,7 @@ export const userService = {
   deleteCashier: async (cashierId: string | number) => {
     try {
       const response = await api.delete(
-        `${API_BASE_URL}/cashiers/${cashierId}`
+        `${API_BASE_URL}/cashier/${cashierId}`
       );
       return extractData(response);
     } catch (error) {
