@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Sidebar } from "../../components/ui/sidebar";
+import {Sidebar} from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import { ShoppingCart, Plus } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
 import { saleService } from "../../services/saleService";
 import { Product, Saler, Client, Blocker, SortConfig } from "./sale";
+import api from '../../services/authService';
+
 
 // Import the new components
 import { SalesStats } from "./SalesStats";
@@ -18,7 +19,6 @@ import { SaleDetailsModal } from "./SaleDetailsModal";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { SalesPagination } from "./SalesPagination";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const SaleManagement: React.FC = () => {
   const [sales, setSales] = useState<any[]>([]);
@@ -117,10 +117,10 @@ const SaleManagement: React.FC = () => {
     try {
       const [productsRes, salersRes, clientsRes, blockersRes] =
         await Promise.all([
-          axios.get(`${API_BASE_URL}/products?search=${productsSearch}`),
-          axios.get(`${API_BASE_URL}/saler?search=${salersSearch}`),
-          axios.get(`${API_BASE_URL}/clients?search=${clientsSearch}`),
-          axios.get(`${API_BASE_URL}/blockers?search=${blockersSearch}`),
+          api.get(`/products?search=${productsSearch}`),
+          api.get(`/saler?search=${salersSearch}`),
+          api.get(`/clients?search=${clientsSearch}`),
+          api.get(`/blockers?search=${blockersSearch}`),
         ]);
 
       // Handle products response

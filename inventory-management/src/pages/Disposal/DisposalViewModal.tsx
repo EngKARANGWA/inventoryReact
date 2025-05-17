@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Package,
-  Warehouse,
-  FileText,
-  X,
-  AlertTriangle,
-} from "lucide-react";
+import { Package, Warehouse, FileText, X, AlertTriangle, Truck, Recycle, Gift, Skull, Calendar } from "lucide-react";
 
 interface DisposalViewModalProps {
   selectedDisposal: any;
@@ -19,7 +13,42 @@ const methodOptions = [
     icon: <AlertTriangle className="w-4 h-4 mr-2" />,
     color: "bg-amber-100 text-amber-800",
   },
-  // ... other method options
+  {
+    value: "expired",
+    label: "Expired",
+    icon: <Calendar className="w-4 h-4 mr-2" />,
+    color: "bg-purple-100 text-purple-800",
+  },
+  {
+    value: "destroyed",
+    label: "Destroyed",
+    icon: <Skull className="w-4 h-4 mr-2" />,
+    color: "bg-red-100 text-red-800",
+  },
+  {
+    value: "donated",
+    label: "Donated",
+    icon: <Gift className="w-4 h-4 mr-2" />,
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    value: "recycled",
+    label: "Recycled",
+    icon: <Recycle className="w-4 h-4 mr-2" />,
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "returned_to_supplier",
+    label: "Returned to Supplier",
+    icon: <Truck className="w-4 h-4 mr-2" />,
+    color: "bg-indigo-100 text-indigo-800",
+  },
+  {
+    value: "other",
+    label: "Other",
+    icon: <Package className="w-4 h-4 mr-2" />,
+    color: "bg-gray-100 text-gray-800",
+  },
 ];
 
 const DisposalViewModal: React.FC<DisposalViewModalProps> = ({
@@ -84,7 +113,9 @@ const DisposalViewModal: React.FC<DisposalViewModalProps> = ({
                 )}`}
               >
                 {getMethodIcon(selectedDisposal.method)}
-                <span className="ml-1">{getMethodLabel(selectedDisposal.method)}</span>
+                <span className="ml-1">
+                  {getMethodLabel(selectedDisposal.method)}
+                </span>
               </span>
             </div>
           </div>
@@ -114,17 +145,24 @@ const DisposalViewModal: React.FC<DisposalViewModalProps> = ({
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Price</p>
+                  <p className="text-sm text-gray-500">Unit Price</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {selectedDisposal.price?.buyingUnitPrice
-                      ? `$${Number(selectedDisposal.price.buyingUnitPrice).toFixed(2)} per unit`
+                    {selectedDisposal.unitPrice &&
+                    selectedDisposal.unitPrice !== "0.00"
+                      ? `RWF ${Number(selectedDisposal.unitPrice).toFixed(2)}`
                       : "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total Value</p>
                   <p className="text-sm font-medium text-gray-900">
-                    ${(selectedDisposal.quantity * (selectedDisposal.price?.buyingUnitPrice || 0)).toFixed(2)}
+                    {selectedDisposal.unitPrice &&
+                    selectedDisposal.unitPrice !== "0.00"
+                      ? `RWF ${(
+                          selectedDisposal.quantity *
+                          Number(selectedDisposal.unitPrice)
+                        ).toFixed(2)}`
+                      : "N/A"}
                   </p>
                 </div>
               </div>
@@ -171,9 +209,7 @@ const DisposalViewModal: React.FC<DisposalViewModalProps> = ({
                 Notes
               </h3>
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-900">
-                  {selectedDisposal.note}
-                </p>
+                <p className="text-sm text-gray-900">{selectedDisposal.note}</p>
               </div>
             </div>
           )}

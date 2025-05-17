@@ -10,29 +10,33 @@ import {
   ArrowRight,
   AlertCircle,
   AlertTriangle,
+  Skull,
+  Gift,
+  Recycle,
+  Truck,
 } from "lucide-react";
 import { Disposal } from "../../services/disposalService";
 interface DisposalTableViewProps {
-    loading: boolean;
-    error: string | null;
-    filteredDisposals: any[];
-    paginatedDisposals: any[];
-    sortConfig: {
-      key: keyof Disposal;
-      direction: "ascending" | "descending";
-    } | null;
-    requestSort: (key: keyof Disposal) => void;
-    currentPage: number;
-    totalPages: number;
-    pageSize: number;
-    totalDisposals: number;
-    handlePageChange: (newPage: number) => void;
-    setSelectedDisposal: (disposal: any) => void;
-    setShowViewModal: (show: boolean) => void;
-    handleEditClick: (disposal: any) => void;
-    handleDeleteConfirm: (id: number) => void;
-    searchTerm: string;
-  }
+  loading: boolean;
+  error: string | null;
+  filteredDisposals: any[];
+  paginatedDisposals: any[];
+  sortConfig: {
+    key: keyof Disposal;
+    direction: "ascending" | "descending";
+  } | null;
+  requestSort: (key: keyof Disposal) => void;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalDisposals: number;
+  handlePageChange: (newPage: number) => void;
+  setSelectedDisposal: (disposal: any) => void;
+  setShowViewModal: (show: boolean) => void;
+  handleEditClick: (disposal: any) => void;
+  handleDeleteConfirm: (id: number) => void;
+  searchTerm: string;
+}
 
 const methodOptions = [
   {
@@ -41,7 +45,42 @@ const methodOptions = [
     icon: <AlertTriangle className="w-4 h-4 mr-2" />,
     color: "bg-amber-100 text-amber-800",
   },
-  // ... other method options
+  {
+    value: "expired",
+    label: "Expired",
+    icon: <Calendar className="w-4 h-4 mr-2" />,
+    color: "bg-purple-100 text-purple-800",
+  },
+  {
+    value: "destroyed",
+    label: "Destroyed",
+    icon: <Skull className="w-4 h-4 mr-2" />,
+    color: "bg-red-100 text-red-800",
+  },
+  {
+    value: "donated",
+    label: "Donated",
+    icon: <Gift className="w-4 h-4 mr-2" />,
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    value: "recycled",
+    label: "Recycled",
+    icon: <Recycle className="w-4 h-4 mr-2" />,
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "returned_to_supplier",
+    label: "Returned to Supplier",
+    icon: <Truck className="w-4 h-4 mr-2" />,
+    color: "bg-indigo-100 text-indigo-800",
+  },
+  {
+    value: "other",
+    label: "Other",
+    icon: <Package className="w-4 h-4 mr-2" />,
+    color: "bg-gray-100 text-gray-800",
+  },
 ];
 
 const DisposalTableView: React.FC<DisposalTableViewProps> = ({
@@ -59,7 +98,7 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
   setShowViewModal,
   handleEditClick,
   handleDeleteConfirm,
-  searchTerm
+  searchTerm,
 }) => {
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -86,37 +125,39 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
   };
 
   const renderSkeleton = () => {
-    return Array(5).fill(0).map((_, i) => (
-      <tr key={`skeleton-${i}`} className="animate-pulse">
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-        </td>
-        <td className="px-6 py-4 text-right">
-          <div className="h-6 bg-gray-200 rounded w-16 inline-block"></div>
-        </td>
-      </tr>
-    ));
+    return Array(5)
+      .fill(0)
+      .map((_, i) => (
+        <tr key={`skeleton-${i}`} className="animate-pulse">
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </td>
+          <td className="px-6 py-4 text-right">
+            <div className="h-6 bg-gray-200 rounded w-16 inline-block"></div>
+          </td>
+        </tr>
+      ));
   };
 
   return (
-    <div 
-      id="disposals-table-container" 
+    <div
+      id="disposals-table-container"
       className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
     >
       <div className="overflow-x-auto">
@@ -211,10 +252,7 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
               renderSkeleton()
             ) : error ? (
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-6 py-4 text-center"
-                >
+                <td colSpan={7} className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center text-red-600">
                     <AlertCircle className="w-5 h-5 mr-2" />
                     {error}
@@ -223,17 +261,17 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
               </tr>
             ) : filteredDisposals.length === 0 ? (
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-6 py-4 text-center text-gray-500"
-                >
+                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                   No disposals found.{" "}
                   {searchTerm && "Try a different search term."}
                 </td>
               </tr>
             ) : (
               paginatedDisposals.map((disposal) => (
-                <tr key={disposal.id} className="hover:bg-gray-50 transition-colors">
+                <tr
+                  key={disposal.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {disposal.referenceNumber}
@@ -275,9 +313,7 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
                         @ $
                         {disposal.price.buyingUnitPrice !== undefined &&
                         disposal.price.buyingUnitPrice !== null
-                          ? Number(
-                              disposal.price.buyingUnitPrice
-                            ).toFixed(2)
+                          ? Number(disposal.price.buyingUnitPrice).toFixed(2)
                           : "N/A"}
                         /unit
                       </div>
@@ -285,8 +321,12 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      {getMethodIcon(disposal.method)}
-                      <span className={`ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMethodColor(disposal.method)}`}>
+                      <span
+                        className={`ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMethodColor(
+                          disposal.method
+                        )}`}
+                      >
+                        {getMethodIcon(disposal.method)}
                         {getMethodLabel(disposal.method)}
                       </span>
                     </div>
@@ -311,7 +351,7 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
                       >
                         <Eye size={18} />
                       </button>
-                      
+
                       <button
                         onClick={() => handleEditClick(disposal)}
                         className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50"
@@ -319,7 +359,7 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
                       >
                         <Edit2 size={18} />
                       </button>
-                      
+
                       <button
                         onClick={() => handleDeleteConfirm(disposal.id)}
                         className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
@@ -376,15 +416,10 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
                 </span>{" "}
                 to{" "}
                 <span className="font-medium">
-                  {Math.min(
-                    currentPage * pageSize,
-                    filteredDisposals.length
-                  )}
+                  {Math.min(currentPage * pageSize, filteredDisposals.length)}
                 </span>{" "}
                 of{" "}
-                <span className="font-medium">
-                  {filteredDisposals.length}
-                </span>{" "}
+                <span className="font-medium">{filteredDisposals.length}</span>{" "}
                 results
               </p>
             </div>
@@ -405,37 +440,34 @@ const DisposalTableView: React.FC<DisposalTableViewProps> = ({
                   <span className="sr-only">Previous</span>
                   <ArrowLeft className="h-5 w-5" aria-hidden="true" />
                 </button>
-                
+
                 {/* Page Numbers */}
-                {Array.from(
-                  { length: Math.min(5, totalPages) },
-                  (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === pageNum
-                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
                   }
-                )}
-                
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        currentPage === pageNum
+                          ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages}

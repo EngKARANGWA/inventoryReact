@@ -10,7 +10,6 @@ interface PaymentFormProps {
   onSubmit: (payment: Payment) => void;
 }
 
-
 const formatNumber = (num: number) => {
   return new Intl.NumberFormat("en-US", {
     style: "decimal",
@@ -55,16 +54,23 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         purchaseId: payment.purchaseId?.toString() || "",
         saleId: payment.saleId?.toString() || "",
       });
+
+      // Load the correct options based on the payment's payableType
+      if (payment.payableType === "purchase") {
+        fetchPurchases();
+      } else if (payment.payableType === "sale") {
+        fetchSales();
+      }
     }
   }, [payment]);
 
   useEffect(() => {
-    if (formData.payableType === "purchase") {
+    if (!payment && formData.payableType === "purchase") {
       fetchPurchases();
-    } else if (formData.payableType === "sale") {
+    } else if (!payment && formData.payableType === "sale") {
       fetchSales();
     }
-  }, [formData.payableType]);
+  }, [formData.payableType, payment]);
 
   useEffect(() => {
     if (formData.payableType === "purchase" && formData.purchaseId) {
@@ -147,7 +153,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "payableType" && {
+      ...(!payment && name === "payableType" && {
         purchaseId: "",
         saleId: "",
       }),
@@ -166,7 +172,17 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
     try {
       const amountValue = parseFloat(formData.amount.replace(/,/g, ""));
-      const paymentData = {
+      
+      // For edit mode, only include fields that can be changed
+      const paymentData = payment ? {
+        amount: amountValue,
+        paymentMethod: formData.paymentMethod as
+          | "bank_transfer"
+          | "cheque"
+          | "cash"
+          | "mobile_money",
+        transactionReference: formData.transactionReference,
+      } : {
         amount: amountValue,
         payableType: formData.payableType as "purchase" | "sale",
         paymentMethod: formData.paymentMethod as
@@ -223,31 +239,33 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-6">
-          {/* Payable Type */}
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Payable Type <span className="text-red-500">*</span>
-              </label>
-              {remainingAmount !== null && (
-                <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm">
-                  Remaining: {formatNumber(remainingAmount)} RWF
-                </div>
-              )}
+          {/* Payable Type - Disabled in edit mode */}
+          {!payment && (
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Payable Type <span className="text-red-500">*</span>
+                </label>
+                {remainingAmount !== null && (
+                  <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm">
+                    Remaining: {formatNumber(remainingAmount)} RWF
+                  </div>
+                )}
+              </div>
+              <select
+                name="payableType"
+                value={formData.payableType}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                disabled={isSubmitting}
+              >
+                <option value="">Select payable type</option>
+                <option value="purchase">Purchase</option>
+                <option value="sale">Sale</option>
+              </select>
             </div>
-            <select
-              name="payableType"
-              value={formData.payableType}
-              onChange={handleFormChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-              disabled={isSubmitting || !!payment}
-            >
-              <option value="">Select payable type</option>
-              <option value="purchase">Purchase</option>
-              <option value="sale">Sale</option>
-            </select>
-          </div>
+          )}
 
           {/* Purchase/Sale Select */}
           {formData.payableType === "purchase" && (
@@ -399,10 +417,12 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
             disabled={
               isSubmitting ||
               !formData.amount ||
-              !formData.payableType ||
               !formData.paymentMethod ||
-              (formData.payableType === "purchase" && !formData.purchaseId) ||
-              (formData.payableType === "sale" && !formData.saleId)
+              (!payment && (
+                !formData.payableType ||
+                (formData.payableType === "purchase" && !formData.purchaseId) ||
+                (formData.payableType === "sale" && !formData.saleId)
+              ))
             }
           >
             {isSubmitting ? (

@@ -14,7 +14,6 @@ import {
 import { productionService } from "../../services/productionServices";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
 import { Production, Product, Warehouse, FilterParams } from "./types";
 import { formatDate, formatNumber, formatCurrency } from "./utils";
 import ProductionForm from "./ProductionForm";
@@ -22,8 +21,8 @@ import ProductionViewModal from "./ProductionViewModal";
 import ProductionTable from "./ProductionTable";
 import ProductionSummaryCards from "./ProductionSummaryCards";
 import ProductionActionBar from "./ProductionActionBar";
+import api from '../../services/authService'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const ProductionManagement: React.FC = () => {
   const [productions, setProductions] = useState<Production[]>([]);
@@ -87,7 +86,7 @@ const ProductionManagement: React.FC = () => {
   const fetchProducts = useCallback(async () => {
     setLoadingProducts(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/products`, {
+      const response = await api.get('/products', {
         params: { activeOnly: true },
       });
       const productsData = Array.isArray(response.data)
@@ -106,7 +105,7 @@ const ProductionManagement: React.FC = () => {
   const fetchWarehouses = useCallback(async () => {
     setLoadingWarehouses(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/warehouse`, {
+      const response = await api.get('/warehouse', {
         params: { activeOnly: true },
       });
       const warehousesData = Array.isArray(response.data)

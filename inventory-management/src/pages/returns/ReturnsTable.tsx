@@ -6,10 +6,6 @@ import {
   Edit2, 
   Trash2, 
   Calendar,
-  Check,
-  Clock,
-  X,
-  Info,
   AlertCircle
 } from "lucide-react";
 import { Return } from "../../services/returnsService";
@@ -56,31 +52,6 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "pending":
-        return "bg-amber-100 text-amber-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Check className="w-4 h-4 text-green-500" />;
-      case "pending":
-        return <Clock className="w-4 h-4 text-amber-500" />;
-      case "cancelled":
-        return <X className="w-4 h-4 text-red-500" />;
-      default:
-        return <Info className="w-4 h-4 text-gray-500" />;
-    }
-  };
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -203,19 +174,6 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
                   )}
                 </div>
               </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => onSort("status")}
-              >
-                <div className="flex items-center">
-                  Status
-                  {sortConfig?.key === "status" && (
-                    <span className="ml-1">
-                      {sortConfig.direction === "ascending" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </div>
-              </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -286,18 +244,6 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
                       <div className="text-sm text-gray-900">
                         {formatDate(ret.date)}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {getStatusIcon(ret.status)}
-                      <span
-                        className={`ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          ret.status
-                        )}`}
-                      >
-                        {ret.status}
-                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

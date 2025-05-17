@@ -8,7 +8,6 @@ import {
   Recycle,
   Truck,
   Skull,
-  Info,
 } from "lucide-react";
 
 interface DisposalFormProps {
@@ -118,9 +117,7 @@ const DisposalForm: React.FC<DisposalFormProps> = ({
                 disabled={isSubmitting || !!editingDisposal || loadingProducts}
               >
                 <option value="">
-                  {loadingProducts
-                    ? "Loading products..."
-                    : "Select a product"}
+                  {loadingProducts ? "Loading products..." : "Select a product"}
                 </option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
@@ -146,7 +143,9 @@ const DisposalForm: React.FC<DisposalFormProps> = ({
                 onChange={handleFormChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
-                disabled={isSubmitting || !!editingDisposal || loadingWarehouses}
+                disabled={
+                  isSubmitting || !!editingDisposal || loadingWarehouses
+                }
               >
                 <option value="">
                   {loadingWarehouses
@@ -193,7 +192,7 @@ const DisposalForm: React.FC<DisposalFormProps> = ({
                 <input
                   type="number"
                   name="unitPrice"
-                  value={formData.unitPrice || ''}
+                  value={formData.unitPrice || estimatedPrice}
                   onChange={handleFormChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   min="0"
@@ -201,12 +200,6 @@ const DisposalForm: React.FC<DisposalFormProps> = ({
                   disabled={isSubmitting}
                   placeholder="Leave empty to use estimated price"
                 />
-                {estimatedPrice !== undefined && estimatedPrice !== null && (
-                  <div className="mt-1 flex items-center text-sm text-gray-500">
-                    <Info className="w-4 h-4 mr-1" />
-                    Estimated price: ${Number(estimatedPrice).toFixed(2)} per unit
-                  </div>
-                )}
               </div>
             )}
 

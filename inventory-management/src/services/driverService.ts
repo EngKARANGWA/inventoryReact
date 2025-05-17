@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import api  from './authService';
 
 export interface Driver {
   id: number;
@@ -25,7 +23,7 @@ export interface Driver {
 export const driverService = {
   getAllDrivers: async (): Promise<Driver[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/drivers`);
+      const response = await api.get('/drivers');
       return response.data; // Assuming the API returns an array directly
     } catch (error) {
       console.error('Error fetching drivers:', error);

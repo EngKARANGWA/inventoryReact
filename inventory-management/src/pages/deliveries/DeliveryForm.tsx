@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import Select from "react-select";
 import { Delivery, deliveryService, SaleItem } from "../../services/deliveryService";
-import axios from "axios";
 import { toast } from "react-toastify";
+import api  from '../../services/authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface DeliveryFormProps {
   editingDelivery: Delivery | null;
@@ -70,7 +69,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     warehouseId: "",
     purchaseId: "",
     saleId: "",
-    saleItemId: "", // Add saleItemId
+    saleItemId: "",
     notes: "",
   });
 
@@ -141,10 +140,9 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     }
   }, [formData.saleId, sales]);
 
-  // Function to load sale items for a specific sale
   const loadSaleItems = async (saleId: string) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/sales/${saleId}`, {
+      const response = await api.get(`/sales/${saleId}`, { 
         params: { include: "items.product" }
       });
       
@@ -165,18 +163,18 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
       setLoadingWarehouses(true);
 
       // Fetch drivers with user profile included
-      const driversRes = await axios.get(`${API_BASE_URL}/drivers`, {
+      const driversRes = await api.get('/drivers', {
         params: { include: "user.profile" }
       });
       setDrivers(driversRes.data?.data || driversRes.data || []);
 
       // Fetch warehouses
-      const warehousesRes = await axios.get(`${API_BASE_URL}/warehouse`);
+      const warehousesRes = await api.get('/warehouse');
       setWarehouses(warehousesRes.data?.data || warehousesRes.data || []);
 
       if (formData.direction === "in") {
         setLoadingPurchases(true);
-        const purchasesRes = await axios.get(`${API_BASE_URL}/purchases`, {
+        const purchasesRes = await api.get('/purchases', {
           params: { 
             include: "product",
             search: purchasesSearch
@@ -190,7 +188,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         setLoadingPurchases(false);
       } else if (formData.direction === "out") {
         setLoadingSales(true);
-        const salesRes = await axios.get(`${API_BASE_URL}/sales`, {
+        const salesRes = await api.get('/sales', {
           params: { 
             include: "items.product",
             search: salesSearch

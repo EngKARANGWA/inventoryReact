@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import api from './authService';
 
 export interface Return {
   id: number;
@@ -9,7 +7,7 @@ export interface Return {
   returnedQuantity: string;
   note: string | null;
   saleId: number;
-  saleItemId: number; // Added this field
+  saleItemId: number;
   productId: number;
   warehouseId: number;
   createdAt: string;
@@ -36,7 +34,7 @@ export interface Return {
       };
     }>;
   };
-  saleItem?: { // Added this field
+  saleItem?: {
     id: number;
     quantity: string;
     unitPrice: string;
@@ -68,11 +66,11 @@ export interface Return {
 
 export interface CreateReturnData {
   saleId: number;
-  saleItemId: number; // Added this field as required
+  saleItemId: number;
   returnedQuantity: number;
   note?: string;
   status?: string;
-  warehouseId?: number; // Optional warehouse specification
+  warehouseId?: number;
 }
 
 interface GetReturnsOptions {
@@ -80,7 +78,7 @@ interface GetReturnsOptions {
   pageSize?: number;
   search?: string;
   saleId?: number;
-  saleItemId?: number; // Added this field
+  saleItemId?: number;
   productId?: number;
   includeDeleted?: boolean;
 }
@@ -97,9 +95,9 @@ const handleResponse = (response: any) => {
 
 // Helper function to handle errors
 const handleError = (error: any) => {
-  if (axios.isAxiosError(error)) {
-    console.error("API Error:", error.response?.data?.message || error.message);
-    throw new Error(error.response?.data?.message || "An error occurred");
+  if (error.response) {
+    console.error("API Error:", error.response.data?.message || error.message);
+    throw new Error(error.response.data?.message || "An error occurred");
   }
   console.error("Error:", error);
   throw error;
@@ -109,12 +107,11 @@ export const returnsService = {
   // Create a new return
   createReturn: async (returnData: CreateReturnData): Promise<Return> => {
     try {
-      // Validate required fields
       if (!returnData.saleItemId) {
         throw new Error("Sale item ID is required");
       }
       
-      const response = await axios.post(`${API_BASE_URL}/returns`, returnData);
+      const response = await api.post('/returns', returnData);
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -122,25 +119,21 @@ export const returnsService = {
     }
   },
 
+  // Update an existing return
   updateReturn: async (
     id: number,
     returnData: CreateReturnData
   ): Promise<Return> => {
     try {
-      // Ensure id is a valid number
       if (!id || isNaN(Number(id))) {
         throw new Error("Invalid return ID for update");
       }
       
-      // Validate required fields for update
       if (returnData.saleItemId === undefined || returnData.saleItemId === null) {
         console.warn("Sale item ID should be provided for update");
       }
       
-      const response = await axios.put(
-        `${API_BASE_URL}/returns/${id}`,
-        returnData
-      );
+      const response = await api.put(`/returns/${id}`, returnData);
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -148,14 +141,14 @@ export const returnsService = {
     }
   },
 
+  // Delete a return
   deleteReturn: async (id: number): Promise<void> => {
     try {
-      // Ensure id is a valid number
       if (!id || isNaN(Number(id))) {
         throw new Error("Invalid return ID for deletion");
       }
       
-      await axios.delete(`${API_BASE_URL}/returns/${id}`);
+      await api.delete(`/returns/${id}`);
     } catch (error) {
       handleError(error);
       throw error;
@@ -177,7 +170,7 @@ export const returnsService = {
         productId: options.productId,
       };
 
-      const response = await axios.get(`${API_BASE_URL}/returns`, { params });
+      const response = await api.get('/returns', { params });
       return {
         data: response.data.data || [],
         pagination: response.data.pagination || {},
@@ -188,9 +181,10 @@ export const returnsService = {
     }
   },
 
+  // Get products
   getProducts: async (): Promise<{ data: any[] }> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products`);
+      const response = await api.get('/products');
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -198,11 +192,12 @@ export const returnsService = {
     }
   },
 
+  // Get sales
   getSales: async (): Promise<{ data: any[] }> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/sales`, {
+      const response = await api.get('/sales', {
         params: {
-          include: "items,products" // Request to include items and their products
+          include: "items,products"
         }
       });
       return {
@@ -217,16 +212,14 @@ export const returnsService = {
   // Get a single return by ID
   getReturnById: async (id: number): Promise<Return | null> => {
     try {
-      // Validate the ID to prevent API calls with undefined
       if (!id || isNaN(Number(id))) {
         console.error("Invalid return ID:", id);
         throw new Error("Invalid return ID");
       }
       
       console.log(`Fetching return with ID: ${id}`);
-      const response = await axios.get(`${API_BASE_URL}/returns/${id}`);
+      const response = await api.get(`/returns/${id}`);
       
-      // Extract the return data from the response
       const returnData = handleResponse(response);
       console.log("Return data fetched successfully");
       

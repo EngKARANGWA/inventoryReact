@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import api from './authService';
 
 export interface SaleItem {
   id?: number;
@@ -95,7 +93,7 @@ interface SaleResponse {
 export const saleService = {
   getAllSales: async (params?: any): Promise<SaleResponse> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/sales`, { params });
+      const response = await api.get('/sales', { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching sales:", error);
@@ -105,7 +103,7 @@ export const saleService = {
 
   getSaleById: async (id: number): Promise<Sale> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/sales/${id}`);
+      const response = await api.get(`/sales/${id}`);
       return response.data.data;
     } catch (error) {
       console.error(`Error fetching sale ${id}:`, error);
@@ -115,7 +113,7 @@ export const saleService = {
 
   createSale: async (saleData: CreateSaleData): Promise<Sale> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/sales`, saleData);
+      const response = await api.post('/sales', saleData);
       return response.data.data;
     } catch (error) {
       console.error("Error creating sale:", error);
@@ -125,7 +123,7 @@ export const saleService = {
 
   updateSale: async (id: number, saleData: UpdateSaleData): Promise<Sale> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/sales/${id}`, saleData);
+      const response = await api.put(`/sales/${id}`, saleData);
       return response.data.data;
     } catch (error) {
       console.error("Error updating sale:", error);
@@ -135,7 +133,7 @@ export const saleService = {
 
   deleteSale: async (id: number): Promise<void> => {
     try {
-      await axios.delete(`${API_BASE_URL}/sales/${id}`);
+      await api.delete(`/sales/${id}`);
     } catch (error) {
       console.error("Error deleting sale:", error);
       throw error;

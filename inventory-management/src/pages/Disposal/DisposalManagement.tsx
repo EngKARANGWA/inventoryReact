@@ -1,6 +1,6 @@
 // src/pages/DisposalManagement.tsx
 import React, { useState, useEffect, useCallback } from "react";
-import { Sidebar } from "../../components/ui/sidebar";
+import {Sidebar} from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -147,19 +147,19 @@ const DisposalManagement: React.FC = () => {
   const fetchPricesForProduct = async (productId: number) => {
     try {
       setLoadingPrices(true);
-      const prices = await priceService.getPricesByProduct(productId);
-
-      setPrices(
-        prices.map((p) => ({
-          id: p.id,
-          buyingUnitPrice:
-            p.buyingUnitPrice !== undefined ? p.buyingUnitPrice : null,
-          sellingUnitPrice:
-            p.sellingUnitPrice !== undefined ? p.sellingUnitPrice : null,
-          date: p.date,
-          productId: p.productId,
-        }))
-      );
+      const priceData = await priceService.getAveragePriceForProduct(productId);
+  
+      if (priceData) {
+        setPrices([{
+          id: 0, // No ID from the average price endpoint
+          buyingUnitPrice: priceData.averageUnitPrice,
+          sellingUnitPrice: null,
+          date: new Date().toISOString(),
+          productId: priceData.productId,
+        }]);
+      } else {
+        setPrices([]);
+      }
     } catch (error) {
       console.error("Error fetching prices:", error);
       toast.error("Failed to load product prices");
@@ -274,7 +274,7 @@ const DisposalManagement: React.FC = () => {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+  
     try {
       const disposalData = {
         productId: Number(formData.productId),
@@ -283,8 +283,9 @@ const DisposalManagement: React.FC = () => {
         method: formData.method,
         note: formData.note,
         date: formData.date,
+        unitPrice: prices[0]?.buyingUnitPrice || 0,
       };
-
+  
       if (editingDisposal) {
         const updatedDisposal = await disposalService.updateDisposal(
           editingDisposal.id,
@@ -302,7 +303,7 @@ const DisposalManagement: React.FC = () => {
         setTotalDisposals(totalDisposals + 1);
         toast.success("Disposal created successfully");
       }
-
+  
       setShowAddForm(false);
     } catch (err: any) {
       console.error("Error saving disposal:", err);

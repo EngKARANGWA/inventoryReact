@@ -8,7 +8,7 @@ import {
   PackageSummary,
 } from "./types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import api from "../../services/authService";
 
 interface ProductionFormProps {
   show: boolean;
@@ -150,6 +150,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     if (!productId) return;
 
     try {
+      // Set loading states
       if (type === "main") {
         setLoadingPrice(true);
       } else if (type === "outcome" && index !== undefined) {
@@ -158,10 +159,11 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         setLoadingProductPrices((prev) => ({ ...prev, [index]: true }));
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/stoke-movements/average-price/${productId}`
+      // Use the centralized api service instead of direct fetch
+      const response = await api.get(
+        `/stoke-movements/average-price/${productId}`
       );
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success && data.data.averageUnitPrice) {
         const roundedPrice = Math.round(data.data.averageUnitPrice * 100) / 100;
@@ -201,7 +203,9 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
       }
     } catch (error) {
       console.error("Failed to fetch average price:", error);
+      // You might want to add error handling here, like showing a toast notification
     } finally {
+      // Reset loading states
       if (type === "main") {
         setLoadingPrice(false);
       } else if (type === "outcome" && index !== undefined) {

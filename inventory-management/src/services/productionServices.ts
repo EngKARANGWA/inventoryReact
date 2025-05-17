@@ -2,6 +2,75 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// Create axios instance with interceptors
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add request interceptor to include auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // If error is 401 and not already retrying
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Try to refresh token
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+        
+        const res = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
+          refreshToken
+        });
+        
+        // If refresh successful, update tokens and retry original request
+        if (res.data?.success) {
+          localStorage.setItem('token', res.data.token);
+          
+          // Update authorization header with new token
+          originalRequest.headers.Authorization = `Bearer ${res.data.token}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        // If refresh fails, logout user
+        console.error('Token refresh failed:', refreshError);
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        
+        // Redirect to login page
+        window.location.href = '/login';
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export interface Product {
   id: number;
   name: string;
@@ -208,7 +277,7 @@ export const productionService = {
         }))
       };
 
-      const response = await axios.post(`${API_BASE_URL}/production`, formattedData);
+      const response = await api.post(`/production`, formattedData);
       
       // Handle different response structures
       const responseData = response.data.data || response.data;
@@ -282,7 +351,7 @@ export const productionService = {
         processedFilters.status = filters.status;
       }
       
-      const response = await axios.get(`${API_BASE_URL}/production`, {
+      const response = await api.get(`/production`, {
         params: {
           page,
           pageSize,
@@ -314,7 +383,7 @@ export const productionService = {
 
   getProductionById: async (id: number): Promise<Production> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/production/${id}`);
+      const response = await api.get(`/production/${id}`);
       const responseData = response.data.data || response.data;
       
       // Ensure compatibility
@@ -371,8 +440,8 @@ export const productionService = {
         }))
       };
 
-      const response = await axios.put(
-        `${API_BASE_URL}/production/${id}`,
+      const response = await api.put(
+        `/production/${id}`,
         formattedData
       );
       
@@ -403,7 +472,7 @@ export const productionService = {
 
   deleteProduction: async (id: number): Promise<void> => {
     try {
-      await axios.delete(`${API_BASE_URL}/production/${id}`);
+      await api.delete(`/production/${id}`);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -416,7 +485,7 @@ export const productionService = {
 
   restoreProduction: async (id: number): Promise<Production> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/production/${id}/restore`);
+      const response = await api.post(`/production/${id}/restore`);
       const responseData = response.data.data || response.data;
       
       return {
@@ -446,7 +515,7 @@ export const productionService = {
     outcomeBreakdown: any[];
   }> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/production/stats`, {
+      const response = await api.get(`/production/stats`, {
         params,
       });
       
@@ -487,3 +556,103 @@ export const productionService = {
     };
   },
 };
+
+// Authentication service functions
+export const authService = {
+  login: async (usernameOrEmail: string, password: string) => {
+    try {
+      const response = await api.post('/auth/login', { usernameOrEmail, password });
+      return response.data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Login failed';
+      throw new Error(message);
+    }
+  },
+
+  register: async (userData: any) => {
+    try {
+      const response = await api.post('/auth/register', userData);
+      return response.data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Registration failed';
+      throw new Error(message);
+    }
+  },
+
+  requestPasswordReset: async (email: string) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Password reset request failed';
+      throw new Error(message);
+    }
+  },
+
+  resetPassword: async (token: string, email: string, newPassword: string) => {
+    try {
+      const response = await api.post('/auth/reset-password', {
+        token,
+        email,
+        newPassword
+      });
+      return response.data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Password reset failed';
+      throw new Error(message);
+    }
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    try {
+      const response = await api.post('/auth/change-password', {
+        currentPassword,
+        newPassword
+      });
+      return response.data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Password change failed';
+      throw new Error(message);
+    }
+  },
+
+  logout: async () => {
+    try {
+      // Call the logout endpoint (optional, since JWT is stateless)
+      await api.post('/auth/logout');
+      
+      // Clear local storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      
+      return { success: true };
+    } catch (error) {
+      // Even if the API call fails, clear local storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      
+      console.error('Logout error:', error);
+      return { success: true };
+    }
+  },
+
+  getCurrentUser: () => {
+    const userString = localStorage.getItem('user');
+    if (!userString) return null;
+    
+    try {
+      return JSON.parse(userString);
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
+    }
+  },
+
+  isAuthenticated: () => {
+    return !!localStorage.getItem('token');
+  }
+};
+
+export default api;

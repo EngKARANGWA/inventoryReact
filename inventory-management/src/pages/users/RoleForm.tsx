@@ -11,6 +11,7 @@ interface RoleFormProps {
 }
 
 interface FormData {
+  id?: string | number;
   blockerId?: string;
   scaleMonitorId?: string;
   salerId?: string;
@@ -26,11 +27,12 @@ interface FormData {
   email: string;
   phoneNumber: string;
   address: string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "suspended" | "pending" | undefined;
   district?: string;
   sector?: string;
   cell?: string;
   licenseNumber?: string;
+  role?: string;
 }
 
 const defaultFormData: FormData = {

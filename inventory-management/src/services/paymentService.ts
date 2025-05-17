@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import  api  from './authService';
 
 export interface Payment {
   id: number;
@@ -94,7 +92,7 @@ export interface SaleItem {
 
 interface CreatePaymentData {
   amount: number;
-  payableType: "purchase" | "sale";
+  payableType?: "purchase" | "sale";
   paymentMethod: "bank_transfer" | "cheque" | "cash" | "mobile_money";
   transactionReference?: string;
   purchaseId?: number;
@@ -119,10 +117,7 @@ interface PaymentResponse {
 }
 
 export const paymentService = {
-  createPayment: async (
-    paymentData: CreatePaymentData,
-    file?: File
-  ): Promise<Payment> => {
+  async createPayment(paymentData: CreatePaymentData, file?: File): Promise<Payment> {
     const formData = new FormData();
 
     Object.entries(paymentData).forEach(([key, value]) => {
@@ -136,7 +131,7 @@ export const paymentService = {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/payments`, formData, {
+      const response = await api.post('/payments', formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -148,9 +143,9 @@ export const paymentService = {
     }
   },
 
-  getAllPayments: async (): Promise<PaymentResponse> => {
+  async getAllPayments(): Promise<PaymentResponse> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/payments`);
+      const response = await api.get('/payments');
       return response.data;
     } catch (error) {
       console.error("Error fetching payments:", error);
@@ -167,13 +162,10 @@ export const paymentService = {
     }
   },
 
-  getPaymentById: async (
-    id: number,
-    includeDeleted: boolean = false
-  ): Promise<Payment | null> => {
+  async getPaymentById(id: number, includeDeleted: boolean = false): Promise<Payment | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/payments/${id}`, {
-        params: { includeDeleted: includeDeleted ? "true" : "false" },
+      const response = await api.get(`/payments/${id}`, {
+        params: { includeDeleted }
       });
       return response.data.data;
     } catch (error) {
@@ -182,11 +174,7 @@ export const paymentService = {
     }
   },
 
-  updatePayment: async (
-    id: number,
-    paymentData: UpdatePaymentData,
-    file?: File
-  ): Promise<Payment> => {
+  async updatePayment(id: number, paymentData: UpdatePaymentData, file?: File): Promise<Payment> {
     const formData = new FormData();
 
     Object.entries(paymentData).forEach(([key, value]) => {
@@ -200,15 +188,11 @@ export const paymentService = {
     }
 
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/payments/${id}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await api.put(`/payments/${id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return response.data.data;
     } catch (error) {
       console.error("Error updating payment:", error);
@@ -216,9 +200,9 @@ export const paymentService = {
     }
   },
 
-  deletePayment: async (id: number): Promise<boolean> => {
+  async deletePayment(id: number): Promise<boolean> {
     try {
-      await axios.delete(`${API_BASE_URL}/payments/${id}`);
+      await api.delete(`/payments/${id}`);
       return true;
     } catch (error) {
       console.error("Error deleting payment:", error);
@@ -226,9 +210,9 @@ export const paymentService = {
     }
   },
 
-  restorePayment: async (id: number): Promise<boolean> => {
+  async restorePayment(id: number): Promise<boolean> {
     try {
-      await axios.put(`${API_BASE_URL}/payments/${id}/restore`);
+      await api.put(`/payments/${id}/restore`);
       return true;
     } catch (error) {
       console.error("Error restoring payment:", error);
@@ -236,9 +220,9 @@ export const paymentService = {
     }
   },
 
-  getPurchases: async (search: string = ""): Promise<Purchase[]> => {
+  async getPurchases(search: string = ""): Promise<Purchase[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/purchases`, {
+      const response = await api.get('/purchases', {
         params: { search },
       });
       return response.data.data || [];
@@ -248,9 +232,9 @@ export const paymentService = {
     }
   },
 
-  getSales: async (search: string = ""): Promise<Sale[]> => {
+  async getSales(search: string = ""): Promise<Sale[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/sales`, {
+      const response = await api.get('/sales', {
         params: { search },
       });
       return response.data.data || [];
@@ -260,9 +244,9 @@ export const paymentService = {
     }
   },
 
-  getSalesWithItems: async (search: string = ""): Promise<Sale[]> => {
+  async getSalesWithItems(search: string = ""): Promise<Sale[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/sales`, {
+      const response = await api.get('/sales', {
         params: { 
           search,
           includeItems: "true" 
@@ -275,18 +259,12 @@ export const paymentService = {
     }
   },
 
-  getPaymentFile: async (filename: string): Promise<Blob> => {
+  async getPaymentFile(filename: string): Promise<Blob> {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/payments/file/${filename}`,
-        {
-          responseType: "blob",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          withCredentials: true,
-        }
-      );
+      const response = await api.get(`/payments/file/${filename}`, {
+        responseType: "blob",
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
       console.error("Error fetching payment file:", error);

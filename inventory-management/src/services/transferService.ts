@@ -1,7 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
+import api  from './authService';
 
 export interface Warehouse {
   id: number;
@@ -36,17 +33,10 @@ export interface Transfer {
     id: number;
     name: string;
     description: string;
+    type?: string; // Added this
   };
-  fromWarehouse?: {
-    id: number;
-    name: string;
-    location: string;
-  };
-  toWarehouse?: {
-    id: number;
-    name: string;
-    location: string;
-  };
+  fromWarehouse?: Warehouse;
+  toWarehouse?: Warehouse;
   driver?: {
     id: number;
     driverId: string;
@@ -92,29 +82,60 @@ interface TransferResponse {
   };
 }
 
-export const transferService = {
-  createTransfer: async (
-    transferData: CreateTransferData
-  ): Promise<Transfer> => {
+export interface AveragePriceData {
+  productId: number;
+  warehouseId: number | null;
+  averageUnitPrice: number;
+  totalQuantity: number;
+  currentStock: number;
+  totalValue: number;
+  countedQuantity: number;
+  movements: number;
+  movementsWithPrice: number;
+  calculationDate: string;
+}
+
+
+export const stockMovementService = {
+  getAveragePrice: async (productId: number): Promise<AveragePriceData> => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/transfers`,
-        transferData
-      );
+      const response = await api.get(`/stoke-movements/average-price/${productId}`);
       return response.data.data;
-    } catch (error) {
-      console.error("Error creating transfer:", error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Failed to fetch average price';
+      console.error("Error fetching average price:", error);
+      throw new Error(errorMessage);
     }
   },
+};
+
+export const transferService = {
+    createTransfer: async (
+      transferData: CreateTransferData
+    ): Promise<Transfer> => {
+      try {
+        const response = await api.post('/transfers', transferData);
+        return response.data.data;
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.message || 'Failed to create transfer';
+        console.error("Error creating transfer:", error);
+        throw new Error(errorMessage);
+      }
+    },
 
   getAllTransfers: async (
-    // options: TransferFilterOptions = {}
+    options: TransferFilterOptions = {}
   ): Promise<TransferResponse> => {
     try {
-      
+      const params = {
+        page: options.page,
+        pageSize: options.pageSize,
+        search: options.search,
+        status: options.status,
+        includeDeleted: options.includeDeleted ? "true" : "false"
+      };
 
-      const response = await axios.get(`${API_BASE_URL}/transfers`);
+      const response = await api.get('/transfers', { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching transfers:", error);
@@ -136,7 +157,7 @@ export const transferService = {
     includeDeleted: boolean = false
   ): Promise<Transfer | null> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/transfers/${id}`, {
+      const response = await api.get(`/transfers/${id}`, {
         params: { includeDeleted: includeDeleted ? "true" : "false" },
       });
       return response.data.data;
@@ -151,10 +172,7 @@ export const transferService = {
     transferData: UpdateTransferData
   ): Promise<Transfer> => {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/transfers/${id}`,
-        transferData
-      );
+      const response = await api.put(`/transfers/${id}`, transferData);
       return response.data.data;
     } catch (error) {
       console.error("Error updating transfer:", error);
@@ -164,7 +182,7 @@ export const transferService = {
 
   deleteTransfer: async (id: number): Promise<boolean> => {
     try {
-      await axios.delete(`${API_BASE_URL}/transfers/${id}`);
+      await api.delete(`/transfers/${id}`);
       return true;
     } catch (error) {
       console.error("Error deleting transfer:", error);

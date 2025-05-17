@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Sidebar } from "../components/ui/sidebar";
+import {Sidebar}  from "../components/ui/sidebar";
 import { Header } from "../components/ui/header";
 import api from '../services/authService';
 import {
@@ -106,7 +106,7 @@ const Dashboard: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [statsData, setStatsData] = useState<any>(null);
@@ -145,10 +145,10 @@ const Dashboard: React.FC = () => {
           api.get('/warehouse'),
         ]);
   
-        const productsData = productsRes.data;
+        const productsData = productsRes.data.data || productsRes.data;
         const warehousesData = warehousesRes.data;
   
-        setProducts(productsData);
+        setProducts(Array.isArray(productsData) ? productsData : []);
         setWarehouses(warehousesData);
         await fetchStatsData();
       } catch (err) {

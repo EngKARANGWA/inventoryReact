@@ -6,7 +6,11 @@ import { PasswordField } from './PasswordField';
 import { login } from '../../services/authService';
 import { toast } from '../../components/ui/toast';
 
-export function LoginForm() {
+interface LoginFormProps {
+  onForgotPassword: () => void;
+}
+
+export function LoginForm({ onForgotPassword }: LoginFormProps) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -47,7 +51,6 @@ export function LoginForm() {
       [name]: value
     }));
     
-    // Clear error when typing
     if (errors[name as keyof typeof errors]) {
       setErrors(prev => ({
         ...prev,
@@ -67,16 +70,14 @@ export function LoginForm() {
     try {
       const response = await login(formData.usernameOrEmail, formData.password);
       
-      // Store tokens in localStorage (consider using httpOnly cookies in production)
       localStorage.setItem('token', response.token);
       localStorage.setItem('refreshToken', response.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.user));
       
       toast.success('Login successful');
       
-      // Navigate based on role
       if (response.user.roles.includes('ADMIN')) {
-        navigate('/admin/dashboard');
+        navigate('/dashboard');
       } else if (response.user.roles.includes('CASHIER')) {
         navigate('/cashier/dashboard');
       } else {
@@ -121,12 +122,13 @@ export function LoginForm() {
       )}
       
       <div className="flex justify-end">
-        <a 
-          href="/forgot-password" 
+        <button 
+          type="button"
+          onClick={onForgotPassword}
           className="text-sm text-indigo-600 hover:text-indigo-800 transition-colors"
         >
           Forgot password?
-        </a>
+        </button>
       </div>
       
       <Button
@@ -136,16 +138,6 @@ export function LoginForm() {
       >
         {isLoading ? 'Signing in...' : 'Sign In'}
       </Button>
-      
-      {/* <div className="text-center text-sm text-gray-600 mt-4">
-        Don't have an account?{' '}
-        <a 
-          href="/register" 
-          className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-        >
-          Create an account
-        </a>
-      </div> */}
     </form>
   );
 }

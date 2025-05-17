@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Sidebar } from "../../components/ui/sidebar";
+import {Sidebar} from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

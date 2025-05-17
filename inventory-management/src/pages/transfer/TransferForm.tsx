@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { Transfer } from "../../services/transferService";
 import { warehouseService } from "../../services/warehouseServices";
-
+import { stockMovementService } from "../../services/transferService";
 import { X } from "lucide-react";
 
 interface Warehouse {
@@ -28,6 +28,7 @@ interface TransferFormProps {
     driverId: string;
     quantity: string;
     note: string;
+    unitPrice: string;
   };
   editingTransfer: Transfer | null;
   isSubmitting: boolean;
@@ -46,6 +47,16 @@ interface TransferFormProps {
   onClose: () => void;
 }
 
+const formatNumber = (value: string | number): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '';
+  
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(num);
+};
+
 const TransferForm: React.FC<TransferFormProps> = ({
   formData,
   editingTransfer,
@@ -61,6 +72,8 @@ const TransferForm: React.FC<TransferFormProps> = ({
 }) => {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [warehousesLoading, setWarehousesLoading] = useState(true);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchWarehouses = async () => {
@@ -76,6 +89,26 @@ const TransferForm: React.FC<TransferFormProps> = ({
 
     fetchWarehouses();
   }, []);
+
+  const handleProductChange = async (selectedOption: any) => {
+    const productId = selectedOption?.value;
+    onSelectChange("productId", productId?.toString() || "");
+
+    if (productId && !editingTransfer) {
+      try {
+        setPriceLoading(true);
+        setPriceError(null);
+        const priceData = await stockMovementService.getAveragePrice(productId);
+        onSelectChange("unitPrice", priceData.averageUnitPrice.toString());
+      } catch (error: any) {
+        console.error("Error fetching average price:", error);
+        setPriceError(error.message);
+        onSelectChange("unitPrice", "");
+      } finally {
+        setPriceLoading(false);
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -96,7 +129,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
 
         <form onSubmit={onSubmit}>
           <div className="grid grid-cols-1 gap-6">
-            {/* Product Select */}
+            {/* Product Select - Disabled in edit mode */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Product <span className="text-red-500">*</span>
@@ -106,12 +139,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
                 name="productId"
                 options={productsOptions}
                 isLoading={productsLoading}
-                onChange={(selectedOption) => {
-                  onSelectChange(
-                    "productId",
-                    selectedOption?.value.toString() || ""
-                  );
-                }}
+                onChange={handleProductChange}
                 value={productsOptions.find(
                   (option) => option.value.toString() === formData.productId
                 )}
@@ -122,6 +150,12 @@ const TransferForm: React.FC<TransferFormProps> = ({
                 required
                 isDisabled={isSubmitting || !!editingTransfer}
               />
+              {priceLoading && (
+                <p className="mt-1 text-sm text-gray-500">Fetching average price...</p>
+              )}
+              {priceError && (
+                <p className="mt-1 text-sm text-red-600">{priceError}</p>
+              )}
               {!productsLoading && productsOptions.length === 0 && (
                 <p className="mt-1 text-sm text-red-600">
                   No products available. Please add products first.
@@ -129,7 +163,37 @@ const TransferForm: React.FC<TransferFormProps> = ({
               )}
             </div>
 
-            {/* From Warehouse */}
+            {/* Unit Price - Only shown for new transfers */}
+            {!editingTransfer && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Unit Price <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="unitPrice"
+                  value={formData.unitPrice ? formatNumber(formData.unitPrice) : ""}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/,/g, "");
+                    if (!isNaN(Number(rawValue)) || rawValue === "") {
+                      onChange({
+                        ...e,
+                        target: {
+                          ...e.target,
+                          name: "unitPrice",
+                          value: rawValue,
+                        },
+                      });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={isSubmitting || priceLoading}
+                />
+              </div>
+            )}
+
+            {/* From Warehouse - Disabled in edit mode */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 From Warehouse <span className="text-red-500">*</span>
@@ -157,7 +221,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
               )}
             </div>
 
-            {/* To Warehouse */}
+            {/* To Warehouse - Disabled in edit mode */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 To Warehouse <span className="text-red-500">*</span>
@@ -185,7 +249,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
               )}
             </div>
 
-            {/* Driver Select */}
+            {/* Driver Select - Enabled in edit mode */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Driver <span className="text-red-500">*</span>
@@ -209,7 +273,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
                 classNamePrefix="select"
                 isClearable
                 required
-                isDisabled={isSubmitting || !!editingTransfer}
+                isDisabled={isSubmitting}
               />
               {!driversLoading && driversOptions.length === 0 && (
                 <p className="mt-1 text-sm text-red-600">
@@ -218,7 +282,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
               )}
             </div>
 
-            {/* Quantity */}
+            {/* Quantity - Enabled in edit mode */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Quantity (Kg) <span className="text-red-500">*</span>
@@ -229,7 +293,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
                 value={formData.quantity.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                 onChange={(e) => {
                   const rawValue = e.target.value.replace(/,/g, "");
-                  if (!isNaN(Number(rawValue))) {
+                  if (!isNaN(Number(rawValue)) || rawValue === "") {
                     onChange({
                       ...e,
                       target: {
@@ -246,7 +310,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
               />
             </div>
 
-            {/* Notes */}
+            {/* Notes - Enabled in edit mode */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Notes
@@ -281,7 +345,8 @@ const TransferForm: React.FC<TransferFormProps> = ({
                 !formData.fromWarehouseId ||
                 !formData.toWarehouseId ||
                 !formData.driverId ||
-                !formData.quantity
+                !formData.quantity ||
+                (!editingTransfer && !formData.unitPrice)
               }
             >
               {isSubmitting ? (

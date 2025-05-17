@@ -1,5 +1,4 @@
-import axios from "axios";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import api from './authService';
 
 export interface Supplier {
   id: number;
@@ -184,20 +183,29 @@ export interface PurchaseFilterOptions {
   search?: string;
 }
 
+interface ApiError extends Error {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
 export const purchaseService = {
-  getAllSuppliers: async (): Promise<Supplier[]> => {
+  async getAllSuppliers(): Promise<Supplier[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/supplier`);
+      const response = await api.get('/supplier');
       return response.data;
     } catch (error) {
-      console.error("Error fetching suppliers:", error);
+      const err = error as ApiError;
+      console.error("Error fetching suppliers:", err);
       return [];
     }
   },
 
-  getAllProducts: async (): Promise<Product[]> => {
+  async getAllProducts(): Promise<Product[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products`);
+      const response = await api.get('/products');
 
       if (
         response.data &&
@@ -210,49 +218,42 @@ export const purchaseService = {
       console.error("Unexpected API response format:", response.data);
       return [];
     } catch (error) {
-      console.error("Error fetching products:", error);
-      // toast.error("Failed to load products");
+      const err = error as ApiError;
+      console.error("Error fetching products:", err);
       return [];
     }
   },
 
-  createPurchase: async (
-    purchaseData: CreatePurchaseData
-  ): Promise<Purchase> => {
+  async createPurchase(purchaseData: CreatePurchaseData): Promise<Purchase> {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/purchases`,
-        purchaseData
-      );
+      const response = await api.post('/purchases', purchaseData);
 
       if (response.data && response.data.success && response.data.data) {
         try {
-          const completePurchase = await axios.get(
-            `${API_BASE_URL}/purchases/${response.data.data.id}`
-          );
+          const completePurchase = await api.get(`/purchases/${response.data.data.id}`);
           return completePurchase.data.data;
         } catch (fetchError) {
-          console.error("Error fetching complete purchase:", fetchError);
+          const err = fetchError as ApiError;
+          console.error("Error fetching complete purchase:", err);
           return response.data.data;
         }
       }
       throw new Error("Unexpected API response format");
     } catch (error) {
-      console.error("Error creating purchase:", error);
-      if (axios.isAxiosError(error)) {
+      const err = error as ApiError;
+      console.error("Error creating purchase:", err);
+      if (err.response) {
         throw new Error(
-          error.response?.data?.message ||
-            error.message ||
-            "Failed to create purchase"
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to create purchase"
         );
       }
-      throw error;
+      throw err;
     }
   },
 
-  getAllPurchases: async (
-    options: Partial<PurchaseFilterOptions> = {}
-  ): Promise<Purchase[]> => {
+  async getAllPurchases(options: Partial<PurchaseFilterOptions> = {}): Promise<Purchase[]> {
     try {
       const completeOptions: PurchaseFilterOptions = {
         page: options.page || 1,
@@ -274,110 +275,99 @@ export const purchaseService = {
         supplierId: completeOptions.supplierId,
       };
 
-      const response = await axios.get(`${API_BASE_URL}/purchases`, { params });
+      const response = await api.get('/purchases', { params });
 
-      // Check if response.data has the expected structure based on API examples
       if (
         response.data &&
         response.data.data &&
         Array.isArray(response.data.data)
       ) {
-        // Return the data array from the response
         return response.data.data;
       } else if (Array.isArray(response.data)) {
-        // If response.data is already an array, return it directly
         return response.data;
       } else {
         console.error("Unexpected API response format:", response.data);
         return [];
       }
     } catch (error) {
-      console.error("Error fetching purchases:", error);
+      const err = error as ApiError;
+      console.error("Error fetching purchases:", err);
       return [];
     }
   },
 
-  getPurchaseById: async (
-    id: number,
-    includeDeleted: boolean = false
-  ): Promise<Purchase | null> => {
+  async getPurchaseById(id: number, includeDeleted: boolean = false): Promise<Purchase | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/purchases/${id}`, {
+      const response = await api.get(`/purchases/${id}`, {
         params: { includeDeleted: includeDeleted ? "true" : "false" },
       });
 
-      // Check if response.data has the expected structure (with success and data fields)
       if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       } else if (response.data && typeof response.data === "object") {
-        // If direct object is returned
         return response.data;
       } else {
         console.error("Unexpected API response format:", response.data);
         return null;
       }
     } catch (error) {
-      console.error("Error fetching purchase:", error);
+      const err = error as ApiError;
+      console.error("Error fetching purchase:", err);
       return null;
     }
   },
 
-  updatePurchase: async (
-    id: number,
-    purchaseData: UpdatePurchaseData
-  ): Promise<Purchase> => {
+  async updatePurchase(id: number, purchaseData: UpdatePurchaseData): Promise<Purchase> {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/purchases/${id}`,
-        purchaseData
-      );
+      const response = await api.put(`/purchases/${id}`, purchaseData);
       
-      // Handle nested response structure
       if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       }
       throw new Error("Unexpected API response format");
     } catch (error) {
-      console.error("Error updating purchase:", error);
-      if (axios.isAxiosError(error)) {
+      const err = error as ApiError;
+      console.error("Error updating purchase:", err);
+      if (err.response) {
         throw new Error(
-          error.response?.data?.message || 
-          error.message || 
+          err.response?.data?.message || 
+          err.message || 
           "Failed to update purchase"
         );
       }
-      throw error;
+      throw err;
     }
   },
 
-  deletePurchase: async (id: number): Promise<boolean> => {
+  async deletePurchase(id: number): Promise<boolean> {
     try {
-      await axios.delete(`${API_BASE_URL}/purchases/${id}`);
+      await api.delete(`/purchases/${id}`);
       return true;
     } catch (error) {
-      console.error("Error deleting purchase:", error);
+      const err = error as ApiError;
+      console.error("Error deleting purchase:", err);
       return false;
     }
   },
 
-  restorePurchase: async (id: number): Promise<Purchase> => {
+  async restorePurchase(id: number): Promise<Purchase> {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/purchases/${id}/restore`
-      );
+      const response = await api.post(`/purchases/${id}/restore`);
       return response.data;
     } catch (error) {
-      console.error("Error restoring purchase:", error);
-      throw error;
+      const err = error as ApiError;
+      console.error("Error restoring purchase:", err);
+      throw err;
     }
   },
 
-  getDeletedPurchases: async (): Promise<Purchase[]> => {
+  async getDeletedPurchases(): Promise<Purchase[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/purchases/deleted`);
+      const response = await api.get('/purchases/deleted');
       return response.data;
     } catch (error) {
-      console.error("Error fetching deleted purchases:", error);
+      const err = error as ApiError;
+      console.error("Error fetching deleted purchases:", err);
       return [];
     }
   },

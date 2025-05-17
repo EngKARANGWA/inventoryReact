@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Sidebar } from "../../components/ui/sidebar";
+import {Sidebar} from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import { AlertCircle, RefreshCw, Truck } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { transferService, Transfer } from "../../services/transferService";
-import { productService } from '../../services/productService';
-import { driverService } from '../../services/driverService';
-import axios from "axios";
+import { productService } from "../../services/productService";
+import { driverService } from "../../services/driverService";
 
 // Import the new components
 import TransferStatsCards from "./TransferStatsCards";
@@ -20,8 +19,6 @@ import TransferViewModal from "./TransferViewModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import Pagination from "./Pagination";
 import TransferCard from "./TransferCard";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface Product {
   id: number;
@@ -44,12 +41,6 @@ interface Driver {
   user?: User;
 }
 
-interface Warehouse {
-  id: number;
-  name: string;
-  location: string;
-}
-
 interface TransferFilters {
   page: number;
   pageSize: number;
@@ -64,16 +55,24 @@ const TransferManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(null);
+  const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(
+    null
+  );
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTransfer, setEditingTransfer] = useState<Transfer | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productsLoading, setProductsLoading] = useState(false);
   const [driversLoading, setDriversLoading] = useState(false);
-  const [productsOptions, setProductsOptions] = useState<{ value: number; label: string }[]>([]);
-  const [driversOptions, setDriversOptions] = useState<{ value: number; label: string }[]>([]);
-  const [warehouseOptions, setWarehouseOptions] = useState<{ value: number; label: string }[]>([]);
+  const [productsOptions, setProductsOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [driversOptions, setDriversOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [warehouseOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [transferToDelete, setTransferToDelete] = useState<number | null>(null);
   const [viewType, setViewType] = useState<"table" | "cards">("table");
@@ -100,6 +99,7 @@ const TransferManagement: React.FC = () => {
     driverId: "",
     quantity: "",
     note: "",
+    unitPrice: "",
   });
 
   const fetchTransfers = useCallback(async () => {
@@ -121,10 +121,13 @@ const TransferManagement: React.FC = () => {
 
       setTransfers(processedTransfers);
       setTotalTransfers(pagination?.total || 0);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching transfers:", err);
-      setError("Failed to fetch transfers. Please try again later.");
-      toast.error("Failed to load transfers");
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to fetch transfers. Please try again later.";
+      setError(errorMessage);
+      toast.error(errorMessage);
       setTransfers([]);
       setTotalTransfers(0);
     } finally {
@@ -139,19 +142,13 @@ const TransferManagement: React.FC = () => {
 
       // Fetch products
       const productsResponse = await productService.getAllProducts();
-      const formattedProducts = productsResponse.data.map((product: Product) => ({
-        value: product.id,
-        label: product.name,
-      }));
+      const formattedProducts = productsResponse.data.map(
+        (product: Product) => ({
+          value: product.id,
+          label: product.name,
+        })
+      );
       setProductsOptions(formattedProducts);
-
-      // Fetch warehouses
-      const warehousesResponse = await axios.get(`${API_BASE_URL}/warehouse`);
-      const formattedWarehouses = warehousesResponse.data.map((warehouse: Warehouse) => ({
-        value: warehouse.id,
-        label: `${warehouse.name} (${warehouse.location})`,
-      }));
-      setWarehouseOptions(formattedWarehouses);
 
       // Fetch drivers
       const driversResponse = await driverService.getAllDrivers();
@@ -160,10 +157,11 @@ const TransferManagement: React.FC = () => {
         label: driver.user?.profile?.names || `Driver ${driver.driverId}`,
       }));
       setDriversOptions(formattedDrivers);
-
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching dropdown options:", error);
-      toast.error("Failed to load form options");
+      const errorMessage =
+        error.response?.data?.message || "Failed to load form options";
+      toast.error(errorMessage);
     } finally {
       setProductsLoading(false);
       setDriversLoading(false);
@@ -202,6 +200,7 @@ const TransferManagement: React.FC = () => {
       driverId: "",
       quantity: "",
       note: "",
+      unitPrice: "",
     });
     setEditingTransfer(null);
     setShowAddForm(true);
@@ -215,6 +214,7 @@ const TransferManagement: React.FC = () => {
       driverId: String(transfer.driverId),
       quantity: String(transfer.quantity),
       note: transfer.note || "",
+      unitPrice: "",
     });
     setEditingTransfer(transfer);
     setShowAddForm(true);
@@ -237,7 +237,9 @@ const TransferManagement: React.FC = () => {
       setShowConfirmDelete(false);
     } catch (err: any) {
       console.error("Error deleting transfer:", err);
-      toast.error(err.message || "Failed to delete transfer");
+      const errorMessage =
+        err.response?.data?.message || "Failed to delete transfer";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
       setTransferToDelete(null);
@@ -268,20 +270,18 @@ const TransferManagement: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const transferData = {
-        productId: Number(formData.productId),
-        fromWarehouseId: Number(formData.fromWarehouseId),
-        toWarehouseId: Number(formData.toWarehouseId),
-        driverId: Number(formData.driverId),
-        quantity: parseFloat(formData.quantity),
-        note: formData.note,
-      };
-
       if (editingTransfer) {
+        const updateData = {
+          driverId: Number(formData.driverId),
+          quantity: parseFloat(formData.quantity),
+          note: formData.note,
+        };
+
         const updatedTransfer = await transferService.updateTransfer(
           editingTransfer.id,
-          { note: formData.note }
+          updateData
         );
+
         setTransfers(
           transfers.map((t) =>
             t.id === editingTransfer.id ? updatedTransfer : t
@@ -289,6 +289,16 @@ const TransferManagement: React.FC = () => {
         );
         toast.success("Transfer updated successfully");
       } else {
+        const transferData = {
+          productId: Number(formData.productId),
+          fromWarehouseId: Number(formData.fromWarehouseId),
+          toWarehouseId: Number(formData.toWarehouseId),
+          driverId: Number(formData.driverId),
+          quantity: parseFloat(formData.quantity),
+          unitPrice: parseFloat(formData.unitPrice),
+          note: formData.note,
+        };
+
         const newTransfer = await transferService.createTransfer(transferData);
         setTransfers([newTransfer, ...transfers]);
         setTotalTransfers(totalTransfers + 1);
@@ -298,12 +308,17 @@ const TransferManagement: React.FC = () => {
       setShowAddForm(false);
     } catch (err: any) {
       console.error("Error saving transfer:", err);
-      toast.error(err.message || "Failed to save transfer");
+      const errorMessage =
+        err.response?.data?.message || "Failed to save transfer";
+      if (err.response?.data?.code === "MISSING_UNIT_PRICE") {
+        toast.error("Unit price is required for the transfer");
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters((prev) => ({

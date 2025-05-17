@@ -1,7 +1,8 @@
 import React from "react";
-import { Edit2, Trash2, Eye, Phone } from "lucide-react";
+import { Edit2, Trash2, Eye, Phone, Key, UserCheck, Users } from "lucide-react";
 import PaginationControls from "./PaginationControls";
 import { User } from "../../services/userService";
+import { toast } from "react-toastify";
 
 interface UsersTableProps {
   users: User[];
@@ -15,6 +16,9 @@ interface UsersTableProps {
   } | null;
   onEditUser: (user: User) => void;
   onDeleteUser: (userId: string) => void;
+  onResetPassword: (user: User) => void;
+  onUpdateStatus: (user: User) => void;
+  onManageRoles: (user: User) => void;
   onViewDetails: (user: User) => void;
   totalUsers: number;
   currentPage: number;
@@ -29,8 +33,11 @@ const UsersTable: React.FC<UsersTableProps> = ({
   searchTerm,
   onRequestSort,
   sortConfig,
-  onEditUser,
+  // onEditUser,
   onDeleteUser,
+  onResetPassword,
+  onUpdateStatus,
+  onManageRoles,
   onViewDetails,
   totalUsers,
   currentPage,
@@ -40,7 +47,12 @@ const UsersTable: React.FC<UsersTableProps> = ({
   const totalPages = Math.ceil(totalUsers / pageSize);
 
   // Define the sortable columns explicitly
-  const sortableColumns: (keyof User)[] = ['username', 'email', 'role', 'status'];
+  const sortableColumns: (keyof User)[] = [
+    "username",
+    "email",
+    "role",
+    "status",
+  ];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -48,14 +60,14 @@ const UsersTable: React.FC<UsersTableProps> = ({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              {sortableColumns.includes('username') && (
+              {sortableColumns.includes("username") && (
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => onRequestSort('username')}
+                  onClick={() => onRequestSort("username")}
                 >
                   <div className="flex items-center">
                     Name
-                    {sortConfig?.key === 'username' && (
+                    {sortConfig?.key === "username" && (
                       <span className="ml-1">
                         {sortConfig.direction === "ascending" ? "↑" : "↓"}
                       </span>
@@ -64,14 +76,14 @@ const UsersTable: React.FC<UsersTableProps> = ({
                 </th>
               )}
 
-              {sortableColumns.includes('email') && (
+              {sortableColumns.includes("email") && (
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => onRequestSort('email')}
+                  onClick={() => onRequestSort("email")}
                 >
                   <div className="flex items-center">
                     Email
-                    {sortConfig?.key === 'email' && (
+                    {sortConfig?.key === "email" && (
                       <span className="ml-1">
                         {sortConfig.direction === "ascending" ? "↑" : "↓"}
                       </span>
@@ -80,14 +92,14 @@ const UsersTable: React.FC<UsersTableProps> = ({
                 </th>
               )}
 
-              {sortableColumns.includes('role') && (
+              {sortableColumns.includes("role") && (
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => onRequestSort('role')}
+                  onClick={() => onRequestSort("role")}
                 >
                   <div className="flex items-center">
                     Role
-                    {sortConfig?.key === 'role' && (
+                    {sortConfig?.key === "role" && (
                       <span className="ml-1">
                         {sortConfig.direction === "ascending" ? "↑" : "↓"}
                       </span>
@@ -100,14 +112,14 @@ const UsersTable: React.FC<UsersTableProps> = ({
                 Phone Number
               </th>
 
-              {sortableColumns.includes('status') && (
+              {sortableColumns.includes("status") && (
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => onRequestSort('status')}
+                  onClick={() => onRequestSort("status")}
                 >
                   <div className="flex items-center">
                     Status
-                    {sortConfig?.key === 'status' && (
+                    {sortConfig?.key === "status" && (
                       <span className="ml-1">
                         {sortConfig.direction === "ascending" ? "↑" : "↓"}
                       </span>
@@ -165,7 +177,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {user.roles?.[0]?.name || user.role || "N/A"}
+                      {user.roles?.[0]?.name || "N/A"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -177,36 +189,78 @@ const UsersTable: React.FC<UsersTableProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.status === "active"
+                        user.status === "active" ||
+                        user.accountStatus === "active"
                           ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
+                          : user.status === "inactive" ||
+                            user.accountStatus === "inactive"
+                          ? "bg-red-100 text-red-800"
+                          : user.status === "suspended" ||
+                            user.accountStatus === "suspended"
+                          ? "bg-orange-100 text-orange-800"
+                          : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
                       {user.status || user.accountStatus}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => onViewDetails(user)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                      title="View Details"
-                    >
-                      <Eye className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => onEditUser(user)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                      title="Edit User"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button
-                      onClick={() => user.id && onDeleteUser(String(user.id))}
-                      className="text-red-600 hover:text-red-900"
-                      title="Delete User"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    {user.roles?.[0]?.name !== "ADMIN" ? (
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => onViewDetails(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="View Details"
+                        >
+                          <Eye className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            // onEditUser(user);
+                            toast.info("Edit feature to be implemented soon", {
+                              position: "top-right",
+                              autoClose: 3000,
+                            });
+                          }}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Edit User"
+                        >
+                          <Edit2 className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => onResetPassword(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Reset Password"
+                        >
+                          <Key className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => onUpdateStatus(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Change Status"
+                        >
+                          <UserCheck className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => onManageRoles(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Manage Roles"
+                        >
+                          <Users className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() =>
+                            user.id && onDeleteUser(String(user.id))
+                          }
+                          className="text-red-600 hover:text-red-900"
+                          title="Delete User"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end space-x-2"></div>
+                    )}
                   </td>
                 </tr>
               ))

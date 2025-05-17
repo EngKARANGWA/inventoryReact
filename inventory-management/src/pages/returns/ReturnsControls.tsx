@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Filter, FileText, Download, RefreshCw, Plus } from "lucide-react";
+import { Search, FileText, Download, RefreshCw, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 
 interface ReturnsControlsProps {
@@ -16,11 +16,9 @@ interface ReturnsControlsProps {
 
 const ReturnsControls: React.FC<ReturnsControlsProps> = ({
   searchTerm,
-  showFilters,
   viewType,
   onSearch,
   onSearchSubmit,
-  onToggleFilters,
   onToggleViewType,
   onRefresh,
   onAddClick,
@@ -46,15 +44,7 @@ const ReturnsControls: React.FC<ReturnsControlsProps> = ({
         </form>
         
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <button
-            onClick={onToggleFilters}
-            className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-            aria-expanded={showFilters}
-            aria-controls="filters-panel"
-          >
-            <Filter size={16} className="mr-1 md:mr-2" />
-            <span>Filters</span>
-          </button>
+
           
           <button
             onClick={onToggleViewType}

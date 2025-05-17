@@ -1,7 +1,7 @@
 import React from "react";
 import { Transfer } from "../../services/transferService";
 import { formatNumber } from "../../utils/formatUtils";
-import { Package, Truck, X, Check, X as XIcon, Clock } from "lucide-react";
+import { Package, Truck, Warehouse, X, Check, Clock } from "lucide-react";
 
 interface TransferViewModalProps {
   transfer: Transfer;
@@ -12,7 +12,7 @@ const TransferViewModal: React.FC<TransferViewModalProps> = ({ transfer, onClose
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed": return <Check className="w-4 h-4 text-green-500" />;
-      case "cancelled": return <XIcon className="w-4 h-4 text-red-500" />;
+      case "cancelled": return <X className="w-4 h-4 text-red-500" />;
       default: return <Clock className="w-4 h-4 text-amber-500" />;
     }
   };
@@ -23,6 +23,10 @@ const TransferViewModal: React.FC<TransferViewModalProps> = ({ transfer, onClose
       case "cancelled": return "bg-red-100 text-red-800";
       default: return "bg-amber-100 text-amber-800";
     }
+  };
+
+  const safeFormatNumber = (value: number | undefined) => {
+    return formatNumber(value ?? 0);
   };
 
   return (
@@ -38,7 +42,6 @@ const TransferViewModal: React.FC<TransferViewModalProps> = ({ transfer, onClose
         </div>
 
         <div className="space-y-6">
-          {/* Transfer Reference and Status */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-gray-50 rounded-lg">
             <div>
               <p className="text-sm text-gray-500">Reference Number</p>
@@ -72,12 +75,11 @@ const TransferViewModal: React.FC<TransferViewModalProps> = ({ transfer, onClose
                   <p className="text-sm font-medium text-gray-900">
                     {transfer.product?.name || "N/A"}
                   </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Status</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {transfer.status}
-                  </p>
+                  {transfer.product?.type && (
+                    <p className="text-xs text-gray-500 capitalize">
+                      Type: {transfer.product.type.replace('_', ' ')}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Created At</p>
@@ -93,6 +95,14 @@ const TransferViewModal: React.FC<TransferViewModalProps> = ({ transfer, onClose
                       : "Not scheduled yet"}
                   </p>
                 </div>
+                {transfer.product?.description && (
+                  <div>
+                    <p className="text-sm text-gray-500">Product Description</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {transfer.product.description}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -104,31 +114,44 @@ const TransferViewModal: React.FC<TransferViewModalProps> = ({ transfer, onClose
               <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
                 <div>
                   <p className="text-sm text-gray-500">From Warehouse</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {transfer.fromWarehouse?.name || "N/A"}
-                    {transfer.fromWarehouse?.location && (
-                      <span className="text-xs text-gray-500 block">
-                        {transfer.fromWarehouse.location}
-                      </span>
-                    )}
-                  </p>
+                  <div className="text-sm font-medium text-gray-900">
+                    <div className="flex items-center">
+                      <Warehouse className="w-4 h-4 mr-1 text-blue-500" />
+                      {transfer.fromWarehouse?.name || "N/A"}
+                    </div>
+                    <div className="text-xs text-gray-500 ml-5">
+                      {transfer.fromWarehouse?.location || "No location specified"}
+                    </div>
+                    <div className="text-xs text-gray-500 ml-5 mt-1">
+                      Capacity: {safeFormatNumber(transfer.fromWarehouse?.capacity)} | 
+                      Occupancy: {safeFormatNumber(transfer.fromWarehouse?.currentOccupancy)}
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">To Warehouse</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {transfer.toWarehouse?.name || "N/A"}
-                    {transfer.toWarehouse?.location && (
-                      <span className="text-xs text-gray-500 block">
-                        {transfer.toWarehouse.location}
-                      </span>
-                    )}
-                  </p>
+                  <div className="text-sm font-medium text-gray-900">
+                    <div className="flex items-center">
+                      <Warehouse className="w-4 h-4 mr-1 text-green-500" />
+                      {transfer.toWarehouse?.name || "N/A"}
+                    </div>
+                    <div className="text-xs text-gray-500 ml-5">
+                      {transfer.toWarehouse?.location || "No location specified"}
+                    </div>
+                    <div className="text-xs text-gray-500 ml-5 mt-1">
+                      Capacity: {safeFormatNumber(transfer.toWarehouse?.capacity)} | 
+                      Occupancy: {safeFormatNumber(transfer.toWarehouse?.currentOccupancy)}
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Driver</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {transfer.driver?.user?.profile?.names || "N/A"}
-                  </p>
+                  <div className="text-sm font-medium text-gray-900">
+                    <p>ID: {transfer.driver?.driverId || "N/A"}</p>
+                    <p className="text-xs text-gray-500">
+                      License: {transfer.driver?.licenseNumber || "Not specified"}
+                    </p>
+                  </div>
                 </div>
                 {transfer.note && (
                   <div>
