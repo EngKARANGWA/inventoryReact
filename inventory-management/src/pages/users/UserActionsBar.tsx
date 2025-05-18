@@ -24,6 +24,7 @@ const availableRoles = [
   { id: "supplier", label: "Supplier" },
   { id: "productionManager", label: "Production Manager" },
   { id: "cashier", label: "Cashier" },
+  { id: "manager", label: "Manager" },
 ];
 
 const UserActionsBar: React.FC<UserActionsBarProps> = ({

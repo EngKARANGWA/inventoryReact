@@ -60,6 +60,7 @@ const UserManagement: React.FC = () => {
       SCALEMONITOR: "scaleMonitor",
       PRODUCTIONMANAGER: "productionManager",
       PRODUCTMANAGER: "productionManager",
+      MANAGER: "manager",
     };
 
     return roleMap[normalizedRole] || roleName.toLowerCase();
@@ -192,9 +193,12 @@ const UserManagement: React.FC = () => {
     try {
       if (editingUser && editingUser.id) {
         // Determine the user's role
-        const effectiveRole = selectedRole || 
-          mapRoleNameToIdentifier(editingUser.roles?.[0]?.name || editingUser.role || "");
-        
+        const effectiveRole =
+          selectedRole ||
+          mapRoleNameToIdentifier(
+            editingUser.roles?.[0]?.name || editingUser.role || ""
+          );
+
         // Determine which role-specific ID to use (if available)
         let roleSpecificId;
         if (effectiveRole === "driver" && editingUser.driverId) {
@@ -209,29 +213,42 @@ const UserManagement: React.FC = () => {
           roleSpecificId = editingUser.supplierId;
         } else if (effectiveRole === "saler" && editingUser.salerId) {
           roleSpecificId = editingUser.salerId;
-        } else if (effectiveRole === "stockkeeper" && editingUser.stockKeeperId) {
+        } else if (
+          effectiveRole === "stockkeeper" &&
+          editingUser.stockKeeperId
+        ) {
           roleSpecificId = editingUser.stockKeeperId;
-        } else if (effectiveRole === "scalemonitor" && editingUser.scaleMonitorId) {
+        } else if (
+          effectiveRole === "scalemonitor" &&
+          editingUser.scaleMonitorId
+        ) {
           roleSpecificId = editingUser.scaleMonitorId;
-        } else if (effectiveRole === "productionmanager" && editingUser.productManagerId) {
+        } else if (
+          effectiveRole === "productionmanager" &&
+          editingUser.productManagerId
+        ) {
           roleSpecificId = editingUser.productManagerId;
         }
-        
-        console.log(`Using role: ${effectiveRole}, ID to update: ${roleSpecificId || editingUser.id}`);
-        
+
+        console.log(
+          `Using role: ${effectiveRole}, ID to update: ${
+            roleSpecificId || editingUser.id
+          }`
+        );
+
         // Create the user data object with all fields
         const userData = {
           // User model data
           username: formData.username,
           email: formData.email,
-          status: formData.status || 'active',
-          
+          status: formData.status || "active",
+
           // Profile data
           names: formData.names,
           phoneNumber: formData.phoneNumber,
           address: formData.address,
           profileId: editingUser.profile?.id,
-          
+
           // Include role-specific IDs to help identify which tables to update
           id: editingUser.id,
           driverId: editingUser.driverId,
@@ -243,18 +260,18 @@ const UserManagement: React.FC = () => {
           stockKeeperId: editingUser.stockKeeperId,
           scaleMonitorId: editingUser.scaleMonitorId,
           productManagerId: editingUser.productManagerId,
-          
+
           // Role-specific fields
           tinNumber: formData.tinNumber,
           licenseNumber: formData.licenseNumber,
           district: formData.district,
           sector: formData.sector,
           cell: formData.cell,
-          
+
           // Include the role to inform the backend which service to use
-          role: effectiveRole
+          role: effectiveRole,
         };
-        
+
         // Update the user - use the role-specific ID if available, otherwise use the user ID
         const idToUse = roleSpecificId || editingUser.id;
         await userService.updateUser(idToUse, userData, effectiveRole);
@@ -268,7 +285,7 @@ const UserManagement: React.FC = () => {
         await userService.createUser(userDataWithRole);
         toast.success("User created successfully");
       }
-  
+
       setShowRoleForm(false);
       setEditingUser(null);
       setSelectedRole("");

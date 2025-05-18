@@ -65,33 +65,6 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// const GuestRoute = ({ children }: { children: React.ReactNode }) => {
-//   const isLoggedIn = isAuthenticated();
-
-//   if (isLoggedIn) {
-//     const currentUser = getCurrentUser();
-//     const userRoles = currentUser?.roles || [];
-
-//     // Redirect to appropriate dashboard based on highest privilege role
-//     if (userRoles.includes(ROLES.ADMIN)) {
-//       return <Navigate to="/dashboard" replace />;
-//     } else if (userRoles.includes(ROLES.MANAGER)) {
-//       return <Navigate to="/dashboard" replace />;
-//     } else if (userRoles.includes(ROLES.CASHIER)) {
-//       return <Navigate to="/dashboard-cashier" replace />;
-//     } else if (userRoles.includes(ROLES.SALER)) {
-//       return <Navigate to="/dashboard-sales" replace />;
-//     } else if (userRoles.includes(ROLES.PRODUCTIONMANAGER)) {
-//       return <Navigate to="/dashboard-production" replace />;
-//     } else if (userRoles.includes(ROLES.STOCKKEEPER)) {
-//       return <Navigate to="/dashboard-stock" replace />;
-//     } else {
-//       return <Navigate to="/dashboard" replace />;
-//     }
-//   }
-
-//   return <>{children}</>;
-// };
 
 const ToastListener = () => {
   const toast = useToast();

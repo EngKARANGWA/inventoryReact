@@ -219,7 +219,7 @@ const ReturnsTable: React.FC<ReturnsTableProps> = ({
                     </div>
                     {ret.saleItem?.unitPrice && (
                       <div className="text-xs text-gray-500">
-                        ${parseFloat(ret.saleItem.unitPrice).toFixed(2)}/KG
+                        Rwf{parseFloat(ret.saleItem.unitPrice).toFixed(2)}/KG
                       </div>
                     )}
                   </td>
