@@ -140,6 +140,7 @@ const PaymentManagement: React.FC = () => {
       toast.success("Payment deleted successfully");
       setShowConfirmDelete(false);
       setPaymentToDelete(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error deleting payment:", err);
       toast.error(err.message || "Failed to delete payment");

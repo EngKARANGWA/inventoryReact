@@ -24,6 +24,7 @@ import { isAuthenticated, getCurrentUser } from "./services/authService";
 import UnauthorizedPage from "./pages/errors/UnauthorizedPage";
 import NotFoundPage from "./pages/errors/NotFoundPage";
 import AuthPage from "./pages/auth/AuthPage";
+import ProfilePage from "./pages/users/ProfilePage";
 
 // Role constants for better maintainability
 const ROLES = {
@@ -287,36 +288,16 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          {/*           
-          <Route path="/dashboard/clients" element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SALER]}>
-              <ClientManagement />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/suppliers" element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}>
-              <SupplierManagement />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/daily-prices" element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SALER]}>
-              <DailyPriceManagement />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/stock-snapshots" element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.STOCKKEEPER]}>
-              <StockSnapshotManagement />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/stats" element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}>
-              <StatsDashboard />
-            </ProtectedRoute>
-          } /> */}
+
+          {/* Profile Page Route */}
+          <Route
+            path="/dashboard/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Role-specific dashboards */}
           <Route
