@@ -24,7 +24,7 @@ import { isAuthenticated, getCurrentUser } from "./services/authService";
 import UnauthorizedPage from "./pages/errors/UnauthorizedPage";
 import NotFoundPage from "./pages/errors/NotFoundPage";
 import AuthPage from "./pages/auth/AuthPage";
-import ProfilePage from "./pages/users/ProfilePage";
+import UserProfilepage from "./pages/profile/ProfilePage";
 
 // Role constants for better maintainability
 const ROLES = {
@@ -141,6 +141,16 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Profile Page Route */}
+          <Route
+            path="/dashboard/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfilepage />
               </ProtectedRoute>
             }
           />
@@ -285,16 +295,6 @@ function AppRoutes() {
                 allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.DRIVER]}
               >
                 <DeliveriesManagement />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Profile Page Route */}
-          <Route
-            path="/dashboard/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
               </ProtectedRoute>
             }
           />

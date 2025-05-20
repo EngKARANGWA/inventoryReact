@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from "react";
 import {Sidebar} from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
@@ -156,7 +157,7 @@ const PurchaseManagement: React.FC = () => {
     if (isMobile && showFilters) {
       setShowFilters(false);
     }
-  }, [filters.page, isMobile]);
+  }, [filters.page, isMobile, showFilters]);
 
   const fetchDropdownOptions = async () => {
     try {
