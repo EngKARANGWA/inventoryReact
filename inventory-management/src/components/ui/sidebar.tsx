@@ -16,6 +16,7 @@ import {
   Boxes,
   HandCoins,
   Banknote,
+  Settings,
 } from 'lucide-react';
 import { getCurrentUser } from "../../services/authService";
 
@@ -100,10 +101,18 @@ const allNavigationItems: NavItem[] = [
     icon: Users,
     allowedRoles: ['ADMIN']
   },
+  {
+    name: 'Setting',
+    href: '/dashboard/profile',
+    icon: Settings,
+    allowedRoles: ['MANAGER','DRIVER','STOCKKEEPER','SALER','CASHIER','PRODUCTIONMANAGER']
+
+  }
 ];
 
 export const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
   const [filteredNavigation, setFilteredNavigation] = useState<NavItem[]>([]);
   const location = useLocation();
