@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { LogOut, UserCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { logout, getCurrentUser } from "../../services/authService";
-import { toast } from "react-toastify";
+import { Link } from 'react-router-dom';
 
 export const Header: React.FC = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -87,19 +88,13 @@ export const Header: React.FC = () => {
                   </div>
 
                   <div className="py-1">
-                    <a
-                      onClick={() => {
-                        toast.info("Profile Feature comming soon", {
-                          position: "top-right",
-                          autoClose: 3000,
-                        });
-                      }}
-                      href="#profile"
+                    <Link
+                      to="/dashboard/profile"
                       className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                     >
                       <UserCircle className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
                       Your Profile
-                    </a>
+                    </Link>
                   </div>
 
                   <div className="py-1">
