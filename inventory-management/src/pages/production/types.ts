@@ -124,4 +124,10 @@ export interface FilterParams {
   dateFrom?: string;
   dateTo?: string;
   status?: string;
+  minEfficiency?: number;
+  maxEfficiency?: number;
+  minOutcome?: number;
+  maxOutcome?: number;
+  hasLoss?: boolean;
+  hasByproduct?: boolean;
 }

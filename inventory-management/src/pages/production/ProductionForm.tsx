@@ -46,20 +46,60 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
   loadingWarehouses,
 }) => {
   const [formData, setFormData] = useState({
-    productId: editingProduction?.productId?.toString() || "",
-    totalOutcome: editingProduction?.totalOutcome?.toString() || "",
-    mainProductId: editingProduction?.mainProductId?.toString() || "",
-    usedQuantity: editingProduction?.usedQuantity?.toString() || "",
-    mainProductUnitCost:
-      editingProduction?.mainProductUnitCost?.toString() || "",
-    warehouseId: editingProduction?.warehouseId?.toString() || "",
-    notes: editingProduction?.notes || "",
-    productionCost: (editingProduction?.productionCost ||
-      []) as ProductionCostItem[],
-    outcomes: editingProduction?.outcomes || [],
-    packagesSummary: editingProduction?.packagesSummary || [],
-    date: editingProduction?.date || new Date().toISOString().split("T")[0],
+    productId: "",
+    totalOutcome: "",
+    mainProductId: "",
+    usedQuantity: "",
+    mainProductUnitCost: "",
+    warehouseId: "",
+    notes: "",
+    productionCost: [] as ProductionCostItem[],
+    outcomes: [] as ProductionOutcome[],
+    packagesSummary: [] as PackageSummary[],
+    date: new Date().toISOString().split("T")[0],
   });
+
+  // Add useEffect to update form data when editingProduction changes
+  useEffect(() => {
+    if (editingProduction) {
+      // Filter out the first outcome with outcomeType "finished_product"
+      const filteredOutcomes = editingProduction.outcomes.filter(
+        (outcome, index) => !(index === 0 && outcome.outcomeType === "finished_product")
+      );
+
+      setFormData({
+        productId: editingProduction.productId?.toString() || "",
+        totalOutcome: editingProduction.totalOutcome?.toString() || "",
+        mainProductId: editingProduction.mainProductId?.toString() || "",
+        usedQuantity: editingProduction.usedQuantity?.toString() || "",
+        mainProductUnitCost: editingProduction.mainProductUnitCost?.toString() || "",
+        warehouseId: editingProduction.warehouseId?.toString() || "",
+        notes: editingProduction.notes || "",
+        productionCost: editingProduction.productionCost || [],
+        outcomes: filteredOutcomes || [],
+        packagesSummary: editingProduction.packagesSummary?.map(pkg => ({
+          ...pkg,
+          packageSize: pkg.size // Map size to packageSize for the form
+        })) || [],
+        date: editingProduction.date ? new Date(editingProduction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      });
+    } else {
+      // Reset form data when not in edit mode
+      setFormData({
+        productId: "",
+        totalOutcome: "",
+        mainProductId: "",
+        usedQuantity: "",
+        mainProductUnitCost: "",
+        warehouseId: "",
+        notes: "",
+        productionCost: [],
+        outcomes: [],
+        packagesSummary: [],
+        date: new Date().toISOString().split('T')[0],
+      });
+    }
+  }, [editingProduction]);
 
   const [formErrors, setFormErrors] = useState({
     productId: "",
@@ -174,7 +214,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
             mainProductUnitCost: roundedPrice.toString(),
           }));
         } else if (type === "outcome" && index !== undefined) {
-          // Update the unit price directly without calling handleOutcomeChange
           setFormData((prev) => {
             const updatedOutcomes = [...prev.outcomes];
             updatedOutcomes[index] = {
@@ -187,7 +226,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
             };
           });
         } else if (type === "cost" && index !== undefined) {
-          // Update the cost directly without calling handleCostItemChange
           setFormData((prev) => {
             const updatedCosts = [...prev.productionCost];
             updatedCosts[index] = {
@@ -202,8 +240,8 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         }
       }
     } catch (error) {
-      console.error("Failed to fetch average price:", error);
-      // You might want to add error handling here, like showing a toast notification
+      console.error("Error fetching average price:", error);
+      // Handle error appropriately
     } finally {
       // Reset loading states
       if (type === "main") {
@@ -248,13 +286,40 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     value: string
   ) => {
     const updatedCosts = [...formData.productionCost];
-    updatedCosts[index] = {
-      ...updatedCosts[index],
-      [field]:
-        field === "quantity" || field === "unitPrice"
-          ? parseFloat(value) || 0
-          : value,
-    };
+    const currentCost = updatedCosts[index] || {};
+
+    if (field === "total") {
+      // When total is changed, update both quantity and unitPrice
+      const total = parseFloat(value) || 0;
+      const quantity = currentCost.quantity || 1;
+      const unitPrice = total / quantity;
+
+      updatedCosts[index] = {
+        ...currentCost,
+        quantity: quantity,
+        unitPrice: unitPrice,
+        total: total
+      };
+    } else if (field === "quantity" || field === "unitPrice") {
+      // When quantity or unitPrice changes, recalculate total
+      const quantity = field === "quantity" ? parseFloat(value) || 0 : (currentCost.quantity || 1);
+      const unitPrice = field === "unitPrice" ? parseFloat(value) || 0 : (currentCost.unitPrice || 0);
+      const total = quantity * unitPrice;
+
+      updatedCosts[index] = {
+        ...currentCost,
+        quantity: quantity,
+        unitPrice: unitPrice,
+        total: total
+      };
+    } else {
+      // For other fields (like item), just update the field
+      updatedCosts[index] = {
+        ...currentCost,
+        [field]: value
+      };
+    }
+
     setFormData((prev) => ({
       ...prev,
       productionCost: updatedCosts,
@@ -484,7 +549,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+  
     const productionData = {
       productId: Number(formData.productId),
       quantityProduced: parseFloat(formData.totalOutcome), // Backend expects quantityProduced
@@ -503,13 +568,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         : {}),
       ...(formData.notes ? { notes: formData.notes } : {}),
       date: formData.date,
-      productionCost: formData.productionCost.map((cost) => ({
-        item: cost.item || "",
-        total:
-          cost.quantity && cost.unitPrice
-            ? cost.quantity * cost.unitPrice
-            : cost.total || cost.cost || cost.amount || cost.price || 0,
-      })),
+      productionCost: formData.productionCost.map((cost) => {
+        // Ensure all required fields are present and properly formatted
+        const quantity = Number(cost.quantity) || 1; // Default to 1 if not provided
+        const unitPrice = Number(cost.unitPrice) || 0;
+        const total = quantity * unitPrice;
+  
+        return {
+          item: cost.item || cost.name || cost.description || "",
+          quantity: quantity,
+          unitPrice: unitPrice,
+          total: total
+        };
+      }),
       outcomes: formData.outcomes.map((outcome) => ({
         outcomeType: outcome.outcomeType,
         ...(outcome.outcomeType === "byproduct" && outcome.productId
@@ -536,7 +607,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         unit: pkg.unit,
       })),
     };
-
+  
     console.log(
       "Submitting production data:",
       JSON.stringify(productionData, null, 2)
@@ -597,7 +668,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Raw Material (Optional)
+                  Raw Material
                 </label>
                 {loadingProducts ? (
                   <div className="flex justify-center py-4">
@@ -616,7 +687,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                       } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                       disabled={isSubmitting || loadingProducts}
                     >
-                      <option value="">Select raw material (optional)</option>
+                      <option value="">Select raw material</option>
                       {rawMaterials
                         .filter(
                           (p) =>
@@ -643,7 +714,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Quantity Used <span className="text-red-500">*</span>
+                      Quantity Used(Kg) <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
@@ -668,7 +739,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Unit Cost
+                      Unit Cost(Rwf)
                     </label>
                     <div className="relative">
                       <input
@@ -755,7 +826,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Outcome <span className="text-red-500">*</span>
+                  Total Outcome(Kg) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"

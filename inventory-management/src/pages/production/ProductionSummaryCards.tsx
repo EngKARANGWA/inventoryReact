@@ -89,7 +89,7 @@ const ProductionSummaryCards: React.FC<ProductionSummaryCardsProps> = ({
       : 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 mb-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-4 mb-4">
       {/* Total Batches Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md">
         <div className="flex items-center justify-between">
@@ -153,7 +153,7 @@ const ProductionSummaryCards: React.FC<ProductionSummaryCardsProps> = ({
         </div>
       </div>
 
-      {/* Byproduct Revenue Card */}
+      {/* Byproduct Revenue Card
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -172,7 +172,7 @@ const ProductionSummaryCards: React.FC<ProductionSummaryCardsProps> = ({
             <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

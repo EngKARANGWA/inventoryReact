@@ -271,10 +271,18 @@ export const productionService = {
           unit: pkg.unit || 'kg'
         })),
         // Format production costs
-        productionCost: data.productionCost?.map(cost => ({
-          item: cost.item || cost.name || cost.description || '',
-          total: Number(cost.total || cost.cost || cost.amount || cost.price || 0)
-        }))
+        productionCost: data.productionCost?.map(cost => {
+          const quantity = Number(cost.quantity) || 1;
+          const unitPrice = Number(cost.unitPrice) || 0;
+          const total = Number(cost.total || cost.cost || cost.amount || cost.price || 0);
+          
+          return {
+            item: cost.item || cost.name || cost.description || '',
+            quantity: quantity,
+            unitPrice: unitPrice,
+            total: total
+          };
+        })
       };
 
       const response = await api.post(`/production`, formattedData);
@@ -434,10 +442,18 @@ export const productionService = {
           totalWeight: Number(pkg.totalWeight),
           unit: pkg.unit || 'kg'
         })),
-        productionCost: data.productionCost?.map(cost => ({
-          item: cost.item || cost.name || cost.description || '',
-          total: Number(cost.total || cost.cost || cost.amount || cost.price || 0)
-        }))
+        productionCost: data.productionCost?.map(cost => {
+          const quantity = Number(cost.quantity) || 1;
+          const unitPrice = Number(cost.unitPrice) || 0;
+          const total = Number(cost.total || cost.cost || cost.amount || cost.price || 0);
+          
+          return {
+            item: cost.item || cost.name || cost.description || '',
+            quantity: quantity,
+            unitPrice: unitPrice,
+            total: total
+          };
+        })
       };
 
       const response = await api.put(

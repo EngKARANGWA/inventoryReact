@@ -19,6 +19,12 @@ export interface FilterParams {
   endDate?: string;
   warehouseId?: string | number;
   status?: string;
+  minEfficiency?: number;
+  maxEfficiency?: number;
+  minOutcome?: number;
+  maxOutcome?: number;
+  hasLoss?: boolean;
+  hasByproduct?: boolean;
 }
 
 interface ProductionActionBarProps {
@@ -198,6 +204,66 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
               </select>
             </div>
 
+            {/* Efficiency Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Min Efficiency (%)
+              </label>
+              <input
+                type="number"
+                name="minEfficiency"
+                value={filters.minEfficiency || ""}
+                onChange={onFilterChange}
+                min="0"
+                max="100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Max Efficiency (%)
+              </label>
+              <input
+                type="number"
+                name="maxEfficiency"
+                value={filters.maxEfficiency || ""}
+                onChange={onFilterChange}
+                min="0"
+                max="100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+
+            {/* Outcome Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Min Outcome
+              </label>
+              <input
+                type="number"
+                name="minOutcome"
+                value={filters.minOutcome || ""}
+                onChange={onFilterChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Max Outcome
+              </label>
+              <input
+                type="number"
+                name="maxOutcome"
+                value={filters.maxOutcome || ""}
+                onChange={onFilterChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+
             {/* Date Range Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -243,6 +309,33 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Additional Filters */}
+            <div className="col-span-2">
+              <div className="flex gap-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    name="hasLoss"
+                    checked={filters.hasLoss || false}
+                    onChange={onFilterChange}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Has Loss</span>
+                </label>
+
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    name="hasByproduct"
+                    checked={filters.hasByproduct || false}
+                    onChange={onFilterChange}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Has Byproduct</span>
+                </label>
+              </div>
             </div>
           </div>
 
