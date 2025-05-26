@@ -6,7 +6,7 @@ import {
   Trash2,
   Factory,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { Production, Product, Warehouse, FilterParams } from "./types";
 import { formatDate, formatNumber } from "./utils";
 import { productionService } from "../../services/productionServices";
@@ -405,6 +405,18 @@ const ProductionManagement: React.FC = () => {
       <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
         <Header />
         <main className="flex-1 w-full p-4 md:p-6 overflow-y-auto">
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="mb-6 md:mb-8">

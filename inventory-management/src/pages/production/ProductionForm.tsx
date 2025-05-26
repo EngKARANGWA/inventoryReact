@@ -51,7 +51,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     mainProductId: "",
     usedQuantity: "",
     mainProductUnitCost: "",
-    mainProductUnitPrice: "",
     warehouseId: "",
     notes: "",
     productionCost: [] as ProductionCostItem[],
@@ -74,7 +73,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         mainProductId: editingProduction.mainProductId?.toString() || "",
         usedQuantity: editingProduction.usedQuantity?.toString() || "",
         mainProductUnitCost: editingProduction.mainProductUnitCost?.toString() || "",
-        mainProductUnitPrice: editingProduction.mainProductUnitPrice?.toString() || "",
         warehouseId: editingProduction.warehouseId?.toString() || "",
         notes: editingProduction.notes || "",
         productionCost: editingProduction.productionCost || [],
@@ -93,7 +91,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         mainProductId: "",
         usedQuantity: "",
         mainProductUnitCost: "",
-        mainProductUnitPrice: "",
         warehouseId: "",
         notes: "",
         productionCost: [],
@@ -110,7 +107,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     mainProductId: "",
     usedQuantity: "",
     mainProductUnitCost: "",
-    mainProductUnitPrice: "",
     outcomesValidation: "",
     packagesValidation: "",
   });
@@ -477,7 +473,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
       mainProductId: "",
       usedQuantity: "",
       mainProductUnitCost: "",
-      mainProductUnitPrice: "",
       outcomesValidation: "",
       packagesValidation: "",
     };
@@ -506,12 +501,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         errors.mainProductUnitCost = "Please enter the unit cost";
       } else if (isNaN(parseFloat(formData.mainProductUnitCost)) || parseFloat(formData.mainProductUnitCost) < 0) {
         errors.mainProductUnitCost = "Unit cost cannot be negative";
-      }
-
-      if (!formData.mainProductUnitPrice) {
-        errors.mainProductUnitPrice = "Please enter the unit price";
-      } else if (isNaN(parseFloat(formData.mainProductUnitPrice)) || parseFloat(formData.mainProductUnitPrice) < 0) {
-        errors.mainProductUnitPrice = "Unit price cannot be negative";
       }
     }
 
@@ -583,7 +572,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
       ...(formData.mainProductUnitCost
         ? { 
             mainProductUnitCost: parseFloat(formData.mainProductUnitCost),
-            mainProductUnitPrice: parseFloat(formData.mainProductUnitPrice)
+            mainProductUnitPrice: parseFloat(formData.mainProductUnitCost)
           }
         : {}),
       ...(formData.warehouseId
@@ -606,28 +595,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
       }),
       outcomes: formData.outcomes.map((outcome) => ({
         outcomeType: outcome.outcomeType,
-        ...(outcome.outcomeType === "byproduct" && outcome.productId
-          ? { productId: Number(outcome.productId) }
-          : {}),
-        name:
-          outcome.name ||
-          (outcome.outcomeType === "loss" ? "Processing Loss" : ""),
-        quantity: parseFloat(outcome.quantity?.toString() || "0"),
+        name: outcome.name,
+        quantity: parseFloat(outcome.quantity.toString()),
         unit: outcome.unit || "kg",
-        ...(outcome.outcomeType === "byproduct" &&
-        outcome.unitPrice !== undefined
-          ? { unitPrice: parseFloat(outcome.unitPrice.toString()) }
-          : {}),
-        ...(outcome.warehouseId
-          ? { warehouseId: Number(outcome.warehouseId) }
-          : {}),
-        ...(outcome.notes ? { notes: outcome.notes } : {}),
+        productId: outcome.productId ? Number(outcome.productId) : undefined,
+        unitPrice: outcome.unitPrice ? parseFloat(outcome.unitPrice.toString()) : undefined,
+        warehouseId: outcome.warehouseId ? Number(outcome.warehouseId) : undefined,
+        notes: outcome.notes,
       })),
       packagesSummary: formData.packagesSummary.map((pkg) => ({
-        size: pkg.packageSize, // Backend expects 'size' not 'packageSize'
-        quantity: parseInt(pkg.quantity.toString()),
-        totalWeight: parseFloat(pkg.totalWeight.toString()),
-        unit: pkg.unit,
+        size: pkg.packageSize || pkg.size || "",
+        quantity: Number(pkg.quantity),
+        totalWeight: Number(pkg.totalWeight),
+        unit: pkg.unit || "kg",
       })),
     };
   
@@ -789,34 +769,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                     {formErrors.mainProductUnitCost && (
                       <p className="mt-1 text-sm text-red-600">
                         {formErrors.mainProductUnitCost}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Unit Price(Rwf)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        name="mainProductUnitPrice"
-                        value={formData.mainProductUnitPrice}
-                        onChange={handleFormChange}
-                        className={`w-full px-3 py-2 border ${
-                          formErrors.mainProductUnitPrice
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-300"
-                        } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                        min="0"
-                        step="0.01"
-                        disabled={isSubmitting || loadingPrice}
-                        placeholder="Enter unit price"
-                      />
-                    </div>
-                    {formErrors.mainProductUnitPrice && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {formErrors.mainProductUnitPrice}
                       </p>
                     )}
                   </div>
