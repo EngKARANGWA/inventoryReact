@@ -20,7 +20,7 @@ const UserRolesModal: React.FC<UserRolesModalProps> = ({
   const [availableRoles] = useState<string[]>([
     "ADMIN", "USER", "CASHIER", "BLOCKER", "DRIVER", 
     "CLIENT", "SALER", "STOCKKEEPER", "SCALEMONITOR", 
-    "SUPPLIER", "PRODUCTIONMANAGER"
+    "SUPPLIER", "PRODUCTIONMANAGER", "MANAGER"
   ]);
   const [selectedRole, setSelectedRole] = useState("");
   // const [success, setSuccess] = useState(false);

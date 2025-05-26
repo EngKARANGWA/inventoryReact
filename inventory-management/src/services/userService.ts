@@ -86,8 +86,6 @@ export interface Role {
   updatedAt?: string;
 }
 
-
-
 const extractData = (response: AxiosResponse): any => {
   if (response.data && typeof response.data === "object") {
     if ("data" in response.data) {
@@ -232,10 +230,12 @@ export const userService = {
         endpoint = "/drivers";
       } else if (role === "client") {
         endpoint = "/clients";
+      } else if (role === "manager") {
+        endpoint = "/managers";
       } else if (role === "scalemonitor") {
         endpoint = "/sm";
       } else if (role === "stockkeeper") {
-        endpoint = "/stock-keepers";
+        endpoint = "/stockkeeper";
       } else if (role === "supplier") {
         endpoint = "/supplier";
       } else if (role === "productionmanager") {
@@ -323,8 +323,11 @@ export const userService = {
           case "saler":
             endpoint = `${API_BASE_URL}/saler/${idToUse}`;
             break;
+          case "manager":
+            endpoint = `${API_BASE_URL}/managers/${idToUse}`;
+            break;
           case "stockkeeper":
-            endpoint = `${API_BASE_URL}/stock-keepers/${idToUse}`;
+            endpoint = `${API_BASE_URL}/stockkeeper/${idToUse}`;
             break;
           case "scalemonitor":
             endpoint = `${API_BASE_URL}/sm/${idToUse}`;
@@ -352,10 +355,8 @@ export const userService = {
     }
   },
 
-  // Delete a user - with role-specific endpoint handling
   deleteUser: async (userId: string | number, role?: string) => {
     try {
-      // Determine which endpoint to use based on the role
       let endpoint = `${API_BASE_URL}/users/${userId}`;
 
       if (role) {
@@ -378,8 +379,11 @@ export const userService = {
           case "saler":
             endpoint = `${API_BASE_URL}/saler/${userId}`;
             break;
+          case "manager":
+            endpoint = `${API_BASE_URL}/managers/${userId}`;
+            break;
           case "stockkeeper":
-            endpoint = `${API_BASE_URL}/stock-keepers/${userId}`;
+            endpoint = `${API_BASE_URL}/stockkeeper/${userId}`;
             break;
           case "scalemonitor":
             endpoint = `${API_BASE_URL}/sm/${userId}`;
@@ -423,11 +427,14 @@ export const userService = {
         case "client":
           endpoint = `${API_BASE_URL}/clients`;
           break;
+        case "manager":
+          endpoint = `${API_BASE_URL}/managers`;
+          break;
         case "saler":
           endpoint = `${API_BASE_URL}/saler`;
           break;
         case "stockkeeper":
-          endpoint = `${API_BASE_URL}/stock-keepers`;
+          endpoint = `${API_BASE_URL}/stockkeeper`;
           break;
         case "scalemonitor":
           endpoint = `${API_BASE_URL}/sm`;
@@ -635,9 +642,7 @@ export const userService = {
   // Delete a cashier
   deleteCashier: async (cashierId: string | number) => {
     try {
-      const response = await api.delete(
-        `${API_BASE_URL}/cashier/${cashierId}`
-      );
+      const response = await api.delete(`${API_BASE_URL}/cashier/${cashierId}`);
       return extractData(response);
     } catch (error) {
       console.error(`Error deleting cashier ${cashierId}:`, error);

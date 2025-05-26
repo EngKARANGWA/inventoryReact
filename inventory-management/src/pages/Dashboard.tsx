@@ -20,6 +20,7 @@ import {
 import { StockMovementChart } from "../components/ui/StockMovementChart";
 import AddPriceModal from "../components/ui/AddPriceModal";
 import StockTrendsChart from "../components/ui/StockTrendsChart";
+import { PasswordChangePrompt } from './auth/PasswordChangePrompt';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -114,6 +115,12 @@ const Dashboard: React.FC = () => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
+  const [user, setUser] = useState(() => {
+    // Initialize user from localStorage
+    const userData = localStorage.getItem('user');
+    return userData ? JSON.parse(userData) : null;
+  });
+
   // Fetch stats data
   const fetchStatsData = async (startDate?: string, endDate?: string) => {
     try {
@@ -159,6 +166,8 @@ const Dashboard: React.FC = () => {
         setIsLoading(false);
       }
     };
+    const userData = JSON.parse(localStorage.getItem('user') || 'null');
+    setUser(userData);
   
     fetchData();
   }, [refreshKey]);
@@ -212,11 +221,18 @@ const Dashboard: React.FC = () => {
     },
   ];
 
+  
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
         <Header />
+
+        {user && (
+          <PasswordChangePrompt user={user} />
+        )}
+
+
         <main className="flex-1 w-full p-4 md:p-6 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             {/* Add Price Modal */}

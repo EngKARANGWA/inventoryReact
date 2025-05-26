@@ -192,7 +192,101 @@ const RoleForm: React.FC<RoleFormProps> = ({
             </div>
           </form>
         );
+case "manager":
+        return (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.names || ""}
+                onChange={(e) => handleChange("names", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter full name"
+              />
+            </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.username || ""}
+                onChange={(e) => handleChange("username", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter user name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="manager@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                required
+                value={formData.phoneNumber || ""}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter phone number"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Address
+              </label>
+              <textarea
+                required
+                value={formData.address || ""}
+                onChange={(e) => handleChange("address", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter address"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? "Saving..."
+                  : mode === "edit"
+                  ? "Update Manager"
+                  : "Save Manager"}
+              </button>
+            </div>
+          </form>
+        );
       case "scalemonitor":
       case "scaleMonitor":
         return (
@@ -981,7 +1075,7 @@ return (
 <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800">
 <p>No form available for role: {effectiveRole || "unknown"}</p>
 <p className="mt-2">
-  Available roles: blocker, scaleMonitor, saler, stockKeeper, client, driver, supplier, productionManager, cashier
+  Available roles: blocker, scaleMonitor, saler, stockKeeper, client, driver, supplier, productionManager, cashier, manager
 </p>
 <p className="mt-4">Current props:</p>
 <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto text-xs">

@@ -155,7 +155,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
             </div>
           </form>
         );
-
+      
       case "scaleMonitor":
         return (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -769,7 +769,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
                 placeholder="Enter full name"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
