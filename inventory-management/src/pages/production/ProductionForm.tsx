@@ -51,6 +51,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     mainProductId: "",
     usedQuantity: "",
     mainProductUnitCost: "",
+    mainProductUnitPrice: "",
     warehouseId: "",
     notes: "",
     productionCost: [] as ProductionCostItem[],
@@ -63,9 +64,9 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
   useEffect(() => {
     if (editingProduction) {
       // Filter out the first outcome with outcomeType "finished_product"
-      const filteredOutcomes = editingProduction.outcomes.filter(
+      const filteredOutcomes = editingProduction.outcomes?.filter(
         (outcome, index) => !(index === 0 && outcome.outcomeType === "finished_product")
-      );
+      ) || [];
 
       setFormData({
         productId: editingProduction.productId?.toString() || "",
@@ -73,6 +74,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         mainProductId: editingProduction.mainProductId?.toString() || "",
         usedQuantity: editingProduction.usedQuantity?.toString() || "",
         mainProductUnitCost: editingProduction.mainProductUnitCost?.toString() || "",
+        mainProductUnitPrice: editingProduction.mainProductUnitPrice?.toString() || "",
         warehouseId: editingProduction.warehouseId?.toString() || "",
         notes: editingProduction.notes || "",
         productionCost: editingProduction.productionCost || [],
@@ -91,6 +93,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         mainProductId: "",
         usedQuantity: "",
         mainProductUnitCost: "",
+        mainProductUnitPrice: "",
         warehouseId: "",
         notes: "",
         productionCost: [],
@@ -107,6 +110,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     mainProductId: "",
     usedQuantity: "",
     mainProductUnitCost: "",
+    mainProductUnitPrice: "",
     outcomesValidation: "",
     packagesValidation: "",
   });
@@ -468,79 +472,90 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
 
   const validateForm = () => {
     const errors = {
-      productId: !formData.productId ? "Finished product is required" : "",
-      totalOutcome:
-        !formData.totalOutcome ||
-        isNaN(parseFloat(formData.totalOutcome)) ||
-        parseFloat(formData.totalOutcome) <= 0
-          ? "Valid total outcome is required (must be greater than 0)"
-          : "",
-      mainProductId:
-        formData.mainProductId && !formData.usedQuantity
-          ? "Used quantity is required when raw material is selected"
-          : "",
-      usedQuantity:
-        formData.usedQuantity &&
-        (isNaN(parseFloat(formData.usedQuantity)) ||
-          parseFloat(formData.usedQuantity) <= 0)
-          ? "Valid used quantity is required (must be greater than 0)"
-          : formData.mainProductId && !formData.usedQuantity
-          ? "Used quantity is required"
-          : "",
-      mainProductUnitCost:
-        formData.mainProductId &&
-        formData.mainProductUnitCost &&
-        (isNaN(parseFloat(formData.mainProductUnitCost)) ||
-          parseFloat(formData.mainProductUnitCost) < 0)
-          ? "Valid unit cost is required (must be 0 or greater)"
-          : "",
+      productId: "",
+      totalOutcome: "",
+      mainProductId: "",
+      usedQuantity: "",
+      mainProductUnitCost: "",
+      mainProductUnitPrice: "",
       outcomesValidation: "",
       packagesValidation: "",
     };
 
-    // Validate outcomes sum equals used quantity
-    if (formData.usedQuantity) {
-      const finishedOutcome = parseFloat(formData.totalOutcome) || 0;
-      const otherOutcomes = formData.outcomes.reduce(
-        (sum, outcome) =>
-          sum + (parseFloat(outcome.quantity?.toString() || "0") || 0),
-        0
-      );
+    // Validate product
+    if (!formData.productId) {
+      errors.productId = "Please select a product";
+    }
 
-      const totalOutcomes = finishedOutcome + otherOutcomes;
-      const difference = Math.abs(
-        parseFloat(formData.usedQuantity) - totalOutcomes
-      );
+    // Validate total outcome
+    if (!formData.totalOutcome) {
+      errors.totalOutcome = "Please enter the total outcome";
+    } else if (isNaN(parseFloat(formData.totalOutcome)) || parseFloat(formData.totalOutcome) <= 0) {
+      errors.totalOutcome = "Total outcome must be greater than 0";
+    }
 
-      if (difference > 0.01) {
-        // Allow small rounding differences
-        errors.outcomesValidation = `Total outcomes (${totalOutcomes.toFixed(
-          2
-        )}) must equal used quantity (${formData.usedQuantity})`;
+    // Validate main product if used
+    if (formData.mainProductId) {
+      if (!formData.usedQuantity) {
+        errors.usedQuantity = "Please enter the quantity used";
+      } else if (isNaN(parseFloat(formData.usedQuantity)) || parseFloat(formData.usedQuantity) <= 0) {
+        errors.usedQuantity = "Quantity used must be greater than 0";
+      }
+
+      if (!formData.mainProductUnitCost) {
+        errors.mainProductUnitCost = "Please enter the unit cost";
+      } else if (isNaN(parseFloat(formData.mainProductUnitCost)) || parseFloat(formData.mainProductUnitCost) < 0) {
+        errors.mainProductUnitCost = "Unit cost cannot be negative";
+      }
+
+      if (!formData.mainProductUnitPrice) {
+        errors.mainProductUnitPrice = "Please enter the unit price";
+      } else if (isNaN(parseFloat(formData.mainProductUnitPrice)) || parseFloat(formData.mainProductUnitPrice) < 0) {
+        errors.mainProductUnitPrice = "Unit price cannot be negative";
       }
     }
 
-    // Validate packages total weight doesn't exceed total outcome
-    if (formData.packagesSummary.length > 0 && formData.totalOutcome) {
-      const totalPackageWeight = formData.packagesSummary.reduce(
-        (sum, pkg) => sum + (pkg.totalWeight || 0),
-        0
-      );
-
-      if (totalPackageWeight > parseFloat(formData.totalOutcome)) {
-        errors.packagesValidation = `Total package weight (${totalPackageWeight}) cannot exceed total outcome (${formData.totalOutcome})`;
+    // Validate outcomes
+    if (formData.outcomes.length === 0) {
+      errors.outcomesValidation = "Please add at least one outcome";
+    } else {
+      const hasValidOutcomes = formData.outcomes.every(outcome => {
+        const quantity = parseFloat(outcome.quantity?.toString() || "0");
+        return !isNaN(quantity) && quantity > 0;
+      });
+      if (!hasValidOutcomes) {
+        errors.outcomesValidation = "All outcomes must have valid quantities";
       }
     }
 
+    // Validate packages
+    if (formData.packagesSummary.length === 0) {
+      errors.packagesValidation = "Please add at least one package";
+    } else {
+      const hasValidPackages = formData.packagesSummary.every(pkg => {
+        const quantity = parseInt(pkg.quantity.toString());
+        const weight = parseFloat(pkg.totalWeight.toString());
+        return !isNaN(quantity) && quantity > 0 && !isNaN(weight) && weight > 0;
+      });
+      if (!hasValidPackages) {
+        errors.packagesValidation = "All packages must have valid quantities and weights";
+      }
+    }
+
+    console.log('Form validation errors:', errors);
     setFormErrors(errors);
 
-    // If there are errors, scroll to error summary
-    const hasErrors = Object.values(errors).some((error) => error !== "");
-    if (hasErrors && errorSummaryRef.current) {
-      errorSummaryRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+    const hasErrors = Object.values(errors).some(error => error !== "");
+    if (hasErrors) {
+      console.log('Form validation failed');
+      if (errorSummaryRef.current) {
+        errorSummaryRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    } else {
+      console.log('Form validation passed');
     }
 
     return !hasErrors;
@@ -548,7 +563,12 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    console.log('Form submission started');
+    if (!validateForm()) {
+      console.log('Form validation failed, submission cancelled');
+      return;
+    }
+    console.log('Form validation passed, proceeding with submission');
   
     const productionData = {
       productId: Number(formData.productId),
@@ -561,7 +581,10 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         ? { usedQuantity: parseFloat(formData.usedQuantity) }
         : {}),
       ...(formData.mainProductUnitCost
-        ? { mainProductUnitCost: parseFloat(formData.mainProductUnitCost) }
+        ? { 
+            mainProductUnitCost: parseFloat(formData.mainProductUnitCost),
+            mainProductUnitPrice: parseFloat(formData.mainProductUnitPrice)
+          }
         : {}),
       ...(formData.warehouseId
         ? { warehouseId: Number(formData.warehouseId) }
@@ -766,6 +789,34 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                     {formErrors.mainProductUnitCost && (
                       <p className="mt-1 text-sm text-red-600">
                         {formErrors.mainProductUnitCost}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Unit Price(Rwf)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="mainProductUnitPrice"
+                        value={formData.mainProductUnitPrice}
+                        onChange={handleFormChange}
+                        className={`w-full px-3 py-2 border ${
+                          formErrors.mainProductUnitPrice
+                            ? "border-red-500 bg-red-50"
+                            : "border-gray-300"
+                        } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        min="0"
+                        step="0.01"
+                        disabled={isSubmitting || loadingPrice}
+                        placeholder="Enter unit price"
+                      />
+                    </div>
+                    {formErrors.mainProductUnitPrice && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {formErrors.mainProductUnitPrice}
                       </p>
                     )}
                   </div>

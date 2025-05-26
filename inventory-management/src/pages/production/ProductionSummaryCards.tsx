@@ -3,7 +3,6 @@ import {
   Factory,
   Banknote,
   Activity,
-  TrendingUp,
 } from "lucide-react";
 import { formatCurrency } from "./utils";
 import { Production, ProductionCost, ProductionOutcome } from "./types"; // Import your types

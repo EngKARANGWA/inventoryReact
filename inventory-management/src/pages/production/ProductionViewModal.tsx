@@ -30,36 +30,50 @@ const ProductionViewModal: React.FC<ProductionViewModalProps> = ({
   onEdit,
 }) => {
   // Calculate costs
-  const totalMaterialCost =
-    production.mainProduct &&
-    production.usedQuantity &&
-    production.mainProductUnitCost
-      ? production.mainProductUnitCost * production.usedQuantity
-      : 0;
+  const totalMaterialCost = (() => {
+    if (!production.mainProduct || !production.usedQuantity || !production.mainProductUnitPrice) {
+      return 0;
+    }
+    const quantity = parseFloat(production.usedQuantity.toString());
+    const unitPrice = parseFloat(production.mainProductUnitPrice.toString());
+    if (isNaN(quantity) || isNaN(unitPrice)) {
+      return 0;
+    }
+    return quantity * unitPrice;
+  })();
 
-  const totalProductionCost =
-    production.productionCost?.reduce(
-      (sum, cost) =>
-        sum + (cost.total || cost.cost || cost.amount || cost.price || 0),
-      0
-    ) || 0;
+  const totalProductionCost = (() => {
+    if (!production.productionCost?.length) return 0;
+    return production.productionCost.reduce((sum, cost) => {
+      const amount = parseFloat((cost.total || cost.cost || cost.amount || cost.price || 0).toString());
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
+  })();
 
   const totalCost = totalMaterialCost + totalProductionCost;
 
   // Calculate byproduct revenue
-  const byproductRevenue =
-    production.outcomes?.reduce((sum, outcome) => {
+  const byproductRevenue = (() => {
+    if (!production.outcomes?.length) return 0;
+    return production.outcomes.reduce((sum, outcome) => {
       if (outcome.outcomeType === "byproduct" && outcome.unitPrice) {
-        return sum + outcome.quantity * outcome.unitPrice;
+        const quantity = parseFloat(outcome.quantity.toString());
+        const unitPrice = parseFloat(outcome.unitPrice.toString());
+        if (isNaN(quantity) || isNaN(unitPrice)) {
+          return sum;
+        }
+        return sum + (quantity * unitPrice);
       }
       return sum;
-    }, 0) || 0;
+    }, 0);
+  })();
 
   const netProductionCost = totalCost - byproductRevenue;
-  const unitCost =
-    production.totalOutcome > 0
-      ? netProductionCost / production.totalOutcome
-      : 0;
+  const unitCost = (() => {
+    if (!production.totalOutcome) return 0;
+    const totalOutcome = parseFloat(production.totalOutcome.toString());
+    return totalOutcome > 0 ? netProductionCost / totalOutcome : 0;
+  })();
 
   // Calculate outcome breakdown
   const outcomeBreakdown = {
@@ -464,7 +478,7 @@ const efficiencyMetrics = {
                         <div className="flex justify-between mb-1">
                           <span className="text-sm text-gray-600">
                             {production.mainProduct.name} (
-                            {formatNumber(production.usedQuantity || 0)} kg)
+                            {formatNumber(parseFloat(production.usedQuantity?.toString() || "0"))} kg)
                           </span>
                           <span className="text-sm font-medium text-gray-900">
                             {formatCurrency(totalMaterialCost)}
@@ -472,10 +486,8 @@ const efficiencyMetrics = {
                         </div>
                         <div className="flex justify-between text-xs text-gray-500">
                           <span>
-                            Unit Cost:{" "}
-                            {formatCurrency(
-                              production.mainProductUnitCost || 0
-                            )}
+                            Unit Price:{" "}
+                            {formatCurrency(parseFloat(production.mainProductUnitPrice?.toString() || "0"))}
                             /kg
                           </span>
                         </div>

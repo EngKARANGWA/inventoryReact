@@ -95,6 +95,7 @@ export interface Production {
   mainProductId?: number | null;
   usedQuantity?: number | null;
   mainProductUnitCost?: number | null;
+  mainProductUnitPrice?: number | null;
   packagesSummary?: PackageSummary[];
   outcomesSummary?: OutcomesSummary;
   productionLoss?: number;
