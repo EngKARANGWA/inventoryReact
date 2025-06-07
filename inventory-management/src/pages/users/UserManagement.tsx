@@ -1,35 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
-import {
-  Search,
-  Edit2,
-  Trash2,
-  Filter,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  Users,
-  UserCheck,
-  UserX,
-  Phone,
-  Clock,
-  Plus,
-  RefreshCw,
-} from "lucide-react";
-import { userService, User } from "../../services/userService";
-import RoleForm from "../../components/users/RoleForm";
-import UserDetailsModal from "../../components/users/UserDetailsModal";
-// import { useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { userService, User } from "../../services/userService";
+import UserStatsCards from "./UserStatsCards";
+import UserActionsBar from "./UserActionsBar";
+import UsersTable from "./UsersTable";
+import RoleFormModal from "./RoleFormModal";
+import UserDetailsModal from "./UserDetailsModal";
+import ResetPasswordModal from "./ResetPasswordModal";
+import UserStatusModal from "./UserStatusModal";
+import UserRolesModal from "./UserRolesModal";
 
 const UserManagement: React.FC = () => {
-  // const location = useLocation();
-  // const queryParams = new URLSearchParams(location.search);
-  // const skipRole = queryParams.get("skipRole") === "true";
-
-  const [users, setUsers] = useState<User[]>([]);
+  // State to store all users fetched from backend
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  // State to store filtered users for display
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,6 +32,9 @@ const UserManagement: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showRolesModal, setShowRolesModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [totalUsers, setTotalUsers] = useState(0);
   const [sortConfig, setSortConfig] = useState<{
@@ -51,10 +42,38 @@ const UserManagement: React.FC = () => {
     direction: "ascending" | "descending";
   } | null>(null);
 
-  // Fetch users when filters or search term changes
+  // Helper function to map role names to form identifiers
+  const mapRoleNameToIdentifier = (roleName: string): string => {
+    if (!roleName) return "";
+
+    // Normalize the role name to uppercase and remove underscores
+    const normalizedRole = roleName.toUpperCase().replace(/_/g, "");
+
+    const roleMap: Record<string, string> = {
+      ADMIN: "admin",
+      BLOCKER: "blocker",
+      CASHIER: "cashier",
+      CLIENT: "client",
+      DRIVER: "driver",
+      SALER: "saler",
+      STOCKKEEPER: "stockKeeper",
+      SCALEMONITOR: "scaleMonitor",
+      PRODUCTIONMANAGER: "productionManager",
+      PRODUCTMANAGER: "productionManager",
+    };
+
+    return roleMap[normalizedRole] || roleName.toLowerCase();
+  };
+
+  // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
-  }, [filters, searchTerm]);
+  }, []);
+
+  // Apply filters whenever filters or search term changes
+  useEffect(() => {
+    applyFilters();
+  }, [allUsers, filters, searchTerm]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -67,23 +86,80 @@ const UserManagement: React.FC = () => {
 
       if (!Array.isArray(usersData)) {
         console.warn("Unexpected response format:", response);
-        setUsers([]);
+        setAllUsers([]);
         setTotalUsers(0);
       } else {
-        setUsers(usersData);
-        setTotalUsers(usersData.length); // Update this if your API provides pagination info
+        setAllUsers(usersData);
+        // Initially set filtered users to all users
+        setFilteredUsers(usersData);
+        setTotalUsers(usersData.length);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error fetching users:", err);
-      setError("Failed to fetch users. Please try again later.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch users. Please try again later."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // Apply filters to the fetched users
+  const applyFilters = () => {
+    let result = [...allUsers];
+
+    // Apply search filter
+    if (searchTerm) {
+      result = result.filter(
+        (user) =>
+          user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply role filter
+    if (filters.role) {
+      result = result.filter((user) => {
+        // Check if role matches either in user.role or user.roles array
+        if (
+          user.role &&
+          user.role.toLowerCase() === filters.role.toLowerCase()
+        ) {
+          return true;
+        }
+        if (user.roles && user.roles.length > 0) {
+          return user.roles.some(
+            (role) => role.name.toLowerCase() === filters.role.toLowerCase()
+          );
+        }
+        return false;
+      });
+    }
+
+    // Apply status filter
+    if (filters.status) {
+      result = result.filter((user) => {
+        const userStatus = user.status || user.accountStatus;
+        return userStatus?.toLowerCase() === filters.status.toLowerCase();
+      });
+    }
+
+    // Apply pagination
+    setTotalUsers(result.length);
+
+    // Set filtered users
+    setFilteredUsers(result);
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    handlePageChange(1); // Reset to first page when searching
+    // Reset to first page when searching
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+    }));
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -91,9 +167,8 @@ const UserManagement: React.FC = () => {
     setFilters((prev) => ({
       ...prev,
       [name]: value,
-      page: 1, // Reset to first page when filters change
+      page: 1, // Reset to first page on filter change
     }));
-    handlePageChange(1); // Reset to first page when filtering
   };
 
   const clearFilters = () => {
@@ -107,69 +182,284 @@ const UserManagement: React.FC = () => {
   };
 
   const handleAddUser = (role: string) => {
-    setEditingUser(null); // Ensure we're not in edit mode
-    setSelectedRole(role || ""); // Set the selected role (empty if not specified)
-    setShowRoleForm(true); // Always show the form
-  };
-
-  const handleEditUser = (user: User) => {
-    setEditingUser(user);
-    setSelectedRole(user.role || "");
+    setEditingUser(null);
+    setSelectedRole(role || "");
     setShowRoleForm(true);
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        await userService.deleteUser(userId);
-        setUsers(users.filter((user) => user.id !== userId));
-        setTotalUsers(totalUsers - 1);
-        toast.success("User deleted successfully");
-      } catch (err) {
-        setError("Failed to delete user");
-        toast.error("Failed to delete user");
-        console.error("Error deleting user:", err);
-        toast.error("Failed to delete user");
-      }
-    }
   };
 
   const handleFormSubmit = async (formData: any) => {
     setIsSubmitting(true);
     try {
       if (editingUser && editingUser.id) {
-        await userService.updateUser(editingUser.id, formData);
-        setUsers(
-          users.map((user) =>
-            user.id === editingUser.id ? { ...user, ...formData } : user
-          )
-        );
+        // Determine the user's role
+        const effectiveRole = selectedRole || 
+          mapRoleNameToIdentifier(editingUser.roles?.[0]?.name || editingUser.role || "");
+        
+        // Determine which role-specific ID to use (if available)
+        let roleSpecificId;
+        if (effectiveRole === "driver" && editingUser.driverId) {
+          roleSpecificId = editingUser.driverId;
+        } else if (effectiveRole === "cashier" && editingUser.cashierId) {
+          roleSpecificId = editingUser.cashierId;
+        } else if (effectiveRole === "client" && editingUser.clientId) {
+          roleSpecificId = editingUser.clientId;
+        } else if (effectiveRole === "blocker" && editingUser.blockerId) {
+          roleSpecificId = editingUser.blockerId;
+        } else if (effectiveRole === "supplier" && editingUser.supplierId) {
+          roleSpecificId = editingUser.supplierId;
+        } else if (effectiveRole === "saler" && editingUser.salerId) {
+          roleSpecificId = editingUser.salerId;
+        } else if (effectiveRole === "stockkeeper" && editingUser.stockKeeperId) {
+          roleSpecificId = editingUser.stockKeeperId;
+        } else if (effectiveRole === "scalemonitor" && editingUser.scaleMonitorId) {
+          roleSpecificId = editingUser.scaleMonitorId;
+        } else if (effectiveRole === "productionmanager" && editingUser.productManagerId) {
+          roleSpecificId = editingUser.productManagerId;
+        }
+        
+        console.log(`Using role: ${effectiveRole}, ID to update: ${roleSpecificId || editingUser.id}`);
+        
+        // Create the user data object with all fields
+        const userData = {
+          // User model data
+          username: formData.username,
+          email: formData.email,
+          status: formData.status || 'active',
+          
+          // Profile data
+          names: formData.names,
+          phoneNumber: formData.phoneNumber,
+          address: formData.address,
+          profileId: editingUser.profile?.id,
+          
+          // Include role-specific IDs to help identify which tables to update
+          id: editingUser.id,
+          driverId: editingUser.driverId,
+          cashierId: editingUser.cashierId,
+          clientId: editingUser.clientId,
+          blockerId: editingUser.blockerId,
+          supplierId: editingUser.supplierId,
+          salerId: editingUser.salerId,
+          stockKeeperId: editingUser.stockKeeperId,
+          scaleMonitorId: editingUser.scaleMonitorId,
+          productManagerId: editingUser.productManagerId,
+          
+          // Role-specific fields
+          tinNumber: formData.tinNumber,
+          licenseNumber: formData.licenseNumber,
+          district: formData.district,
+          sector: formData.sector,
+          cell: formData.cell,
+          
+          // Include the role to inform the backend which service to use
+          role: effectiveRole
+        };
+        
+        // Update the user - use the role-specific ID if available, otherwise use the user ID
+        const idToUse = roleSpecificId || editingUser.id;
+        await userService.updateUser(idToUse, userData, effectiveRole);
         toast.success("User updated successfully");
       } else {
+        // For creating new users (existing code)
         const userDataWithRole = {
           ...formData,
           role: selectedRole || formData.role,
         };
-        const newUser = await userService.createUser(userDataWithRole);
-        setUsers([newUser, ...users]);
-        setTotalUsers(totalUsers + 1);
+        await userService.createUser(userDataWithRole);
         toast.success("User created successfully");
       }
+  
       setShowRoleForm(false);
       setEditingUser(null);
       setSelectedRole("");
-    } catch (err) {
-      setError("Failed to save user");
-      toast.error("Failed to save user");
+      fetchUsers();
+    } catch (err: unknown) {
       console.error("Error saving user:", err);
-      toast.error("Failed to save user");
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to save user";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        await userService.deleteUser(userId);
+        fetchUsers(); // Refresh after delete
+        toast.success("User deleted successfully");
+      } catch (err) {
+        setError("Failed to delete user");
+        toast.error("Failed to delete user");
+      }
+    }
+  };
+
+  const handleResetPassword = async (userId: string | number) => {
+    try {
+      await userService.resetUserPassword(userId);
+      toast.success("Password reset successfully");
+      // Close the modal after successfully resetting password
+      setShowResetPasswordModal(false);
+    } catch (err) {
+      console.error("Error resetting password:", err);
+      toast.error("Failed to reset password");
+    }
+  };
+
+  const handleUpdateStatus = async (
+    userId: string | number,
+    status: string
+  ) => {
+    try {
+      await userService.updateUserStatus(userId, status as any);
+      toast.success("User status updated successfully");
+      // Close the modal after successfully updating status
+      setShowStatusModal(false);
+      // Refresh users list
+      fetchUsers();
+    } catch (err) {
+      console.error("Error updating user status:", err);
+      toast.error("Failed to update user status");
+    }
+  };
+
+  const handleUpdateRoles = async (
+    userId: string | number,
+    roles: string[]
+  ) => {
+    try {
+      await userService.assignRolesToUser(userId, roles);
+      toast.success("User roles updated successfully");
+      // Refresh users list
+      fetchUsers();
+    } catch (err) {
+      console.error("Error updating user roles:", err);
+      toast.error("Failed to update user roles");
+    }
+  };
+
   const handleRefresh = () => {
     fetchUsers();
+  };
+
+  const handleUserAction = (action: string, user: User) => {
+    setEditingUser(user);
+
+    switch (action) {
+      case "edit":
+        // Get the role name from either the roles array or role field
+        const roleName = user.roles?.[0]?.name || user.role || "";
+        // Map it to the correct identifier for the form
+        const roleIdentifier = mapRoleNameToIdentifier(roleName);
+
+        console.log(
+          `Editing user with role: ${roleName}, mapped to: ${roleIdentifier}`
+        );
+        console.log("User data:", user);
+
+        // First, extract any role-specific IDs from the user object
+        // We need to identify which role-specific ID is available
+        let roleSpecificId;
+        let roleSpecificIdField;
+
+        if (user.driverId) {
+          roleSpecificId = user.driverId;
+          roleSpecificIdField = "driverId";
+        } else if (user.cashierId) {
+          roleSpecificId = user.cashierId;
+          roleSpecificIdField = "cashierId";
+        } else if (user.clientId) {
+          roleSpecificId = user.clientId;
+          roleSpecificIdField = "clientId";
+        } else if (user.blockerId) {
+          roleSpecificId = user.blockerId;
+          roleSpecificIdField = "blockerId";
+        } else if (user.supplierId) {
+          roleSpecificId = user.supplierId;
+          roleSpecificIdField = "supplierId";
+        } else if (user.salerId) {
+          roleSpecificId = user.salerId;
+          roleSpecificIdField = "salerId";
+        } else if (user.stockKeeperId) {
+          roleSpecificId = user.stockKeeperId;
+          roleSpecificIdField = "stockKeeperId";
+        } else if (user.scaleMonitorId) {
+          roleSpecificId = user.scaleMonitorId;
+          roleSpecificIdField = "scaleMonitorId";
+        } else if (user.productManagerId) {
+          roleSpecificId = user.productManagerId;
+          roleSpecificIdField = "productManagerId";
+        }
+
+        console.log(
+          `Found role-specific ID: ${roleSpecificIdField} = ${roleSpecificId}`
+        );
+
+        // Create initial data object with all potential fields
+        const initialData: any = {
+          // Common user fields
+          id: user.id,
+          username: user.username || "",
+          email: user.email || "",
+
+          // Profile fields
+          names: user.profile?.names || user.username || "",
+          phoneNumber: user.profile?.phoneNumber || "",
+          address: user.profile?.address || "",
+          status: user.accountStatus || user.status || "active",
+
+          // Role information
+          role: roleIdentifier,
+
+          // Role-specific fields
+          tinNumber: user.tinNumber || "",
+          licenseNumber: user.licenseNumber || "",
+          district: user.district || "",
+          sector: user.sector || "",
+          cell: user.cell || "",
+
+          // Role-specific IDs - include all that might be available
+          driverId: user.driverId,
+          cashierId: user.cashierId,
+          clientId: user.clientId,
+          blockerId: user.blockerId,
+          supplierId: user.supplierId,
+          salerId: user.salerId,
+          stockKeeperId: user.stockKeeperId,
+          scaleMonitorId: user.scaleMonitorId,
+          productManagerId: user.productManagerId,
+        };
+
+        // Log the complete initial data for debugging
+        console.log("Initial form data:", initialData);
+
+        setSelectedRole(roleIdentifier);
+        setShowRoleForm(true);
+        break;
+
+      case "reset-password":
+        setShowResetPasswordModal(true);
+        break;
+
+      case "update-status":
+        setShowStatusModal(true);
+        break;
+
+      case "manage-roles":
+        setShowRolesModal(true);
+        break;
+
+      case "view-details":
+        setShowDetailsModal(true);
+        break;
+
+      default:
+        console.warn(`Unknown action: ${action}`);
+        break;
+    }
   };
 
   const requestSort = (key: keyof User) => {
@@ -179,15 +469,8 @@ const UserManagement: React.FC = () => {
     }
     setSortConfig({ key, direction });
   };
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = !filters.role || user.role === filters.role;
-    const matchesStatus = !filters.status || user.status === filters.status;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
 
+  // Sort users
   const sortedUsers = React.useMemo(() => {
     if (!sortConfig) return filteredUsers;
 
@@ -205,28 +488,12 @@ const UserManagement: React.FC = () => {
     });
   }, [filteredUsers, sortConfig]);
 
-  const availableRoles = [
-    { id: "blocker", label: "Blocker" },
-    { id: "scaleMonitor", label: "Scale Monitor" },
-    { id: "saler", label: "Saler" },
-    { id: "stockKeeper", label: "Stock Keeper" },
-    { id: "client", label: "Client" },
-    { id: "driver", label: "Driver" },
-    { id: "supplier", label: "Supplier" },
-    { id: "productionManager", label: "Production Manager" },
-    { id: "cashier", label: "Cashier" },
-  ];
-
-  // Calculate summary data
-  const activeUsers = users.filter((user) => user.status === "active").length;
-  const inactiveUsers = users.filter(
-    (user) => user.status === "inactive"
-  ).length;
-  const recentLogins = users.filter((user) => user.role !== "Driver").length;
-
-  const currentPage = filters.page || 1;
-  const pageSize = filters.pageSize || 10;
-  const totalPages = Math.ceil(totalUsers / pageSize);
+  // Apply pagination
+  const paginatedUsers = React.useMemo(() => {
+    const startIndex = (filters.page - 1) * filters.pageSize;
+    const endIndex = startIndex + Number(filters.pageSize);
+    return sortedUsers.slice(startIndex, endIndex);
+  }, [sortedUsers, filters.page, filters.pageSize]);
 
   const handlePageChange = (newPage: number) => {
     setFilters((prev) => ({
@@ -264,578 +531,165 @@ const UserManagement: React.FC = () => {
               </p>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">
-                      Total Users
-                    </p>
-                    <p className="text-2xl font-bold text-gray-800">
-                      {totalUsers}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">
-                      Active Users
-                    </p>
-                    <p className="text-2xl font-bold text-gray-800">
-                      {activeUsers}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <UserCheck className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">
-                      Inactive Users
-                    </p>
-                    <p className="text-2xl font-bold text-gray-800">
-                      {inactiveUsers}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <UserX className="w-6 h-6 text-red-600" />
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">
-                      Recent Logins
-                    </p>
-                    <p className="text-2xl font-bold text-gray-800">
-                      {recentLogins}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-amber-600" />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <UserStatsCards users={allUsers} />
 
-            {/* Action Bar */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                    size={20}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search users..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={searchTerm}
-                    onChange={handleSearch}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    <Filter size={18} className="mr-2" />
-                    Filters
-                    {showFilters ? (
-                      <ChevronUp size={18} className="ml-2" />
-                    ) : (
-                      <ChevronDown size={18} className="ml-2" />
-                    )}
-                  </button>
-                  <button
-                    onClick={handleRefresh}
-                    className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                    title="Refresh data"
-                  >
-                    <RefreshCw size={18} />
-                  </button>
-                  <div className="relative group">
-                    <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <Plus size={18} className="mr-2" />
-                      Add User
-                      <ChevronDown size={18} className="ml-2" />
-                    </button>
-                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden group-hover:block z-10">
-                      <div className="py-1">
-                        {availableRoles.map((role) => (
-                          <button
-                            key={role.id}
-                            onClick={() => handleAddUser(role.id)}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            {role.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <UserActionsBar
+              searchTerm={searchTerm}
+              onSearch={handleSearch}
+              showFilters={showFilters}
+              onToggleFilters={() => setShowFilters(!showFilters)}
+              onRefresh={handleRefresh}
+              onAddUser={handleAddUser}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={clearFilters}
+              onApplyFilters={applyFilters} // Now just applies the filters locally
+            />
 
-              {/* Filters Panel */}
-              {showFilters && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">
-                    Filters
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Role
-                      </label>
-                      <select
-                        name="role"
-                        value={filters.role}
-                        onChange={handleFilterChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Roles</option>
-                        {availableRoles.map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {role.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
-                      </label>
-                      <select
-                        name="status"
-                        value={filters.status}
-                        onChange={handleFilterChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Items per page
-                      </label>
-                      <select
-                        name="pageSize"
-                        value={filters.pageSize}
-                        onChange={handleFilterChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      onClick={clearFilters}
-                      className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md mr-2"
-                    >
-                      Clear Filters
-                    </button>
-                    <button
-                      onClick={fetchUsers}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      Apply Filters
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Users Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort("username")}
-                      >
-                        <div className="flex items-center">
-                          Name
-                          {sortConfig?.key === "username" && (
-                            <span className="ml-1">
-                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort("email")}
-                      >
-                        <div className="flex items-center">
-                          Email
-                          {sortConfig?.key === "email" && (
-                            <span className="ml-1">
-                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort("role")}
-                      >
-                        <div className="flex items-center">
-                          Role
-                          {sortConfig?.key === "role" && (
-                            <span className="ml-1">
-                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Phone Number
-                      </th>
-                      <th
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => requestSort("status")}
-                      >
-                        <div className="flex items-center">
-                          Status
-                          {sortConfig?.key === "status" && (
-                            <span className="ml-1">
-                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center">
-                          <div className="flex justify-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : error ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="px-6 py-4 text-center text-red-600"
-                        >
-                          {error}
-                        </td>
-                      </tr>
-                    ) : sortedUsers.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="px-6 py-4 text-center text-gray-500"
-                        >
-                          No users found.{" "}
-                          {searchTerm && "Try a different search term."}
-                        </td>
-                      </tr>
-                    ) : (
-                      sortedUsers.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <span className="text-gray-600 font-medium">
-                                  {user.username?.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {user.username}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {user.id}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {user.email}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                              {user.roles?.[0]?.name || user.role || "N/A"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <div className="flex items-center">
-                              <Phone className="w-4 h-4 mr-1 text-gray-400" />
-                              {user.profile?.phoneNumber || "N/A"}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                user.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {user.status || user.accountStatus}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => {
-                                setEditingUser(user);
-                                setShowDetailsModal(true);
-                              }}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                              title="View Details"
-                            >
-                              <Eye className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => handleEditUser(user)}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                              title="Edit User"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                user.id && handleDeleteUser(String(user.id))
-                              }
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete User"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-                {/* {renderPagination()} */}
-              </div>
-
-              {totalUsers > 0 && (
-                <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
-                  <div className="flex-1 flex justify-between items-center sm:hidden">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                        currentPage === 1
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-white text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      Previous
-                    </button>
-                    <span className="text-sm text-gray-700">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage >= totalPages}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                        currentPage >= totalPages
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-white text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      Next
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        Showing{" "}
-                        <span className="font-medium">
-                          {(currentPage - 1) * pageSize + 1}
-                        </span>{" "}
-                        to{" "}
-                        <span className="font-medium">
-                          {Math.min(currentPage * pageSize, totalUsers)}
-                        </span>{" "}
-                        of <span className="font-medium">{totalUsers}</span>{" "}
-                        results
-                      </p>
-                    </div>
-                    <div>
-                      <nav
-                        className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                        aria-label="Pagination"
-                      >
-                        <button
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === 1
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-gray-500 hover:bg-gray-50"
-                          }`}
-                        >
-                          <span className="sr-only">Previous</span>
-                          <ChevronUp className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                        {Array.from(
-                          { length: Math.min(5, totalPages) },
-                          (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 5) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 3) {
-                              pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 2) {
-                              pageNum = totalPages - 4 + i;
-                            } else {
-                              pageNum = currentPage - 2 + i;
-                            }
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => handlePageChange(pageNum)}
-                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                  currentPage === pageNum
-                                    ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                                    : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          }
-                        )}
-                        <button
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage >= totalPages}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage >= totalPages
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-gray-500 hover:bg-gray-50"
-                          }`}
-                        >
-                          <span className="sr-only">Next</span>
-                          <ChevronDown className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      </nav>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <UsersTable
+              users={paginatedUsers}
+              loading={loading}
+              error={error}
+              searchTerm={searchTerm}
+              onRequestSort={requestSort}
+              sortConfig={sortConfig}
+              onEditUser={(user) => handleUserAction("edit", user)}
+              onDeleteUser={handleDeleteUser}
+              onResetPassword={(user) =>
+                handleUserAction("reset-password", user)
+              }
+              onUpdateStatus={(user) => handleUserAction("update-status", user)}
+              onManageRoles={(user) => handleUserAction("manage-roles", user)}
+              onViewDetails={(user) => handleUserAction("view-details", user)}
+              totalUsers={totalUsers}
+              currentPage={filters.page}
+              pageSize={filters.pageSize}
+              onPageChange={handlePageChange}
+            />
           </div>
         </main>
       </div>
 
-      {/* Role Form Modal */}
       {showRoleForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">
-                {editingUser ? "Edit User" : "Add New User"}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowRoleForm(false);
-                  setEditingUser(null);
-                  setSelectedRole("");
-                }}
-                className="text-gray-500 hover:text-gray-700"
-                disabled={isSubmitting}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            <RoleForm
-              role={selectedRole}
-              onSubmit={handleFormSubmit}
-              onClose={() => {
-                setShowRoleForm(false);
-                setEditingUser(null);
-                setSelectedRole("");
-              }}
-              initialData={editingUser || undefined}
-              isSubmitting={isSubmitting}
-              mode={editingUser ? "edit" : "add"}
-            />
-          </div>
-        </div>
+        <RoleFormModal
+          role={selectedRole}
+          onClose={() => {
+            setShowRoleForm(false);
+            setEditingUser(null);
+            setSelectedRole("");
+          }}
+          onSubmit={handleFormSubmit}
+          initialData={
+            editingUser
+              ? {
+                  id: editingUser.id,
+                  names:
+                    editingUser.profile?.names || editingUser.username || "",
+                  username: editingUser.username || "",
+                  email: editingUser.email || "",
+                  phoneNumber: editingUser.profile?.phoneNumber || "",
+                  address: editingUser.profile?.address || "",
+                  status:
+                    editingUser.accountStatus ||
+                    editingUser.accountStatus ||
+                    "active",
+                  tinNumber: editingUser.tinNumber || "",
+                  licenseNumber: editingUser.licenseNumber || "",
+                  district: editingUser.district || "",
+                  sector: editingUser.sector || "",
+                  cell: editingUser.cell || "",
+                  blockerId: editingUser.blockerId,
+                  scaleMonitorId: editingUser.scaleMonitorId,
+                  salerId: editingUser.salerId,
+                  driverId: editingUser.driverId,
+                  supplierId: editingUser.supplierId,
+                  productManagerId: editingUser.productManagerId,
+                  cashierId: editingUser.cashierId,
+                  stockKeeperId: editingUser.stockKeeperId,
+                  clientId: editingUser.clientId,
+                  role: selectedRole,
+                }
+              : undefined
+          }
+          isSubmitting={isSubmitting}
+          mode={editingUser ? "edit" : "add"}
+        />
       )}
 
-      {/* User Details Modal */}
       {showDetailsModal && editingUser && (
         <UserDetailsModal
           user={{
             id: String(editingUser.id),
             name: editingUser.username || "",
+            email: editingUser.email || "",
             role: editingUser.roles?.[0]?.name || editingUser.role || "",
-            status: editingUser.status || editingUser.accountStatus || "",
-            roleSpecificData: {
-              phoneNumber: editingUser.profile?.phoneNumber,
-              address: editingUser.profile?.address,
-              ...editingUser.roleSpecificData,
-            },
+            status:
+              editingUser.accountStatus || editingUser.accountStatus || "",
+            createdAt: editingUser.createdAt,
+            lastLogin: editingUser.lastLogin,
+            profile: editingUser.profile
+              ? {
+                  id: editingUser.profile.id,
+                  names: editingUser.profile.names,
+                  phoneNumber: editingUser.profile.phoneNumber,
+                  address: editingUser.profile.address,
+                  status: editingUser.profile.status,
+                  createdAt: editingUser.profile.createdAt,
+                  updatedAt: editingUser.profile.updatedAt,
+                }
+              : undefined,
+            roles: editingUser.roles?.map((role) => ({
+              id: role.id,
+              name: role.name,
+              description: role.description,
+              createdAt: role.createdAt,
+            })),
           }}
           onClose={() => {
             setShowDetailsModal(false);
             setEditingUser(null);
           }}
-          onUpdateRoles={(userId, newRoles) => {
-            // Handle role update
-            const updatedUsers = users.map((user) =>
-              user.id === userId ? { ...user, role: newRoles[0] } : user
-            );
-            setUsers(updatedUsers);
-          }}
         />
       )}
 
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      {showResetPasswordModal && editingUser && (
+        <ResetPasswordModal
+          userId={editingUser.id}
+          username={editingUser.username}
+          onClose={() => {
+            setShowResetPasswordModal(false);
+            setEditingUser(null);
+          }}
+          onResetPassword={handleResetPassword}
+        />
+      )}
+
+      {showStatusModal && editingUser && (
+        <UserStatusModal
+          userId={editingUser.id}
+          username={editingUser.username}
+          currentStatus={
+            editingUser.accountStatus || editingUser.accountStatus || "active"
+          }
+          onClose={() => {
+            setShowStatusModal(false);
+            setEditingUser(null);
+          }}
+          onUpdateStatus={handleUpdateStatus}
+        />
+      )}
+
+      {showRolesModal && editingUser && (
+        <UserRolesModal
+          userId={editingUser.id}
+          username={editingUser.username}
+          onClose={() => {
+            setShowRolesModal(false);
+            setEditingUser(null);
+          }}
+          onUpdateRoles={handleUpdateRoles}
+        />
+      )}
     </div>
   );
 };

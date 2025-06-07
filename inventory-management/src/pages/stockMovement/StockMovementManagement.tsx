@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Sidebar } from "../../components/ui/sidebar";
+import {Sidebar} from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import {
   Search,
@@ -13,7 +13,6 @@ import {
   Package,
   Warehouse,
   Calendar,
-  Plus,
   Download,
   FileText,
   AlertCircle,
@@ -34,7 +33,8 @@ const StockMovementManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedMovement, setSelectedMovement] = useState<StockMovement | null>(null);
+  const [selectedMovement, setSelectedMovement] =
+    useState<StockMovement | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewType, setViewType] = useState<"table" | "cards">("table");
 
@@ -43,7 +43,7 @@ const StockMovementManagement: React.FC = () => {
     direction: "ascending" | "descending";
   } | null>({
     key: "movementDate",
-    direction: "descending"
+    direction: "descending",
   });
 
   const [filters, setFilters] = useState({
@@ -69,12 +69,13 @@ const StockMovementManagement: React.FC = () => {
     setError(null);
 
     try {
-      const { data, pagination } = await stockMovementService.getAllStockMovements({
-        ...filters,
-        direction: filters.direction || undefined,
-        sourceType: filters.sourceType || undefined,
-        search: searchTerm,
-      });
+      const { data, pagination } =
+        await stockMovementService.getAllStockMovements({
+          ...filters,
+          direction: filters.direction || undefined,
+          sourceType: filters.sourceType || undefined,
+          search: searchTerm,
+        });
 
       setStockMovements(data || []);
       setTotalMovements(pagination?.total || 0);
@@ -118,16 +119,16 @@ const StockMovementManagement: React.FC = () => {
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
-    
+
     setFilters((prev) => ({
       ...prev,
       page: newPage,
     }));
-    
+
     // Scroll to top of the table
-    const tableElement = document.getElementById('movements-table-container');
+    const tableElement = document.getElementById("movements-table-container");
     if (tableElement) {
-      tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      tableElement.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -177,15 +178,18 @@ const StockMovementManagement: React.FC = () => {
   }, [sortedMovements, searchTerm]);
 
   // Calculate summary statistics
-  const incomingMovements = stockMovements.filter((m) => m.direction === "in").length;
-  const outgoingMovements = stockMovements.filter((m) => m.direction === "out").length;
+  const incomingMovements = stockMovements.filter(
+    (m) => m.direction === "in"
+  ).length;
+  const outgoingMovements = stockMovements.filter(
+    (m) => m.direction === "out"
+  ).length;
   const totalQuantityIn = stockMovements
     .filter((m) => m.direction === "in")
     .reduce((sum, m) => sum + parseFloat(m.quantity), 0);
   const totalQuantityOut = stockMovements
     .filter((m) => m.direction === "out")
     .reduce((sum, m) => sum + parseFloat(m.quantity), 0);
-  const netQuantity = totalQuantityIn - totalQuantityOut;
 
   const getDirectionIcon = (direction: string) => {
     return direction === "in" ? (
@@ -197,7 +201,10 @@ const StockMovementManagement: React.FC = () => {
 
   const getSourceTypeBadge = (sourceType: string) => {
     const typeMap: Record<string, { color: string; text: string }> = {
-      production: { color: "bg-purple-100 text-purple-800", text: "Production" },
+      production: {
+        color: "bg-purple-100 text-purple-800",
+        text: "Production",
+      },
       delivery: { color: "bg-blue-100 text-blue-800", text: "Delivery" },
       transfer: { color: "bg-indigo-100 text-indigo-800", text: "Transfer" },
       sale: { color: "bg-yellow-100 text-yellow-800", text: "Sale" },
@@ -220,8 +227,8 @@ const StockMovementManagement: React.FC = () => {
   };
 
   const getDirectionColor = (direction: string) => {
-    return direction === "in" 
-      ? "bg-green-100 text-green-800" 
+    return direction === "in"
+      ? "bg-green-100 text-green-800"
       : "bg-red-100 text-red-800";
   };
 
@@ -232,40 +239,42 @@ const StockMovementManagement: React.FC = () => {
 
   // Handle view toggle between table and cards
   const toggleViewType = () => {
-    setViewType(prev => prev === "table" ? "cards" : "table");
+    setViewType((prev) => (prev === "table" ? "cards" : "table"));
   };
 
   // Function to generate skeleton loading state
   const renderSkeleton = () => {
-    return Array(5).fill(0).map((_, i) => (
-      <tr key={`skeleton-${i}`} className="animate-pulse">
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-        </td>
-        <td className="px-6 py-4 text-right">
-          <div className="h-6 bg-gray-200 rounded w-16 inline-block"></div>
-        </td>
-      </tr>
-    ));
+    return Array(5)
+      .fill(0)
+      .map((_, i) => (
+        <tr key={`skeleton-${i}`} className="animate-pulse">
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </td>
+          <td className="px-6 py-4 text-right">
+            <div className="h-6 bg-gray-200 rounded w-16 inline-block"></div>
+          </td>
+        </tr>
+      ));
   };
 
   const currentPage = filters.page || 1;
@@ -294,7 +303,7 @@ const StockMovementManagement: React.FC = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
@@ -314,7 +323,7 @@ const StockMovementManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
@@ -325,7 +334,7 @@ const StockMovementManagement: React.FC = () => {
                       {loading ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        incomingMovements
+                        `${formatNumber(totalQuantityIn)} Kg`
                       )}
                     </p>
                   </div>
@@ -334,10 +343,10 @@ const StockMovementManagement: React.FC = () => {
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
-                  {loading ? "..." : `${formatNumber(totalQuantityIn)} Kg`}
+                  {loading ? "..." : incomingMovements}
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
@@ -348,7 +357,7 @@ const StockMovementManagement: React.FC = () => {
                       {loading ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        outgoingMovements
+                        `${formatNumber(totalQuantityOut)} Kg`
                       )}
                     </p>
                   </div>
@@ -357,32 +366,11 @@ const StockMovementManagement: React.FC = () => {
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
-                  {loading ? "..." : `${formatNumber(totalQuantityOut)} Kg`}
+                  {loading ? "..." : outgoingMovements}
                 </div>
               </div>
+
               
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 transition-all hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs md:text-sm font-medium text-gray-500">
-                      Net Quantity
-                    </p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-800">
-                      {loading ? (
-                        <span className="animate-pulse">...</span>
-                      ) : (
-                        formatNumber(netQuantity)
-                      )}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Warehouse className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-gray-500">
-                  {netQuantity >= 0 ? "Net Gain" : "Net Loss"}
-                </div>
-              </div>
             </div>
 
             {/* Controls Bar */}
@@ -404,7 +392,7 @@ const StockMovementManagement: React.FC = () => {
                     onChange={handleSearch}
                   />
                 </form>
-                
+
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
@@ -420,18 +408,18 @@ const StockMovementManagement: React.FC = () => {
                       <ChevronDown size={16} className="ml-1" />
                     )}
                   </button>
-                  
+
                   <button
                     onClick={toggleViewType}
                     className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-                    title={`Switch to ${viewType === "table" ? "card" : "table"} view`}
+                    title={`Switch to ${
+                      viewType === "table" ? "card" : "table"
+                    } view`}
                   >
                     <FileText size={16} className="mr-1" />
-                    <span>
-                      {viewType === "table" ? "Cards" : "Table"}
-                    </span>
+                    <span>{viewType === "table" ? "Cards" : "Table"}</span>
                   </button>
-                  
+
                   <button
                     onClick={handleExportData}
                     className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
@@ -440,7 +428,7 @@ const StockMovementManagement: React.FC = () => {
                     <Download size={16} className="mr-1" />
                     <span>Export</span>
                   </button>
-                  
+
                   <button
                     onClick={handleRefresh}
                     className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
@@ -449,7 +437,7 @@ const StockMovementManagement: React.FC = () => {
                     <RefreshCw size={16} />
                     <span className="sr-only">Refresh</span>
                   </button>
-                  
+                  {/*                   
                   <button
                     className="flex items-center px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
                     disabled
@@ -457,13 +445,13 @@ const StockMovementManagement: React.FC = () => {
                   >
                     <Plus size={16} className="mr-1 md:mr-2" />
                     <span>New Movement</span>
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
               {/* Filters Panel */}
               {showFilters && (
-                <div 
+                <div
                   id="filters-panel"
                   className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 transition-all"
                 >
@@ -541,19 +529,21 @@ const StockMovementManagement: React.FC = () => {
                 <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                   <Package className="w-8 h-8 text-blue-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No movements found</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No movements found
+                </h3>
                 <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                  {searchTerm ? 
-                    `No movements matching "${searchTerm}" were found. Try a different search term or clear your filters.` : 
-                    "There are no movements to display."}
+                  {searchTerm
+                    ? `No movements matching "${searchTerm}" were found. Try a different search term or clear your filters.`
+                    : "There are no movements to display."}
                 </p>
               </div>
             )}
 
             {/* Movements Display - Table View */}
             {viewType === "table" && (
-              <div 
-                id="movements-table-container" 
+              <div
+                id="movements-table-container"
                 className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
               >
                 <div className="overflow-x-auto">
@@ -568,7 +558,9 @@ const StockMovementManagement: React.FC = () => {
                             Reference
                             {sortConfig?.key === "referenceNumber" && (
                               <span className="ml-1">
-                                {sortConfig.direction === "ascending" ? "↑" : "↓"}
+                                {sortConfig.direction === "ascending"
+                                  ? "↑"
+                                  : "↓"}
                               </span>
                             )}
                           </div>
@@ -587,7 +579,9 @@ const StockMovementManagement: React.FC = () => {
                             Quantity
                             {sortConfig?.key === "quantity" && (
                               <span className="ml-1">
-                                {sortConfig.direction === "ascending" ? "↑" : "↓"}
+                                {sortConfig.direction === "ascending"
+                                  ? "↑"
+                                  : "↓"}
                               </span>
                             )}
                           </div>
@@ -600,7 +594,9 @@ const StockMovementManagement: React.FC = () => {
                             Direction
                             {sortConfig?.key === "direction" && (
                               <span className="ml-1">
-                                {sortConfig.direction === "ascending" ? "↑" : "↓"}
+                                {sortConfig.direction === "ascending"
+                                  ? "↑"
+                                  : "↓"}
                               </span>
                             )}
                           </div>
@@ -616,7 +612,9 @@ const StockMovementManagement: React.FC = () => {
                             Date
                             {sortConfig?.key === "movementDate" && (
                               <span className="ml-1">
-                                {sortConfig.direction === "ascending" ? "↑" : "↓"}
+                                {sortConfig.direction === "ascending"
+                                  ? "↑"
+                                  : "↓"}
                               </span>
                             )}
                           </div>
@@ -631,10 +629,7 @@ const StockMovementManagement: React.FC = () => {
                         renderSkeleton()
                       ) : error ? (
                         <tr>
-                          <td
-                            colSpan={8}
-                            className="px-6 py-4 text-center"
-                          >
+                          <td colSpan={8} className="px-6 py-4 text-center">
                             <div className="flex items-center justify-center text-red-600">
                               <AlertCircle className="w-5 h-5 mr-2" />
                               {error}
@@ -653,13 +648,18 @@ const StockMovementManagement: React.FC = () => {
                         </tr>
                       ) : (
                         paginatedMovements.map((movement) => (
-                          <tr key={movement.id} className="hover:bg-gray-50 transition-colors">
+                          <tr
+                            key={movement.id}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-gray-900">
                                 {movement.referenceNumber}
                               </div>
                               <div className="text-xs text-gray-500">
-                                {new Date(movement.createdAt).toLocaleDateString()}
+                                {new Date(
+                                  movement.createdAt
+                                ).toLocaleDateString()}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -688,7 +688,12 @@ const StockMovementManagement: React.FC = () => {
                               {movement.resultingSnapshot && (
                                 <div className="text-xs text-gray-500">
                                   New stock:{" "}
-                                  {formatNumber(parseFloat(movement.resultingSnapshot.quantity))} Kg
+                                  {formatNumber(
+                                    parseFloat(
+                                      movement.resultingSnapshot.quantity
+                                    )
+                                  )}{" "}
+                                  Kg
                                 </div>
                               )}
                             </td>
@@ -711,11 +716,15 @@ const StockMovementManagement: React.FC = () => {
                               <div className="flex items-center">
                                 <Calendar className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
                                 <div className="text-sm text-gray-900">
-                                  {new Date(movement.movementDate).toLocaleDateString()}
+                                  {new Date(
+                                    movement.movementDate
+                                  ).toLocaleDateString()}
                                 </div>
                               </div>
                               <div className="text-xs text-gray-500">
-                                {new Date(movement.movementDate).toLocaleTimeString()}
+                                {new Date(
+                                  movement.movementDate
+                                ).toLocaleTimeString()}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -809,7 +818,7 @@ const StockMovementManagement: React.FC = () => {
                             <span className="sr-only">Previous</span>
                             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
                           </button>
-                          
+
                           {/* Page Numbers */}
                           {Array.from(
                             { length: Math.min(5, totalPages) },
@@ -839,7 +848,7 @@ const StockMovementManagement: React.FC = () => {
                               );
                             }
                           )}
-                          
+
                           <button
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage >= totalPages}
@@ -850,7 +859,10 @@ const StockMovementManagement: React.FC = () => {
                             }`}
                           >
                             <span className="sr-only">Next</span>
-                            <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                            <ArrowRight
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
                           </button>
                         </nav>
                       </div>
@@ -865,49 +877,58 @@ const StockMovementManagement: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {loading ? (
                   // Skeleton for card view
-                  Array(6).fill(0).map((_, i) => (
-                    <div key={`card-skeleton-${i}`} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 animate-pulse">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-                      <div className="flex justify-between mb-3">
-                        <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-                        <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                  Array(6)
+                    .fill(0)
+                    .map((_, i) => (
+                      <div
+                        key={`card-skeleton-${i}`}
+                        className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 animate-pulse"
+                      >
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div className="flex justify-between mb-3">
+                          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                        </div>
+                        <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                        <div className="flex justify-between">
+                          <div className="h-10 bg-gray-200 rounded w-2/3"></div>
+                          <div className="h-10 bg-gray-200 rounded w-1/4"></div>
+                        </div>
                       </div>
-                      <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
-                      <div className="flex justify-between">
-                        <div className="h-10 bg-gray-200 rounded w-2/3"></div>
-                        <div className="h-10 bg-gray-200 rounded w-1/4"></div>
-                      </div>
-                    </div>
-                  ))
+                    ))
                 ) : error ? (
                   <div className="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
                     <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Error Loading Data
+                    </h3>
                     <p className="text-gray-500 mb-4">{error}</p>
-                    <button 
+                    <button
                       onClick={handleRefresh}
                       className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg"
                     >
-                      <RefreshCw size={16} className="mr-2" /> 
+                      <RefreshCw size={16} className="mr-2" />
                       Try Again
                     </button>
                   </div>
                 ) : paginatedMovements.length === 0 ? (
                   <div className="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
                     <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No movements found</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No movements found
+                    </h3>
                     <p className="text-gray-500 mb-4">
-                      {searchTerm ? 
-                        `No movements matching "${searchTerm}" were found.` : 
-                        "There are no movements to display."}
+                      {searchTerm
+                        ? `No movements matching "${searchTerm}" were found.`
+                        : "There are no movements to display."}
                     </p>
                   </div>
                 ) : (
                   paginatedMovements.map((movement) => (
-                    <div 
-                      key={movement.id} 
+                    <div
+                      key={movement.id}
                       className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md"
                     >
                       <div className="p-4">
@@ -917,7 +938,10 @@ const StockMovementManagement: React.FC = () => {
                               {movement.referenceNumber}
                             </h3>
                             <p className="text-xs text-gray-500">
-                              Created on {new Date(movement.createdAt).toLocaleDateString()}
+                              Created on{" "}
+                              {new Date(
+                                movement.createdAt
+                              ).toLocaleDateString()}
                             </p>
                           </div>
                           <div className="flex items-center">
@@ -931,9 +955,11 @@ const StockMovementManagement: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className="mb-3">
-                          <p className="text-sm font-medium text-gray-700">Product</p>
+                          <p className="text-sm font-medium text-gray-700">
+                            Product
+                          </p>
                           <p className="text-sm font-semibold text-gray-900">
                             {movement.product?.name || "N/A"}
                           </p>
@@ -943,35 +969,43 @@ const StockMovementManagement: React.FC = () => {
                             </p>
                           )}
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-3 mb-3">
                           <div>
-                            <p className="text-sm font-medium text-gray-700">Quantity</p>
+                            <p className="text-sm font-medium text-gray-700">
+                              Quantity
+                            </p>
                             <p className="text-sm text-gray-900">
                               {formatNumber(parseFloat(movement.quantity))} Kg
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-700">Warehouse</p>
+                            <p className="text-sm font-medium text-gray-700">
+                              Warehouse
+                            </p>
                             <p className="text-sm text-gray-900">
                               {movement.warehouse?.name || "N/A"}
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-700">Source Type</p>
+                          <p className="text-sm font-medium text-gray-700">
+                            Source Type
+                          </p>
                           <div className="mt-1">
                             {getSourceTypeBadge(movement.sourceType)}
                           </div>
                         </div>
-                        
+
                         <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                           <p className="text-xs text-gray-500 flex items-center">
                             <Calendar className="h-3 w-3 mr-1" />
-                            {new Date(movement.movementDate).toLocaleDateString()}
+                            {new Date(
+                              movement.movementDate
+                            ).toLocaleDateString()}
                           </p>
-                          
+
                           <button
                             onClick={() => {
                               setSelectedMovement(movement);
@@ -987,7 +1021,7 @@ const StockMovementManagement: React.FC = () => {
                     </div>
                   ))
                 )}
-                
+
                 {/* Card View Pagination */}
                 {filteredMovements.length > 0 && (
                   <div className="col-span-full mt-4">
@@ -1004,12 +1038,20 @@ const StockMovementManagement: React.FC = () => {
                         <ArrowLeft size={16} className="mr-1" />
                         Previous
                       </button>
-                      
+
                       <span className="text-sm text-gray-700">
-                        Page {currentPage} of {totalPages} 
-                        <span className="hidden sm:inline"> • Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredMovements.length)} of {filteredMovements.length}</span>
+                        Page {currentPage} of {totalPages}
+                        <span className="hidden sm:inline">
+                          {" "}
+                          • Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                          {Math.min(
+                            currentPage * pageSize,
+                            filteredMovements.length
+                          )}{" "}
+                          of {filteredMovements.length}
+                        </span>
                       </span>
-                      
+
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage >= totalPages}

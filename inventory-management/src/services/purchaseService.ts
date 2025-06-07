@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+import api from './authService';
 
 export interface Supplier {
   id: number;
@@ -27,36 +25,100 @@ export interface Supplier {
 export interface Product {
   id: number;
   name: string;
+  type: string;
   description: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Payment {
   id: number;
   paymentReference: string;
   amount: string;
-  payableType: string;
+  payableType?: string;
   paymentMethod: string;
   status: string;
-  transactionReference: string | null;
+  transactionReference?: string | null;
   paidAt: string | null;
+  purchaseId?: number;
+  saleId?: null | number;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: null | string;
+  purchase_id?: number;
+  sale_id?: null | number;
+}
+
+export interface Driver {
+  id: number;
+  driverId: string;
+  licenseNumber: string;
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: null | string;
+  user_id: number;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    profile: {
+      id: number;
+      names: string;
+      phoneNumber: string;
+      address: string;
+      status: string;
+    };
+  };
+}
+
+export interface Warehouse {
+  id: number;
+  name: string;
+  location: string;
+  capacity: number;
+  currentOccupancy: number;
+  status: string;
+  managerId: null | number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: null | string;
 }
 
 export interface Delivery {
   id: number;
   deliveryReference: string;
   status: string;
+  direction: string;
   deliveredAt: string;
   notes: string;
-  weight: string;
+  quantity: string;
+  unitPrice: null | string;
+  purchaseId: number;
+  saleId: null | number;
   driverId: number;
+  productId: number;
+  warehouseId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: null | string;
+  warehouse_id: number;
+  purchase_id: number;
+  sale_id: null | number;
+  driver_id: number;
+  product_id: number;
+  driver: Driver;
+  warehouse: Warehouse;
+  product: Product;
+  weight?: string;
 }
 
 export interface Purchase {
   id: number;
   purchaseReference: string;
   description: string | null;
-  buyingUnitPrice: string;
-  sellingUnitPrice: string;
+  unitPrice: string | null;
   weight: string;
   status:
     | "draft"
@@ -64,29 +126,29 @@ export interface Purchase {
     | "payment_completed"
     | "delivery_complete"
     | "all_completed";
-  expectedDeliveryDate: string;
+  expectedDeliveryDate: string | null;
   totalPaid: string;
   totalDelivered: string;
   supplierId: number;
   productId: number;
   blockerId: number | null;
-  dailyPriceId: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  supplier_id?: number;
+  product_id?: number;
+  blocker_id?: number | null;
   supplier: Supplier;
   product?: Product;
   payments: Payment[];
   deliveries: Delivery[];
-  dailyPrice?: {
+  blocker?: {
     id: number;
-    product?:{
-      name: string;
-      description: string;
-    };
-    buyingUnitPrice: string;
-    sellingUnitPrice: string;
-    date: string;
+    blockerId: string;
+    userId: number;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
   };
 }
 
@@ -94,6 +156,7 @@ interface CreatePurchaseData {
   supplierId: number;
   productId: number;
   weight: number;
+  unitPrice: number;
   description?: string;
   expectedDeliveryDate?: string;
 }
@@ -107,6 +170,7 @@ interface UpdatePurchaseData {
     | "delivery_complete"
     | "all_completed";
   expectedDeliveryDate?: string;
+  weight?: number;
 }
 
 export interface PurchaseFilterOptions {
@@ -119,50 +183,77 @@ export interface PurchaseFilterOptions {
   search?: string;
 }
 
+interface ApiError extends Error {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
 
 export const purchaseService = {
-  getAllSuppliers: async (): Promise<Supplier[]> => {
+  async getAllSuppliers(): Promise<Supplier[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/supplier`);
+      const response = await api.get('/supplier');
       return response.data;
     } catch (error) {
-      console.error("Error fetching suppliers:", error);
+      const err = error as ApiError;
+      console.error("Error fetching suppliers:", err);
       return [];
     }
   },
 
-  getAllProducts: async (): Promise<Product[]> => {
+  async getAllProducts(): Promise<Product[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products`);
-      return response.data;
+      const response = await api.get('/products');
+
+      if (
+        response.data &&
+        response.data.success &&
+        Array.isArray(response.data.data)
+      ) {
+        return response.data.data;
+      }
+
+      console.error("Unexpected API response format:", response.data);
+      return [];
     } catch (error) {
-      console.error("Error fetching products:", error);
+      const err = error as ApiError;
+      console.error("Error fetching products:", err);
       return [];
     }
   },
 
-  createPurchase: async (
-    purchaseData: CreatePurchaseData
-  ): Promise<Purchase> => {
+  async createPurchase(purchaseData: CreatePurchaseData): Promise<Purchase> {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/purchases`,
-        purchaseData
-      );
-      // Fetch the complete purchase after creation
-      const completePurchase = await axios.get(
-        `${API_BASE_URL}/purchases/${response.data.id}`
-      );
-      return completePurchase.data;
+      const response = await api.post('/purchases', purchaseData);
+
+      if (response.data && response.data.success && response.data.data) {
+        try {
+          const completePurchase = await api.get(`/purchases/${response.data.data.id}`);
+          return completePurchase.data.data;
+        } catch (fetchError) {
+          const err = fetchError as ApiError;
+          console.error("Error fetching complete purchase:", err);
+          return response.data.data;
+        }
+      }
+      throw new Error("Unexpected API response format");
     } catch (error) {
-      console.error("Error creating purchase:", error);
-      throw error;
+      const err = error as ApiError;
+      console.error("Error creating purchase:", err);
+      if (err.response) {
+        throw new Error(
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to create purchase"
+        );
+      }
+      throw err;
     }
   },
 
-  getAllPurchases: async (
-    options: Partial<PurchaseFilterOptions> = {}
-  ): Promise<Purchase[]> => {
+  async getAllPurchases(options: Partial<PurchaseFilterOptions> = {}): Promise<Purchase[]> {
     try {
       const completeOptions: PurchaseFilterOptions = {
         page: options.page || 1,
@@ -184,76 +275,99 @@ export const purchaseService = {
         supplierId: completeOptions.supplierId,
       };
 
-      const response = await axios.get<Purchase[]>(
-        `${API_BASE_URL}/purchases`,
-        { params }
-      );
-      return response.data;
+      const response = await api.get('/purchases', { params });
+
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
+        return response.data.data;
+      } else if (Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        return [];
+      }
     } catch (error) {
-      console.error("Error fetching purchases:", error);
+      const err = error as ApiError;
+      console.error("Error fetching purchases:", err);
       return [];
     }
   },
 
-  getPurchaseById: async (
-    id: number,
-    includeDeleted: boolean = false
-  ): Promise<Purchase | null> => {
+  async getPurchaseById(id: number, includeDeleted: boolean = false): Promise<Purchase | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/purchases/${id}`, {
+      const response = await api.get(`/purchases/${id}`, {
         params: { includeDeleted: includeDeleted ? "true" : "false" },
       });
-      return response.data;
+
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      } else if (response.data && typeof response.data === "object") {
+        return response.data;
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        return null;
+      }
     } catch (error) {
-      console.error("Error fetching purchase:", error);
+      const err = error as ApiError;
+      console.error("Error fetching purchase:", err);
       return null;
     }
   },
 
-  updatePurchase: async (
-    id: number,
-    purchaseData: UpdatePurchaseData
-  ): Promise<Purchase> => {
+  async updatePurchase(id: number, purchaseData: UpdatePurchaseData): Promise<Purchase> {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/purchases/${id}`,
-        purchaseData
-      );
-      return response.data;
+      const response = await api.put(`/purchases/${id}`, purchaseData);
+      
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      }
+      throw new Error("Unexpected API response format");
     } catch (error) {
-      console.error("Error updating purchase:", error);
-      throw error;
+      const err = error as ApiError;
+      console.error("Error updating purchase:", err);
+      if (err.response) {
+        throw new Error(
+          err.response?.data?.message || 
+          err.message || 
+          "Failed to update purchase"
+        );
+      }
+      throw err;
     }
   },
 
-  deletePurchase: async (id: number): Promise<boolean> => {
+  async deletePurchase(id: number): Promise<boolean> {
     try {
-      await axios.delete(`${API_BASE_URL}/purchases/${id}`);
+      await api.delete(`/purchases/${id}`);
       return true;
     } catch (error) {
-      console.error("Error deleting purchase:", error);
+      const err = error as ApiError;
+      console.error("Error deleting purchase:", err);
       return false;
     }
   },
 
-  restorePurchase: async (id: number): Promise<Purchase> => {
+  async restorePurchase(id: number): Promise<Purchase> {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/purchases/${id}/restore`
-      );
+      const response = await api.post(`/purchases/${id}/restore`);
       return response.data;
     } catch (error) {
-      console.error("Error restoring purchase:", error);
-      throw error;
+      const err = error as ApiError;
+      console.error("Error restoring purchase:", err);
+      throw err;
     }
   },
 
-  getDeletedPurchases: async (): Promise<Purchase[]> => {
+  async getDeletedPurchases(): Promise<Purchase[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/purchases/deleted`);
+      const response = await api.get('/purchases/deleted');
       return response.data;
     } catch (error) {
-      console.error("Error fetching deleted purchases:", error);
+      const err = error as ApiError;
+      console.error("Error fetching deleted purchases:", err);
       return [];
     }
   },

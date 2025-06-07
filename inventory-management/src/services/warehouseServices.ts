@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+import api from './authService';
 
 export interface WarehouseManager {
   id: number;
@@ -43,6 +42,7 @@ interface CreateWarehouseData {
   location: string;
   capacity: number;
   description?: string;
+  status?: "active" | "inactive";
 }
 
 interface UpdateWarehouseData {
@@ -53,11 +53,6 @@ interface UpdateWarehouseData {
   status?: "active" | "inactive";
 }
 
-// interface ChangeManagerData {
-//   managerId: number | null;
-// }
-
-// Helper function to handle API responses
 const handleResponse = (response: any) => {
   if (response.data && Array.isArray(response.data)) {
     return response.data;
@@ -68,8 +63,7 @@ const handleResponse = (response: any) => {
   return response;
 };
 
-// Helper function to handle errors
-const handleError = (error: any) => {
+const handleError = (error: unknown) => {
   if (axios.isAxiosError(error)) {
     console.error("API Error:", error.response?.data?.message || error.message);
     throw new Error(error.response?.data?.message || "An error occurred");
@@ -79,15 +73,11 @@ const handleError = (error: any) => {
 };
 
 export const warehouseService = {
-  // Create a new warehouse
   createWarehouse: async (
     warehouseData: CreateWarehouseData
   ): Promise<Warehouse> => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/warehouse`,
-        warehouseData
-      );
+      const response = await api.post(`/warehouse`, warehouseData);
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -95,10 +85,9 @@ export const warehouseService = {
     }
   },
 
-  // Get all warehouses
   getAllWarehouses: async (): Promise<Warehouse[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/warehouse`);
+      const response = await api.get(`/warehouse`);
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -106,10 +95,9 @@ export const warehouseService = {
     }
   },
 
-  // Get a single warehouse by ID
   getWarehouseById: async (id: number): Promise<Warehouse | null> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/warehouse/${id}`);
+      const response = await api.get(`/warehouse/${id}`);
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -117,16 +105,12 @@ export const warehouseService = {
     }
   },
 
-  // Update a warehouse
   updateWarehouse: async (
     id: number,
     warehouseData: UpdateWarehouseData
   ): Promise<Warehouse> => {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/warehouse/${id}`,
-        warehouseData
-      );
+      const response = await api.put(`/warehouse/${id}`, warehouseData);
       return handleResponse(response);
     } catch (error) {
       handleError(error);
@@ -134,18 +118,14 @@ export const warehouseService = {
     }
   },
 
-  // Change warehouse manager
   changeManager: async (
     warehouseId: number,
     data: { newManagerId: number }
   ): Promise<void> => {
     try {
-      await axios.post(
-        `${API_BASE_URL}/warehouse/${warehouseId}/change-manager`,
-        {
-          newManagerId: data.newManagerId,
-        }
-      );
+      await api.post(`/warehouse/${warehouseId}/change-manager`, {
+        newManagerId: data.newManagerId,
+      });
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -156,10 +136,9 @@ export const warehouseService = {
     }
   },
 
-  // Delete a warehouse
   deleteWarehouse: async (id: number): Promise<boolean> => {
     try {
-      await axios.delete(`${API_BASE_URL}/warehouse/${id}`);
+      await api.delete(`/warehouse/${id}`);
       return true;
     } catch (error) {
       handleError(error);
@@ -167,12 +146,9 @@ export const warehouseService = {
     }
   },
 
-  // Restore a warehouse
   restoreWarehouse: async (id: number): Promise<Warehouse> => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/warehouse/${id}/restore`
-      );
+      const response = await api.post(`/warehouse/${id}/restore`);
       return handleResponse(response);
     } catch (error) {
       handleError(error);

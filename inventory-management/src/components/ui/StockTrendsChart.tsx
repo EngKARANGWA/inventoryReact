@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import api from '../../services/authService';
 
 ChartJS.register(
   CategoryScale,
@@ -23,14 +24,8 @@ ChartJS.register(
 
 interface StockSnapshot {
   id: number;
-  productId: number;
-  warehouseId: number;
   quantity: string;
   snapshotDate: string;
-  lastMovementId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
   product?: {
     id: number;
     name: string;
@@ -46,7 +41,10 @@ interface StockTrendsChartProps {
   filterId?: number;
 }
 
-const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ filterType = 'all', filterId }) => {
+const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ 
+  filterType = 'all', 
+  filterId 
+}: StockTrendsChartProps) => {
   const [stockData, setStockData] = useState<StockSnapshot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,31 +54,20 @@ const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ filterType = 'all',
       try {
         setIsLoading(true);
         setError(null);
-        let url = 'https://test.gvibyequ.a2hosted.com/api/stock-snapshot';
         
+        let url = '/stock-snapshot';
         if (filterType === 'product' && filterId) {
           url += `/product/${filterId}`;
         } else if (filterType === 'warehouse' && filterId) {
           url += `/warehouse/${filterId}`;
         }
 
-        const response = await fetch(url);
+        const response = await api.get(url);
+        const responseData = response.data.data || response.data;
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          if (errorData.message === "No snapshots found for this warehouse") {
-            setStockData([]);
-            setError('No stock data available for the selected filter');
-            return;
-          }
-          throw new Error(errorData.message || 'Failed to fetch stock data');
-        }
-
-        const data = await response.json();
-        setStockData(data.data || data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load stock trends');
-        console.error('Error fetching stock data:', err);
+        setStockData(Array.isArray(responseData) ? responseData : []);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to load stock trends');
       } finally {
         setIsLoading(false);
       }
@@ -89,7 +76,6 @@ const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ filterType = 'all',
     fetchStockData();
   }, [filterType, filterId]);
 
-  // Process data for chart
   const chartData = {
     labels: stockData.map(item => new Date(item.snapshotDate).toLocaleDateString()),
     datasets: [
@@ -113,28 +99,6 @@ const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ filterType = 'all',
         display: true,
         text: 'Stock Trends Over Time',
       },
-      tooltip: {
-        callbacks: {
-          label: function(context: any) {
-            return `Quantity: ${context.parsed.y.toLocaleString()} Kg`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Quantity (Kg)'
-        }
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Date'
-        }
-      }
     }
   };
 
@@ -147,11 +111,11 @@ const StockTrendsChart: React.FC<StockTrendsChartProps> = ({ filterType = 'all',
   }
 
   if (error) {
-    return <div className="text-red-500 text-center p-4">{error}</div>;
+    return <div className="text-red-500">{error}</div>;
   }
 
   if (stockData.length === 0) {
-    return <div className="text-gray-500 text-center p-4">No stock data available</div>;
+    return <div className="text-gray-500">No stock data available</div>;
   }
 
   return <Line options={options} data={chartData} />;

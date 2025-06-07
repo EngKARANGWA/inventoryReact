@@ -1,6 +1,30 @@
-import axios from "axios";
+import api  from './authService';
 
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+// Keep all your existing interfaces
+export interface SaleItem {
+  id: number;
+  quantity: string;
+  unitPrice: string;
+  totalDelivered: string;
+  note?: string;
+  saleId: number;
+  productId: number;
+  product?: {
+    id: number;
+    name: string;
+    type?: string;
+    description?: string;
+  };
+  sale?: {
+    id: number;
+    saleReference: string;
+    referenceNumber?: string;
+    status?: string;
+    client?: {
+      name?: string;
+    };
+  };
+}
 
 export interface Delivery {
   id: number;
@@ -12,7 +36,9 @@ export interface Delivery {
   quantity: string;
   purchaseId: number | null;
   saleId: number | null;
+  saleItemId: number | null; 
   driverId: number;
+  unitPrice: string;
   productId: number | null;
   warehouseId: number | null;
   createdAt: string;
@@ -31,6 +57,7 @@ export interface Delivery {
   product?: {
     id: number;
     name: string;
+    type: string;
     description: string;
   } | null;
   warehouse?: {
@@ -61,23 +88,24 @@ export interface Delivery {
   sale?: {
     id: number;
     referenceNumber: string;
-    saleReference?: string; // Add this to match the response
-    quantity: string;
-    status?: string;
+    saleReference?: string;
     note?: string;
+    status?: string;
     client?: {
       name?: string;
     };
+    items?: SaleItem[];
   } | null;
+  saleItem?: SaleItem | null;
 }
 
 export interface CreateDeliveryData {
   direction: "in" | "out";
   quantity: number;
   driverId: number;
-  productId: number;
   warehouseId: number;
   saleId?: number;
+  saleItemId?: number;
   purchaseId?: number;
   notes?: string;
 }
@@ -109,14 +137,9 @@ export interface DeliveryResponse {
 }
 
 export const deliveryService = {
-  createDelivery: async (
-    deliveryData: CreateDeliveryData
-  ): Promise<Delivery> => {
+  async createDelivery(deliveryData: CreateDeliveryData): Promise<Delivery> {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/deliveries`,
-        deliveryData
-      );
+      const response = await api.post('/deliveries', deliveryData);
       return response.data;
     } catch (error) {
       console.error("Error creating delivery:", error);
@@ -124,26 +147,10 @@ export const deliveryService = {
     }
   },
 
-  getAllDeliveries: async (
-    options: DeliveryFilterOptions = {}
-  ): Promise<DeliveryResponse> => {
+  async getAllDeliveries(filterOptions?: DeliveryFilterOptions): Promise<DeliveryResponse> {
     try {
-      const params = {
-        page: options.page || 1,
-        pageSize: options.pageSize || 10,
-        includeDeleted: options.includeDeleted ? "true" : "false",
-        search: options.search,
-        status: options.status,
-        direction: options.direction,
-        productId: options.productId,
-        warehouseId: options.warehouseId,
-        driverId: options.driverId,
-        dateFrom: options.dateFrom,
-        dateTo: options.dateTo,
-      };
-
-      const response = await axios.get(`${API_BASE_URL}/deliveries`, {
-        params,
+      const response = await api.get('/deliveries', {
+        params: filterOptions
       });
       return response.data;
     } catch (error) {
@@ -157,13 +164,10 @@ export const deliveryService = {
     }
   },
 
-  getDeliveryById: async (
-    id: number,
-    includeDeleted: boolean = false
-  ): Promise<Delivery | null> => {
+  async getDeliveryById(id: number, includeDeleted: boolean = false): Promise<Delivery | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/deliveries/${id}`, {
-        params: { includeDeleted: includeDeleted ? "true" : "false" },
+      const response = await api.get(`/deliveries/${id}`, {
+        params: { includeDeleted }
       });
       return response.data;
     } catch (error) {
@@ -172,15 +176,9 @@ export const deliveryService = {
     }
   },
 
-  updateDelivery: async (
-    id: number,
-    deliveryData: UpdateDeliveryData
-  ): Promise<Delivery> => {
+  async updateDelivery(id: number, deliveryData: UpdateDeliveryData): Promise<Delivery> {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/deliveries/${id}`,
-        deliveryData
-      );
+      const response = await api.put(`/deliveries/${id}`, deliveryData);
       return response.data;
     } catch (error) {
       console.error("Error updating delivery:", error);
@@ -188,9 +186,9 @@ export const deliveryService = {
     }
   },
 
-  deleteDelivery: async (id: number): Promise<boolean> => {
+  async deleteDelivery(id: number): Promise<boolean> {
     try {
-      await axios.delete(`${API_BASE_URL}/deliveries/${id}`);
+      await api.delete(`/deliveries/${id}`);
       return true;
     } catch (error) {
       console.error("Error deleting delivery:", error);
@@ -198,9 +196,9 @@ export const deliveryService = {
     }
   },
 
-  restoreDelivery: async (id: number): Promise<boolean> => {
+  async restoreDelivery(id: number): Promise<boolean> {
     try {
-      await axios.post(`${API_BASE_URL}/deliveries/${id}/restore`);
+      await api.post(`/deliveries/${id}/restore`);
       return true;
     } catch (error) {
       console.error("Error restoring delivery:", error);

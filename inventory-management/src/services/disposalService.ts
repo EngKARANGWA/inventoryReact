@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = "https://test.gvibyequ.a2hosted.com/api";
+import api  from './authService';
 
 export interface Disposal {
   id: number;
@@ -47,6 +45,7 @@ interface CreateDisposalData {
   method: string;
   note?: string;
   date?: string;
+  unitPrice?: number; 
 }
 
 interface UpdateDisposalData {
@@ -84,10 +83,7 @@ export const disposalService = {
     disposalData: CreateDisposalData
   ): Promise<Disposal> => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/disposal`,
-        disposalData
-      );
+      const response = await api.post('/disposal', disposalData);
       return response.data.data;
     } catch (error) {
       console.error("Error creating disposal:", error);
@@ -96,22 +92,10 @@ export const disposalService = {
   },
 
   getAllDisposals: async (
-    options: DisposalFilterOptions = {}
+    options?: DisposalFilterOptions
   ): Promise<DisposalResponse> => {
     try {
-      const params = {
-        page: options.page || 1,
-        pageSize: options.pageSize || 10,
-        includeDeleted: options.includeDeleted ? "true" : "false",
-        search: options.search,
-        method: options.method,
-        productId: options.productId,
-        warehouseId: options.warehouseId,
-        startDate: options.startDate,
-        endDate: options.endDate,
-      };
-
-      const response = await axios.get(`${API_BASE_URL}/disposal`, { params });
+      const response = await api.get('/disposal', { params: options });
       return response.data;
     } catch (error) {
       console.error("Error fetching disposals:", error);
@@ -133,7 +117,7 @@ export const disposalService = {
     includeDeleted: boolean = false
   ): Promise<Disposal | null> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/disposal/${id}`, {
+      const response = await api.get(`/disposal/${id}`, {
         params: { includeDeleted: includeDeleted ? "true" : "false" },
       });
       return response.data.data;
@@ -148,10 +132,7 @@ export const disposalService = {
     disposalData: UpdateDisposalData
   ): Promise<Disposal> => {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/disposal/${id}`,
-        disposalData
-      );
+      const response = await api.put(`/disposal/${id}`, disposalData);
       return response.data.data;
     } catch (error) {
       console.error("Error updating disposal:", error);
@@ -161,7 +142,7 @@ export const disposalService = {
 
   deleteDisposal: async (id: number): Promise<boolean> => {
     try {
-      await axios.delete(`${API_BASE_URL}/disposal/${id}`);
+      await api.delete(`/disposal/${id}`);
       return true;
     } catch (error) {
       console.error("Error deleting disposal:", error);
@@ -174,8 +155,8 @@ export const disposalService = {
 export const productService = {
   getAllProducts: async (): Promise<Product[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products`);
-      return response.data || [];
+      const response = await api.get('/products');
+      return response.data?.data || [];
     } catch (error) {
       console.error("Error fetching products:", error);
       return [];
@@ -186,7 +167,7 @@ export const productService = {
 export const warehouseService = {
   getAllWarehouses: async (): Promise<Warehouse[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/warehouse`);
+      const response = await api.get('/warehouse');
       return response.data || [];
     } catch (error) {
       console.error("Error fetching warehouses:", error);
@@ -196,15 +177,16 @@ export const warehouseService = {
 };
 
 export const priceService = {
-  getPricesByProduct: async (productId: number): Promise<Price[]> => {
+  getAveragePriceForProduct: async (productId: number): Promise<{
+    productId: number;
+    averageUnitPrice: number | null;
+  } | null> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/daily-price`, {
-        params: { productId },
-      });
-      return response.data || [];
+      const response = await api.get(`/stoke-movements/average-price/${productId}`);
+      return response.data?.data || null;
     } catch (error) {
-      console.error("Error fetching prices:", error);
-      return [];
+      console.error("Error fetching average price:", error);
+      return null;
     }
   },
 };
@@ -221,7 +203,7 @@ interface Warehouse {
   location: string;
 }
 
-interface Price {
+export interface Price {
   id: number;
   buyingUnitPrice?: number | null;
   sellingUnitPrice?: number | null;

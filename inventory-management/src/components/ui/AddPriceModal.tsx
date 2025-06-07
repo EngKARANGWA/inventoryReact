@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface Product {
   id: number;
   name: string;
@@ -39,7 +42,7 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
         setLoading(true);
         try {
           const response = await axios.get(
-            "https://test.gvibyequ.a2hosted.com/api/products"
+            `${API_BASE_URL}/products`
           );
           setProducts(response.data);
         } catch (error) {
@@ -90,7 +93,7 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      await axios.post("https://test.gvibyequ.a2hosted.com/api/daily-price", {
+      await axios.post(`${API_BASE_URL}/daily-price`, {
         buyingUnitPrice: parseFloat(formData.buyingPrice),
         sellingUnitPrice: parseFloat(formData.sellingPrice),
         productId: parseInt(formData.productId),

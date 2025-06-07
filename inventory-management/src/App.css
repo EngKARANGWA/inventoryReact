@@ -42,10 +42,10 @@
 
 /* Responsive Adjustments */
 @media (min-width: 600px) {
-  #root {
-    padding: 2rem; /* More padding on larger screens */
+  /* #root {
+    padding: 2rem; More padding on larger screens
   }
-  
+   */
   .logo {
     height: 6em; /* Larger logo on desktop */
   }
