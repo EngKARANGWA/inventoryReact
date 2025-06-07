@@ -17,7 +17,6 @@ interface Profile {
 }
 
 const ProfilePage: React.FC = () => {
-  const profileId = 1; // Replace with actual user profile ID in production
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ names: '', phoneNumber: '', address: '' });
@@ -28,12 +27,18 @@ const ProfilePage: React.FC = () => {
   const toast = useToast();
   const user = getCurrentUser();
   const email = user?.email || '';
+  const userId = user?.id;
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!userId) {
+        toast.error('User not authenticated');
+        return;
+      }
+
       toast.info('Loading profile...');
       try {
-        const data = await userService.getProfileById(profileId);
+        const data = await userService.getProfileById(userId);
         setProfile(data);
         setForm({
           names: data.names || '',
@@ -41,13 +46,14 @@ const ProfilePage: React.FC = () => {
           address: data.address || '',
         });
         toast.success('Profile loaded');
-      } catch {
-        toast.error('Failed to load profile');
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to load profile';
+        toast.error(errorMsg);
       }
     };
+
     fetchProfile();
-    // eslint-disable-next-line
-  }, [profileId]);
+  }, [userId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -66,15 +72,21 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!userId) {
+      toast.error('User not authenticated');
+      return;
+    }
+
     setSaving(true);
     toast.info('Saving profile...');
     try {
-      const updated = await userService.updateProfile(profileId, form);
+      const updated = await userService.updateProfile(userId, form);
       setProfile(updated);
       setEditMode(false);
       toast.success('Profile updated!');
-    } catch {
-      toast.error('Failed to update profile');
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to update profile';
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }

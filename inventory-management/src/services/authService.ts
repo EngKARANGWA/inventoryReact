@@ -73,8 +73,12 @@ export const login = async (usernameOrEmail: string, password: string) => {
       password,
     });
     return response.data;
-  } catch (error: any) {
-    const message = error.response?.data?.message || "Login failed";
+  } catch (error: unknown) {
+    let message = "Login failed";
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message = err.response?.data?.message || message;
+    }
     throw new Error(message);
   }
 };
@@ -93,9 +97,12 @@ export const requestPasswordReset = async (email: string) => {
   try {
     const response = await api.post("/auth/forgot-password", { email });
     return response.data;
-  } catch (error: any) {
-    const message =
-      error.response?.data?.message || "Password reset request failed";
+  } catch (error: unknown) {
+    let message = "Password reset request failed";
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message = err.response?.data?.message || message;
+    }
     throw new Error(message);
   }
 };
@@ -112,8 +119,12 @@ export const resetPassword = async (
       newPassword,
     });
     return response.data;
-  } catch (error: any) {
-    const message = error.response?.data?.message || "Password reset failed";
+  } catch (error: unknown) {
+    let message = "Password reset failed";
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message = err.response?.data?.message || message;
+    }
     throw new Error(message);
   }
 };
@@ -128,8 +139,12 @@ export const changePassword = async (
       newPassword,
     });
     return response.data;
-  } catch (error: any) {
-    const message = error.response?.data?.message || "Password change failed";
+  } catch (error: unknown) {
+    let message = "Password change failed";
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message = err.response?.data?.message || message;
+    }
     throw new Error(message);
   }
 };
