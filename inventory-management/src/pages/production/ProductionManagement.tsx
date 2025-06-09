@@ -51,7 +51,7 @@ const ProductionManagement: React.FC = () => {
     key: string;
     direction: "ascending" | "descending";
   } | null>({
-    key: "date",
+    key: "id",
     direction: "descending",
   });
 

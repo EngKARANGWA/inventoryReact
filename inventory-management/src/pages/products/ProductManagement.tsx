@@ -208,9 +208,12 @@ const ProductManagement: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const lastUpdated = products.length > 0 
-  ? new Date(Math.max(...products.map(p => new Date(p.updatedAt).getTime())))
-  : null;
+  const lastUpdated =
+    products.length > 0
+      ? new Date(
+          Math.max(...products.map((p) => new Date(p.updatedAt).getTime()))
+        )
+      : null;
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -231,10 +234,14 @@ const ProductManagement: React.FC = () => {
             <ProductStats
               loading={loading}
               rawMaterialCount={
-                products.filter((p) => p.type === "raw_material").length
+                products.filter(
+                  (p) => p.type === "raw_material" || p.type === "raw_and_finished"
+                ).length
               }
               finishedProductCount={
-                products.filter((p) => p.type === "finished_product").length
+                products.filter(
+                  (p) => p.type === "finished_product" || p.type === "raw_and_finished"
+                ).length
               }
               lastUpdated={lastUpdated}
             />

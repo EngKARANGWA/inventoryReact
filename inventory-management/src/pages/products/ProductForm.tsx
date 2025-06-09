@@ -70,7 +70,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       isValid = false;
     }
 
-    if (!['raw_material', 'finished_product'].includes(formData.type)) {
+    if (!['raw_material', 'finished_product', 'raw_and_finished'].includes(formData.type)) {
       newErrors.type = 'Invalid product type';
       isValid = false;
     }
@@ -216,6 +216,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             >
               <option value="finished_product">Finished Product</option>
               <option value="raw_material">Raw Material</option>
+              <option value="raw_and_finished">Finished and Raw Material</option>
             </select>
             {errors.type && (
               <p className="mt-1 text-sm text-red-600">{errors.type}</p>

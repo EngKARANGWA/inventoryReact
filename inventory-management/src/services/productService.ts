@@ -4,7 +4,7 @@ export interface Product {
   id: number;
   name: string;
   description: string;
-  type: 'raw_material' | 'finished_product';
+  type: 'raw_material' | 'finished_product' | 'raw_and_finished';
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

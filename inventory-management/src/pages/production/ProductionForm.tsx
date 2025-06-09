@@ -63,25 +63,31 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
   useEffect(() => {
     if (editingProduction) {
       // Filter out the first outcome with outcomeType "finished_product"
-      const filteredOutcomes = editingProduction.outcomes?.filter(
-        (outcome, index) => !(index === 0 && outcome.outcomeType === "finished_product")
-      ) || [];
+      const filteredOutcomes =
+        editingProduction.outcomes?.filter(
+          (outcome, index) =>
+            !(index === 0 && outcome.outcomeType === "finished_product")
+        ) || [];
 
       setFormData({
         productId: editingProduction.productId?.toString() || "",
         totalOutcome: editingProduction.totalOutcome?.toString() || "",
         mainProductId: editingProduction.mainProductId?.toString() || "",
         usedQuantity: editingProduction.usedQuantity?.toString() || "",
-        mainProductUnitCost: editingProduction.mainProductUnitCost?.toString() || "",
+        mainProductUnitCost:
+          editingProduction.mainProductUnitCost?.toString() || "",
         warehouseId: editingProduction.warehouseId?.toString() || "",
         notes: editingProduction.notes || "",
         productionCost: editingProduction.productionCost || [],
         outcomes: filteredOutcomes || [],
-        packagesSummary: editingProduction.packagesSummary?.map(pkg => ({
-          ...pkg,
-          packageSize: pkg.size // Map size to packageSize for the form
-        })) || [],
-        date: editingProduction.date ? new Date(editingProduction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        packagesSummary:
+          editingProduction.packagesSummary?.map((pkg) => ({
+            ...pkg,
+            packageSize: pkg.size, // Map size to packageSize for the form
+          })) || [],
+        date: editingProduction.date
+          ? new Date(editingProduction.date).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
       });
     } else {
       // Reset form data when not in edit mode
@@ -96,7 +102,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         productionCost: [],
         outcomes: [],
         packagesSummary: [],
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split("T")[0],
       });
     }
   }, [editingProduction]);
@@ -126,10 +132,12 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
 
   // Filter products by type
   const rawMaterials = products.filter(
-    (product) => product.type === "raw_material"
+    (product) =>
+      product.type === "raw_material" || product.type === "raw_and_finished"
   );
   const finishedProducts = products.filter(
-    (product) => product.type === "finished_product"
+    (product) =>
+      product.type === "finished_product" || product.type === "raw_and_finished"
   );
 
   useEffect(() => {
@@ -298,25 +306,31 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         ...currentCost,
         quantity: quantity,
         unitPrice: unitPrice,
-        total: total
+        total: total,
       };
     } else if (field === "quantity" || field === "unitPrice") {
       // When quantity or unitPrice changes, recalculate total
-      const quantity = field === "quantity" ? parseFloat(value) || 0 : (currentCost.quantity || 1);
-      const unitPrice = field === "unitPrice" ? parseFloat(value) || 0 : (currentCost.unitPrice || 0);
+      const quantity =
+        field === "quantity"
+          ? parseFloat(value) || 0
+          : currentCost.quantity || 1;
+      const unitPrice =
+        field === "unitPrice"
+          ? parseFloat(value) || 0
+          : currentCost.unitPrice || 0;
       const total = quantity * unitPrice;
 
       updatedCosts[index] = {
         ...currentCost,
         quantity: quantity,
         unitPrice: unitPrice,
-        total: total
+        total: total,
       };
     } else {
       // For other fields (like item), just update the field
       updatedCosts[index] = {
         ...currentCost,
-        [field]: value
+        [field]: value,
       };
     }
 
@@ -485,7 +499,10 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     // Validate total outcome
     if (!formData.totalOutcome) {
       errors.totalOutcome = "Please enter the total outcome";
-    } else if (isNaN(parseFloat(formData.totalOutcome)) || parseFloat(formData.totalOutcome) <= 0) {
+    } else if (
+      isNaN(parseFloat(formData.totalOutcome)) ||
+      parseFloat(formData.totalOutcome) <= 0
+    ) {
       errors.totalOutcome = "Total outcome must be greater than 0";
     }
 
@@ -493,13 +510,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     if (formData.mainProductId) {
       if (!formData.usedQuantity) {
         errors.usedQuantity = "Please enter the quantity used";
-      } else if (isNaN(parseFloat(formData.usedQuantity)) || parseFloat(formData.usedQuantity) <= 0) {
+      } else if (
+        isNaN(parseFloat(formData.usedQuantity)) ||
+        parseFloat(formData.usedQuantity) <= 0
+      ) {
         errors.usedQuantity = "Quantity used must be greater than 0";
       }
 
       if (!formData.mainProductUnitCost) {
         errors.mainProductUnitCost = "Please enter the unit cost";
-      } else if (isNaN(parseFloat(formData.mainProductUnitCost)) || parseFloat(formData.mainProductUnitCost) < 0) {
+      } else if (
+        isNaN(parseFloat(formData.mainProductUnitCost)) ||
+        parseFloat(formData.mainProductUnitCost) < 0
+      ) {
         errors.mainProductUnitCost = "Unit cost cannot be negative";
       }
     }
@@ -508,7 +531,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     if (formData.outcomes.length === 0) {
       errors.outcomesValidation = "Please add at least one outcome";
     } else {
-      const hasValidOutcomes = formData.outcomes.every(outcome => {
+      const hasValidOutcomes = formData.outcomes.every((outcome) => {
         const quantity = parseFloat(outcome.quantity?.toString() || "0");
         return !isNaN(quantity) && quantity > 0;
       });
@@ -521,22 +544,23 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     if (formData.packagesSummary.length === 0) {
       errors.packagesValidation = "Please add at least one package";
     } else {
-      const hasValidPackages = formData.packagesSummary.every(pkg => {
+      const hasValidPackages = formData.packagesSummary.every((pkg) => {
         const quantity = parseInt(pkg.quantity.toString());
         const weight = parseFloat(pkg.totalWeight.toString());
         return !isNaN(quantity) && quantity > 0 && !isNaN(weight) && weight > 0;
       });
       if (!hasValidPackages) {
-        errors.packagesValidation = "All packages must have valid quantities and weights";
+        errors.packagesValidation =
+          "All packages must have valid quantities and weights";
       }
     }
 
-    console.log('Form validation errors:', errors);
+    console.log("Form validation errors:", errors);
     setFormErrors(errors);
 
-    const hasErrors = Object.values(errors).some(error => error !== "");
+    const hasErrors = Object.values(errors).some((error) => error !== "");
     if (hasErrors) {
-      console.log('Form validation failed');
+      console.log("Form validation failed");
       if (errorSummaryRef.current) {
         errorSummaryRef.current.scrollIntoView({
           behavior: "smooth",
@@ -544,7 +568,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         });
       }
     } else {
-      console.log('Form validation passed');
+      console.log("Form validation passed");
     }
 
     return !hasErrors;
@@ -552,13 +576,13 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submission started');
+    console.log("Form submission started");
     if (!validateForm()) {
-      console.log('Form validation failed, submission cancelled');
+      console.log("Form validation failed, submission cancelled");
       return;
     }
-    console.log('Form validation passed, proceeding with submission');
-  
+    console.log("Form validation passed, proceeding with submission");
+
     const productionData = {
       productId: Number(formData.productId),
       quantityProduced: parseFloat(formData.totalOutcome), // Backend expects quantityProduced
@@ -570,9 +594,9 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         ? { usedQuantity: parseFloat(formData.usedQuantity) }
         : {}),
       ...(formData.mainProductUnitCost
-        ? { 
+        ? {
             mainProductUnitCost: parseFloat(formData.mainProductUnitCost),
-            mainProductUnitPrice: parseFloat(formData.mainProductUnitCost)
+            mainProductUnitPrice: parseFloat(formData.mainProductUnitCost),
           }
         : {}),
       ...(formData.warehouseId
@@ -585,12 +609,12 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         const quantity = Number(cost.quantity) || 1; // Default to 1 if not provided
         const unitPrice = Number(cost.unitPrice) || 0;
         const total = quantity * unitPrice;
-  
+
         return {
           item: cost.item || cost.name || cost.description || "",
           quantity: quantity,
           unitPrice: unitPrice,
-          total: total
+          total: total,
         };
       }),
       outcomes: formData.outcomes.map((outcome) => ({
@@ -599,8 +623,12 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         quantity: parseFloat(outcome.quantity.toString()),
         unit: outcome.unit || "kg",
         productId: outcome.productId ? Number(outcome.productId) : undefined,
-        unitPrice: outcome.unitPrice ? parseFloat(outcome.unitPrice.toString()) : undefined,
-        warehouseId: outcome.warehouseId ? Number(outcome.warehouseId) : undefined,
+        unitPrice: outcome.unitPrice
+          ? parseFloat(outcome.unitPrice.toString())
+          : undefined,
+        warehouseId: outcome.warehouseId
+          ? Number(outcome.warehouseId)
+          : undefined,
         notes: outcome.notes,
       })),
       packagesSummary: formData.packagesSummary.map((pkg) => ({
@@ -610,7 +638,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         unit: pkg.unit || "kg",
       })),
     };
-  
+
     console.log(
       "Submitting production data:",
       JSON.stringify(productionData, null, 2)
@@ -699,8 +727,10 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                         )
                         .map((product) => (
                           <option key={product.id} value={product.id}>
-                            {product.name}{" "}
-                            {product.unit ? `(${product.unit})` : ""}
+                            {product.name}
+                            {product.type === "raw_and_finished" &&
+                              " (Raw + Finished)"}
+                            {product.unit ? ` (${product.unit})` : ""}
                           </option>
                         ))}
                     </select>
@@ -813,8 +843,10 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                         )
                         .map((product) => (
                           <option key={product.id} value={product.id}>
-                            {product.name}{" "}
-                            {product.unit ? `(${product.unit})` : ""}
+                            {product.name}
+                            {product.type === "raw_and_finished" &&
+                              " (Raw + Finished)"}
+                            {product.unit ? ` (${product.unit})` : ""}
                           </option>
                         ))}
                     </select>
@@ -917,8 +949,10 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
                           <option value="">Select product</option>
                           {products.map((product) => (
                             <option key={product.id} value={product.id}>
-                              {product.name}{" "}
-                              {product.unit ? `(${product.unit})` : ""}
+                              {product.name}
+                              {product.type === "raw_and_finished" &&
+                                " (Raw + Finished)"}
+                              {product.unit ? ` (${product.unit})` : ""}
                             </option>
                           ))}
                         </select>

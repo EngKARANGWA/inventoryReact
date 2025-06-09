@@ -51,6 +51,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
 //   };
 
   const getTypeText = (type: string) => {
+    if (type === 'raw_and_finished') return 'Raw & Finished Product';
     return type === 'raw_material' ? 'Raw Material' : 'Finished Product';
   };
 
