@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from "react";
-import {Sidebar} from "../../components/ui/sidebar";
+import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import {
   Search,
@@ -22,7 +22,7 @@ import "react-toastify/dist/ReactToastify.css";
 import {
   purchaseService,
   Purchase,
-  Supplier,
+  User,
   Product,
   PurchaseFilterOptions,
 } from "../../services/purchaseService";
@@ -43,12 +43,14 @@ const PurchaseManagement: React.FC = () => {
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(
     null
   );
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState<number | null>(
     null
   );
@@ -68,12 +70,12 @@ const PurchaseManagement: React.FC = () => {
     pageSize: 10,
     status: "",
     includeDeleted: false,
-    supplierId: undefined,
+    userId: undefined,
     productId: undefined,
   });
 
   const [formData, setFormData] = useState({
-    supplierId: "",
+    userId: "",
     productId: "",
     weight: "",
     unitPrice: "",
@@ -111,7 +113,6 @@ const PurchaseManagement: React.FC = () => {
   };
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const fetchPurchases = useCallback(async () => {
     setLoading(true);
@@ -162,21 +163,21 @@ const PurchaseManagement: React.FC = () => {
   const fetchDropdownOptions = async () => {
     try {
       setLoadingProducts(true);
-      setLoadingSuppliers(true);
+      setLoadingUsers(true);
 
-      const [products, suppliers] = await Promise.all([
+      const [products, users] = await Promise.all([
         purchaseService.getAllProducts(),
-        purchaseService.getAllSuppliers(),
+        purchaseService.getAllSupplierUsers(),
       ]);
 
       setProducts(products);
-      setSuppliers(suppliers);
+      setUsers(users);
     } catch (error) {
       console.error("Error fetching dropdown options:", error);
       toast.error("Failed to load form options");
     } finally {
       setLoadingProducts(false);
-      setLoadingSuppliers(false);
+      setLoadingUsers(false);
     }
   };
 
@@ -196,7 +197,7 @@ const PurchaseManagement: React.FC = () => {
 
   const handleAddClick = () => {
     setFormData({
-      supplierId: "",
+      userId: "",
       productId: "",
       weight: "",
       unitPrice: "",
@@ -209,10 +210,10 @@ const PurchaseManagement: React.FC = () => {
 
   const handleEditClick = (purchase: Purchase) => {
     setFormData({
-      supplierId: String(purchase.supplierId),
+      userId: String(purchase.userId),
       productId: String(purchase.productId),
       weight: purchase.weight,
-      unitPrice: purchase.unitPrice || "", // Add this line
+      unitPrice: purchase.unitPrice || "",
       description: purchase.description || "",
       expectedDeliveryDate: purchase.expectedDeliveryDate
         ? new Date(purchase.expectedDeliveryDate).toISOString().split("T")[0]
@@ -262,7 +263,7 @@ const PurchaseManagement: React.FC = () => {
 
     try {
       const purchaseData = {
-        supplierId: Number(formData.supplierId),
+        userId: Number(formData.userId),
         productId: Number(formData.productId),
         weight: parseFloat(formData.weight),
         unitPrice: parseFloat(formData.unitPrice),
@@ -372,9 +373,7 @@ const PurchaseManagement: React.FC = () => {
       const searchLower = searchTerm.toLowerCase();
       return (
         purchase.purchaseReference.toLowerCase().includes(searchLower) ||
-        purchase.supplier?.user?.profile?.names
-          ?.toLowerCase()
-          .includes(searchLower) ||
+        purchase.user?.profile?.names?.toLowerCase().includes(searchLower) ||
         purchase.product?.name?.toLowerCase().includes(searchLower) ||
         purchase.description?.toLowerCase().includes(searchLower) ||
         purchase.status.toLowerCase().includes(searchLower)
@@ -383,14 +382,11 @@ const PurchaseManagement: React.FC = () => {
   }, [sortedPurchases, searchTerm]);
 
   // Calculate summary statistics
-  const totalAmount = purchases.reduce(
-    (sum, p) => {
-      const weight = parseFloat(p.weight || "0");
-      const unitPrice = parseFloat(p.unitPrice || "0");
-      return sum + (weight * unitPrice);
-    },
-    0
-  );
+  const totalAmount = purchases.reduce((sum, p) => {
+    const weight = parseFloat(p.weight || "0");
+    const unitPrice = parseFloat(p.unitPrice || "0");
+    return sum + weight * unitPrice;
+  }, 0);
 
   const totalPaid = purchases.reduce(
     (sum, p) => sum + parseFloat(p.totalPaid || "0"),
@@ -478,7 +474,9 @@ const PurchaseManagement: React.FC = () => {
                 <div className="mt-2 text-xs text-gray-500">
                   {loading
                     ? "..."
-                    : `${((totalUnpaid / totalAmount) * 100 || 0).toFixed(1)}% of total outstanding`}
+                    : `${((totalUnpaid / totalAmount) * 100 || 0).toFixed(
+                        1
+                      )}% of total outstanding`}
                 </div>
               </div>
 
@@ -503,7 +501,9 @@ const PurchaseManagement: React.FC = () => {
                 <div className="mt-2 text-xs text-gray-500">
                   {loading
                     ? "..."
-                    : `${((totalPaid / totalAmount) * 100 || 0).toFixed(1)}% of total paid`}
+                    : `${((totalPaid / totalAmount) * 100 || 0).toFixed(
+                        1
+                      )}% of total paid`}
                 </div>
               </div>
             </div>
@@ -639,16 +639,15 @@ const PurchaseManagement: React.FC = () => {
                         Supplier
                       </label>
                       <select
-                        name="supplierId"
-                        value={filters.supplierId}
+                        name="userId"
+                        value={filters.userId}
                         onChange={handleFilterChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       >
                         <option value="">All Suppliers</option>
-                        {suppliers.map((supplier) => (
-                          <option key={supplier.id} value={supplier.id}>
-                            {supplier.user?.profile?.names ||
-                              "Unknown Supplier"}
+                        {users.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.profile?.names || "Unknown Supplier"}
                           </option>
                         ))}
                       </select>
@@ -898,9 +897,9 @@ const PurchaseManagement: React.FC = () => {
         formData={formData}
         onFormChange={handleFormChange}
         products={products}
-        suppliers={suppliers}
+        users={users}
         loadingProducts={loadingProducts}
-        loadingSuppliers={loadingSuppliers}
+        loadingUsers={loadingUsers}
         isSubmitting={isSubmitting}
         editingPurchase={!!editingPurchase}
       />

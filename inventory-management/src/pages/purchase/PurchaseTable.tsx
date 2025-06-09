@@ -1,4 +1,3 @@
-// components/PurchaseTable.tsx
 import React from "react";
 import {
   Edit2,
@@ -192,14 +191,11 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">
-                  {purchase.supplier?.user?.profile?.names ||
+                  {purchase.user?.profile?.names ||
                     "Unknown Supplier"}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {purchase.supplier?.user?.profile?.phoneNumber || "N/A"}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {purchase.supplier?.district}, {purchase.supplier?.sector}
+                  {purchase.user?.profile?.phoneNumber || "N/A"}
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">

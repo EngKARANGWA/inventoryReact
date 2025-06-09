@@ -64,7 +64,7 @@ const PurchaseCards: React.FC<PurchaseCardsProps> = ({ purchases, onView, onEdit
             <div className="mb-3">
               <p className="text-sm font-medium text-gray-700">Supplier</p>
               <p className="text-sm text-gray-900">
-                {purchase.supplier?.user?.profile?.names || "Unknown Supplier"}
+                {purchase.user?.profile?.names || "Unknown Supplier"}
               </p>
             </div>
             

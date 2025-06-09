@@ -1,13 +1,13 @@
 import React from "react";
 import { X } from "lucide-react";
-import { Product, Supplier } from "../../services/purchaseService";
+import { Product, User } from "../../services/purchaseService";
 
 interface PurchaseFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   formData: {
-    supplierId: string;
+    userId: string;
     productId: string;
     weight: string;
     unitPrice: string;
@@ -20,9 +20,9 @@ interface PurchaseFormProps {
     >
   ) => void;
   products: Product[];
-  suppliers: Supplier[];
+  users: User[];
   loadingProducts: boolean;
-  loadingSuppliers: boolean;
+  loadingUsers: boolean;
   isSubmitting: boolean;
   editingPurchase: boolean;
 }
@@ -34,9 +34,9 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
   formData,
   onFormChange,
   products,
-  suppliers,
+  users,
   loadingProducts,
-  loadingSuppliers,
+  loadingUsers,
   isSubmitting,
   editingPurchase,
 }) => {
@@ -64,35 +64,35 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
             {/* Supplier Select */}
             <div className="col-span-1">
               <label
-                htmlFor="supplierId"
+                htmlFor="userId"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Supplier <span className="text-red-500">*</span>
               </label>
               <select
-                id="supplierId"
-                name="supplierId"
-                value={formData.supplierId}
+                id="userId"
+                name="userId"
+                value={formData.userId}
                 onChange={onFormChange}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   editingPurchase ? "bg-gray-100 cursor-not-allowed" : ""
                 }`}
                 required
-                disabled={isSubmitting || loadingSuppliers || editingPurchase}
+                disabled={isSubmitting || loadingUsers || editingPurchase}
               >
                 <option value="">
-                  {loadingSuppliers
+                  {loadingUsers
                     ? "Loading suppliers..."
                     : "Select a supplier"}
                 </option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.user?.profile?.names || "Unknown Supplier"} (
-                    {supplier.supplierId})
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.profile?.names || "Unknown Supplier"} (
+                    {user.id})
                   </option>
                 ))}
               </select>
-              {!loadingSuppliers && suppliers.length === 0 && (
+              {!loadingUsers && users.length === 0 && (
                 <p className="mt-1 text-sm text-red-600">
                   No suppliers available. Please add suppliers first.
                 </p>
@@ -236,9 +236,9 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
               disabled={
                 isSubmitting ||
                 loadingProducts ||
-                loadingSuppliers ||
+                loadingUsers ||
                 (products.length === 0 && !editingPurchase) ||
-                (suppliers.length === 0 && !editingPurchase)
+                (users.length === 0 && !editingPurchase)
               }
             >
               {isSubmitting ? (

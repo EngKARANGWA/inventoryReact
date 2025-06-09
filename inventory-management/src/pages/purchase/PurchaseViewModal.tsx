@@ -239,32 +239,20 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-500">Supplier Name</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {purchase.supplier?.user?.profile?.names ||
+                    {purchase.user?.profile?.names ||
                       "Unknown Supplier"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Supplier ID</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {purchase.supplier?.supplierId || "N/A"}
+                    {purchase.userId || "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Contact</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {purchase.supplier?.user?.profile?.phoneNumber || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Location</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {purchase.supplier?.district || "N/A"}, {purchase.supplier?.sector || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">TIN Number</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {purchase.supplier?.tinNumber || "N/A"}
+                    {purchase.user?.profile?.phoneNumber || "N/A"}
                   </p>
                 </div>
               </div>

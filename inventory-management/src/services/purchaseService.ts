@@ -1,26 +1,18 @@
 import api from './authService';
 
-export interface Supplier {
+export interface User {
   id: number;
-  supplierId: string;
-  district: string;
-  sector: string;
-  cell: string;
-  tinNumber: string;
-  userId: number;
-  user: {
+  username: string;
+  email: string;
+  profile: {
     id: number;
-    username: string;
-    email: string;
-    profile: {
-      id: number;
-      names: string;
-      phoneNumber: string;
-      address: string;
-      status: string;
-    };
+    names: string;
+    phoneNumber: string;
+    address: string;
+    status: string;
   };
 }
+
 
 export interface Product {
   id: number;
@@ -129,16 +121,16 @@ export interface Purchase {
   expectedDeliveryDate: string | null;
   totalPaid: string;
   totalDelivered: string;
-  supplierId: number;
+  userId: number;
   productId: number;
   blockerId: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  supplier_id?: number;
+  user_id?: number;
   product_id?: number;
   blocker_id?: number | null;
-  supplier: Supplier;
+  user: User;
   product?: Product;
   payments: Payment[];
   deliveries: Delivery[];
@@ -153,7 +145,7 @@ export interface Purchase {
 }
 
 interface CreatePurchaseData {
-  supplierId: number;
+  userId: number;
   productId: number;
   weight: number;
   unitPrice: number;
@@ -178,7 +170,7 @@ export interface PurchaseFilterOptions {
   pageSize: number;
   status: string;
   includeDeleted: boolean;
-  supplierId?: number;
+  userId?: number;
   productId?: number;
   search?: string;
 }
@@ -192,16 +184,17 @@ interface ApiError extends Error {
 }
 
 export const purchaseService = {
-  async getAllSuppliers(): Promise<Supplier[]> {
-    try {
-      const response = await api.get('/supplier');
-      return response.data;
-    } catch (error) {
-      const err = error as ApiError;
-      console.error("Error fetching suppliers:", err);
-      return [];
-    }
-  },
+  async getAllSupplierUsers(): Promise<User[]> {
+  try {
+    const response = await api.get('/supplier');
+    return response.data;
+  } catch (error) {
+    const err = error as ApiError;
+    console.error("Error fetching supplier users:", err);
+    return [];
+  }
+}
+,
 
   async getAllProducts(): Promise<Product[]> {
     try {
@@ -260,7 +253,7 @@ export const purchaseService = {
         pageSize: options.pageSize || 10,
         status: options.status || "",
         includeDeleted: options.includeDeleted || false,
-        supplierId: options.supplierId,
+        userId: options.userId,
         productId: options.productId,
         search: options.search,
       };
@@ -272,7 +265,7 @@ export const purchaseService = {
         search: completeOptions.search,
         status: completeOptions.status,
         productId: completeOptions.productId,
-        supplierId: completeOptions.supplierId,
+        userId: completeOptions.userId,
       };
 
       const response = await api.get('/purchases', { params });
