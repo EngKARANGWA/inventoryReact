@@ -168,19 +168,19 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-500">Saler</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {selectedSale.saler?.user?.profile?.names || "Unknown Saler"}
+                    {selectedSale.saler?.profile?.names || "Unknown Saler"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Client</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {selectedSale.client?.user?.profile?.names || "N/A"}
+                    {selectedSale.client?.profile?.names || "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Blocker</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {selectedSale.blocker?.user?.profile?.names || "N/A"}
+                    {selectedSale.blocker?.profile?.names || "N/A"}
                   </p>
                 </div>
                 <div>

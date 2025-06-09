@@ -2,13 +2,20 @@ import Select from "react-select";
 import { X, Plus, Trash } from "lucide-react";
 import api from "../../services/authService";
 
-interface SaleItem {
+export interface SaleItem {
   id?: number;
-  productId: string;
+  productId: number;
   quantity: string;
   unitPrice: string;
+  totalDelivered?: string;
   note?: string;
+  product?: {
+    id: number;
+    name: string;
+    type?: string;
+  };
 }
+
 
 interface SaleFormProps {
   showAddForm: boolean;

@@ -15,32 +15,55 @@ export interface SaleItem {
 export interface Sale {
   id: number;
   saleReference: string | null;
-  quantity: string;
-  unitPrice: string;
+  totalAmount: string;
   status: string;
   expectedDeliveryDate: string;
   totalPaid: string;
-  totalDelivered: string;
   note: string;
   createdAt: string;
-  product: {
+  updatedAt: string;
+  salerId: number;
+  clientId: number | null;
+  blockerId: number | null;
+  items: Array<{
     id: number;
-    name: string;
-    type: string;
-  };
+    productId: number;
+    quantity: string;
+    unitPrice: string;
+    totalDelivered: string;
+    note: string;
+    product?: {
+      id: number;
+      name: string;
+      type?: string;
+    };
+  }>;
   saler: {
     id: number;
-    user: {
-      profile: {
-        names: string;
-      };
+    username: string;
+    email: string;
+    profile?: {
+      names: string;
     };
   };
   client: {
     id: number;
-    clientId: string;
+    username: string;
+    email: string;
+    profile?: {
+      names: string;
+    };
   } | null;
+  blocker?: {
+    id: number;
+    username: string;
+    profile?: {
+      names: string;
+    };
+  };
 }
+
+
 export interface Product {
   id: number;
   name: string;

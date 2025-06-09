@@ -44,23 +44,27 @@ interface Sale {
   }>;
   saler: {
     id: number;
-    salerId: string;
-    tinNumber: string;
-    user?: {
-      profile?: {
-        names: string;
-      };
+    username: string;
+    email: string;
+    profile?: {
+      names: string;
     };
   };
   client: {
     id: number;
-    clientId: string;
-    user?: {
-      profile?: {
-        names: string;
-      };
+    username: string;
+    email: string;
+    profile?: {
+      names: string;
     };
   } | null;
+  blocker?: {
+    id: number;
+    username: string;
+    profile?: {
+      names: string;
+    };
+  };
 }
 
 interface SortConfig {
@@ -136,22 +140,24 @@ const SalesTable: React.FC<SalesTableProps> = ({
     let totalQuantity = 0;
     let totalDelivered = 0;
     let totalValue = 0;
-    
+
     if (sale.items && sale.items.length > 0) {
-      sale.items.forEach(item => {
-        totalQuantity += parseFloat(item.quantity || '0');
-        totalDelivered += parseFloat(item.totalDelivered || '0');
-        totalValue += parseFloat(item.quantity || '0') * parseFloat(item.unitPrice || '0');
+      sale.items.forEach((item) => {
+        totalQuantity += parseFloat(item.quantity || "0");
+        totalDelivered += parseFloat(item.totalDelivered || "0");
+        totalValue +=
+          parseFloat(item.quantity || "0") * parseFloat(item.unitPrice || "0");
       });
     }
-    
+
     return {
       totalQuantity,
       totalDelivered,
       totalValue,
-      deliveryPercentage: totalQuantity > 0 
-        ? Math.min(100, Math.round((totalDelivered / totalQuantity) * 100))
-        : 0
+      deliveryPercentage:
+        totalQuantity > 0
+          ? Math.min(100, Math.round((totalDelivered / totalQuantity) * 100))
+          : 0,
     };
   };
 
@@ -165,7 +171,7 @@ const SalesTable: React.FC<SalesTableProps> = ({
 
   const formatCurrency = (amount: string | number | null) => {
     if (amount === null || amount === undefined) return "N/A";
-    const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const value = typeof amount === "string" ? parseFloat(amount) : amount;
     return `${value.toLocaleString()} RWF`;
   };
 
@@ -247,9 +253,14 @@ const SalesTable: React.FC<SalesTableProps> = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sales.map((sale) => {
-            const { totalQuantity, totalDelivered, totalValue, deliveryPercentage } = calculateSaleTotals(sale);
+            const {
+              totalQuantity,
+              totalDelivered,
+              totalValue,
+              deliveryPercentage,
+            } = calculateSaleTotals(sale);
             const paymentPercentage = getPaymentPercentage(sale);
-            
+
             return (
               <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -271,13 +282,8 @@ const SalesTable: React.FC<SalesTableProps> = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center mb-2">
                     <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {sale.saler?.user?.profile?.names || "N/A"}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {sale.saler?.salerId || "N/A"} | {sale.saler?.tinNumber || "No TIN"}
-                      </div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {sale.saler?.profile?.names || "N/A"}
                     </div>
                   </div>
                   {sale.client && (
@@ -285,10 +291,7 @@ const SalesTable: React.FC<SalesTableProps> = ({
                       <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
                       <div>
                         <div className="text-sm text-gray-900">
-                          {sale.client?.user?.profile?.names || "N/A"}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {sale.client?.clientId || "N/A"}
+                          {sale.client?.profile?.names || "N/A"}
                         </div>
                       </div>
                     </div>
@@ -299,16 +302,20 @@ const SalesTable: React.FC<SalesTableProps> = ({
                     <>
                       <div className="text-sm text-gray-900">
                         {sale.items[0].product?.name || "N/A"}
-                        {sale.items.length > 1 && ` + ${sale.items.length - 1} more`}
+                        {sale.items.length > 1 &&
+                          ` + ${sale.items.length - 1} more`}
                       </div>
                       <div className="flex items-center text-xs text-gray-500">
                         <ShoppingCart className="w-3 h-3 mr-1" />
-                        {sale.items.length} {sale.items.length === 1 ? "item" : "items"}
+                        {sale.items.length}{" "}
+                        {sale.items.length === 1 ? "item" : "items"}
                       </div>
                       {sale.items[0].note && (
                         <div className="text-xs text-gray-500 mt-1 flex items-start">
                           <FileText className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                          <span className="truncate max-w-xs">{sale.items[0].note}</span>
+                          <span className="truncate max-w-xs">
+                            {sale.items[0].note}
+                          </span>
                         </div>
                       )}
                     </>
@@ -334,7 +341,8 @@ const SalesTable: React.FC<SalesTableProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-xs text-gray-500">
-                    Delivered: {totalDelivered.toLocaleString()} Kg ({deliveryPercentage}%)
+                    Delivered: {totalDelivered.toLocaleString()} Kg (
+                    {deliveryPercentage}%)
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                     <div
@@ -342,9 +350,10 @@ const SalesTable: React.FC<SalesTableProps> = ({
                       style={{ width: `${deliveryPercentage}%` }}
                     ></div>
                   </div>
-                  
+
                   <div className="text-xs text-gray-500 mt-2">
-                    Paid: {formatCurrency(sale.totalPaid)} ({paymentPercentage}%)
+                    Paid: {formatCurrency(sale.totalPaid)} ({paymentPercentage}
+                    %)
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                     <div
@@ -366,8 +375,11 @@ const SalesTable: React.FC<SalesTableProps> = ({
                     <div className="text-xs mt-1">
                       {(() => {
                         const today = new Date();
-                        const deliveryDate = new Date(sale.expectedDeliveryDate);
-                        const diffTime = deliveryDate.getTime() - today.getTime();
+                        const deliveryDate = new Date(
+                          sale.expectedDeliveryDate
+                        );
+                        const diffTime =
+                          deliveryDate.getTime() - today.getTime();
                         const diffDays = Math.ceil(
                           diffTime / (1000 * 60 * 60 * 24)
                         );

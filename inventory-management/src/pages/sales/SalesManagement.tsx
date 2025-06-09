@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {Sidebar} from "../../components/ui/sidebar";
+import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import { ShoppingCart, Plus } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { saleService } from "../../services/saleService";
 import { Product, Saler, Client, Blocker, SortConfig } from "./sale";
-import api from '../../services/authService';
-
+import api from "../../services/authService";
 
 // Import the new components
 import { SalesStats } from "./SalesStats";
@@ -18,7 +17,6 @@ import { SalesCards } from "./SalesCards";
 import { SaleDetailsModal } from "./SaleDetailsModal";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { SalesPagination } from "./SalesPagination";
-
 
 const SaleManagement: React.FC = () => {
   const [sales, setSales] = useState<any[]>([]);
@@ -123,47 +121,40 @@ const SaleManagement: React.FC = () => {
           api.get(`/blockers?search=${blockersSearch}`),
         ]);
 
-      // Handle products response
-      const productsData = productsRes.data.success
-        ? productsRes.data.data
-        : productsRes.data;
+      // Handle products
       setProducts(
-        (productsData || []).map((product: any) => ({
-          id: product.id,
-          name: product.name,
-        }))
+        (productsRes.data.success ? productsRes.data.data : productsRes.data) ||
+          []
       );
 
-      // Handle salers response
-      const salersData = salersRes.data.success
-        ? salersRes.data.data
-        : salersRes.data;
+      // Updated Salers
       setSalers(
-        (salersData || []).map((saler: any) => ({
-          id: saler.id,
-          name: saler.user?.profile?.names || "Unknown Saler",
-        }))
+        (salersRes.data.success ? salersRes.data.data : salersRes.data).map(
+          (saler: any) => ({
+            id: saler.id,
+            name: saler.profile?.names || "Unknown Saler",
+          })
+        )
       );
 
-      // Handle clients response
-      const clientsData = clientsRes.data.success
-        ? clientsRes.data.data
-        : clientsRes.data;
+      // Updated Clients
       setClients(
-        (clientsData || []).map((client: any) => ({
-          id: client.id,
-          name: client.user?.profile?.names || "Unknown Client",
-        }))
+        (clientsRes.data.success ? clientsRes.data.data : clientsRes.data).map(
+          (client: any) => ({
+            id: client.id,
+            name: client.profile?.names || "Unknown Client",
+          })
+        )
       );
 
-      // Handle blockers response
-      const blockersData = blockersRes.data.success
-        ? blockersRes.data.data
-        : blockersRes.data;
+      // Updated Blockers
       setBlockers(
-        (blockersData || []).map((blocker: any) => ({
+        (blockersRes.data.success
+          ? blockersRes.data.data
+          : blockersRes.data
+        ).map((blocker: any) => ({
           id: blocker.id,
-          name: blocker.user?.profile?.names || "Unknown Blocker",
+          name: blocker.profile?.names || "Unknown Blocker",
         }))
       );
     } catch (error) {
@@ -380,7 +371,6 @@ const SaleManagement: React.FC = () => {
       );
     });
   }, [sortedSales, filters.search]);
-
 
   const getStatusBadge = (sale: any) => {
     const unitPrice = sale.unitPrice ? parseFloat(sale.unitPrice) : 0;
