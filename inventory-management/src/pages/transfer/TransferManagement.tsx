@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {Sidebar} from "../../components/ui/sidebar";
+import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import { AlertCircle, RefreshCw, Truck } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
@@ -27,18 +27,19 @@ interface Product {
   type: string;
 }
 
-interface UserProfile {
-  names: string;
-}
-
-interface User {
-  profile?: UserProfile;
-}
 
 interface Driver {
   id: number;
-  driverId: string;
-  user?: User;
+  username: string;
+  email: string;
+  profile?: {
+    names: string;
+  };
+  roles: {
+    id: number;
+    name: string;
+    description: string;
+  }[];
 }
 
 interface TransferFilters {
@@ -70,9 +71,7 @@ const TransferManagement: React.FC = () => {
   const [driversOptions, setDriversOptions] = useState<
     { value: number; label: string }[]
   >([]);
-  const [warehouseOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
+  const [warehouseOptions] = useState<{ value: number; label: string }[]>([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [transferToDelete, setTransferToDelete] = useState<number | null>(null);
   const [viewType, setViewType] = useState<"table" | "cards">("table");
@@ -151,11 +150,14 @@ const TransferManagement: React.FC = () => {
       setProductsOptions(formattedProducts);
 
       // Fetch drivers
-      const driversResponse = await driverService.getAllDrivers();
-      const formattedDrivers = driversResponse.map((driver: Driver) => ({
+      const response = await driverService.getAllDrivers();
+      const driversResponse = response as unknown as Driver[];
+
+      const formattedDrivers = driversResponse.map((driver) => ({
         value: driver.id,
-        label: driver.user?.profile?.names || `Driver ${driver.driverId}`,
+        label: driver.profile?.names || driver.username,
       }));
+
       setDriversOptions(formattedDrivers);
     } catch (error: any) {
       console.error("Error fetching dropdown options:", error);

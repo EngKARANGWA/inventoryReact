@@ -147,10 +147,8 @@ const TransferViewModal: React.FC<TransferViewModalProps> = ({ transfer, onClose
                 <div>
                   <p className="text-sm text-gray-500">Driver</p>
                   <div className="text-sm font-medium text-gray-900">
-                    <p>ID: {transfer.driver?.driverId || "N/A"}</p>
-                    <p className="text-xs text-gray-500">
-                      License: {transfer.driver?.licenseNumber || "Not specified"}
-                    </p>
+                    <p>{transfer.driver?.user?.profile?.names || "N/A"}</p>
+                  
                   </div>
                 </div>
                 {transfer.note && (

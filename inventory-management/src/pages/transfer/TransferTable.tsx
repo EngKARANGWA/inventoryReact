@@ -119,8 +119,7 @@ const TransferTable: React.FC<TransferTableProps> = ({
                   <div className="text-sm text-gray-900">{formatNumber(transfer.quantity)} Kg</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{transfer.driver?.driverId || "N/A"}</div>
-                  <div className="text-xs text-gray-500">{transfer.driver?.licenseNumber || ""}</div>
+                  <div className="text-sm text-gray-900">{transfer.driver?.user?.profile?.names || "N/A"}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">

@@ -60,7 +60,7 @@ const TransferCard: React.FC<TransferCardProps> = ({ transfer, onView, onEdit, o
           <div>
             <p className="text-sm font-medium text-gray-700">Driver</p>
             <p className="text-sm text-gray-900">
-              {transfer.driver?.driverId || "N/A"}
+              {transfer.driver?.user?.profile?.names || "N/A"}
             </p>
           </div>
         </div>
