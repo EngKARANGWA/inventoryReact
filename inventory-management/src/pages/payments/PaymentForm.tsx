@@ -31,12 +31,19 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     transactionReference: "",
     purchaseId: "",
     saleId: "",
+    paidAt: "",
   });
   const [file, setFile] = useState<File | null>(null);
   const [purchasesLoading, setPurchasesLoading] = useState(false);
   const [salesLoading, setSalesLoading] = useState(false);
   const [purchasesOptions, setPurchasesOptions] = useState<
-    { value: number; label: string; totalPaid: number; weight: number; unitPrice: number }[]
+    {
+      value: number;
+      label: string;
+      totalPaid: number;
+      weight: number;
+      unitPrice: number;
+    }[]
   >([]);
   const [salesOptions, setSalesOptions] = useState<
     { value: number; label: string; totalPaid: number; totalAmount: number }[]
@@ -53,6 +60,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         transactionReference: payment.transactionReference || "",
         purchaseId: payment.purchaseId?.toString() || "",
         saleId: payment.saleId?.toString() || "",
+        paidAt: payment.paidAt
+          ? new Date(payment.paidAt).toISOString().slice(0, 10)
+          : "",
       });
 
       // Load the correct options based on the payment's payableType
@@ -78,7 +88,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         (p) => p.value.toString() === formData.purchaseId
       );
       if (selectedPurchase) {
-        const totalAmount = selectedPurchase.weight * selectedPurchase.unitPrice;
+        const totalAmount =
+          selectedPurchase.weight * selectedPurchase.unitPrice;
         const remaining = totalAmount - selectedPurchase.totalPaid;
         setRemainingAmount(remaining > 0 ? remaining : 0);
       }
@@ -103,14 +114,14 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       const filteredPurchases = purchases.filter(
         (p: any) => p.status !== "delivery_complete" && p.status !== "completed"
       );
-      
+
       setPurchasesOptions(
         filteredPurchases.map((purchase: any) => ({
           value: purchase.id,
           label: `${purchase.purchaseReference} (${purchase.description})`,
           totalPaid: parseFloat(purchase.totalPaid) || 0,
           weight: parseFloat(purchase.weight) || 0,
-          unitPrice: parseFloat(purchase.unitPrice) || 0
+          unitPrice: parseFloat(purchase.unitPrice) || 0,
         }))
       );
     } catch (error) {
@@ -128,15 +139,17 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       const filteredSales = sales.filter(
         (s: any) => s.status !== "completed" && s.status !== "payment_complete"
       );
-      
+
       setSalesOptions(
         filteredSales.map((sale: any) => ({
           value: sale.id,
           label: `${sale.saleReference} - ${
             sale.client?.user?.profile?.names || "Unknown"
-          } (Total: ${formatNumber(sale.totalAmount)} RWF, Paid: ${formatNumber(sale.totalPaid)} RWF)`,
+          } (Total: ${formatNumber(sale.totalAmount)} RWF, Paid: ${formatNumber(
+            sale.totalPaid
+          )} RWF)`,
           totalPaid: parseFloat(sale.totalPaid) || 0,
-          totalAmount: parseFloat(sale.totalAmount) || 0
+          totalAmount: parseFloat(sale.totalAmount) || 0,
         }))
       );
     } catch (error) {
@@ -147,16 +160,19 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   };
 
   const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(!payment && name === "payableType" && {
-        purchaseId: "",
-        saleId: "",
-      }),
+      ...(!payment &&
+        name === "payableType" && {
+          purchaseId: "",
+          saleId: "",
+        }),
     }));
   };
 
@@ -172,31 +188,34 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
     try {
       const amountValue = parseFloat(formData.amount.replace(/,/g, ""));
-      
+
       // For edit mode, only include fields that can be changed
-      const paymentData = payment ? {
-        amount: amountValue,
-        paymentMethod: formData.paymentMethod as
-          | "bank_transfer"
-          | "cheque"
-          | "cash"
-          | "mobile_money",
-        transactionReference: formData.transactionReference,
-      } : {
-        amount: amountValue,
-        payableType: formData.payableType as "purchase" | "sale",
-        paymentMethod: formData.paymentMethod as
-          | "bank_transfer"
-          | "cheque"
-          | "cash"
-          | "mobile_money",
-        ...(formData.payableType === "purchase" && {
-          purchaseId: parseInt(formData.purchaseId),
-        }),
-        ...(formData.payableType === "sale" && {
-          saleId: parseInt(formData.saleId),
-        }),
-      };
+      const paymentData = payment
+        ? {
+            amount: amountValue,
+            paymentMethod: formData.paymentMethod as
+              | "bank_transfer"
+              | "cheque"
+              | "cash"
+              | "mobile_money",
+            transactionReference: formData.transactionReference,
+          }
+        : {
+            amount: amountValue,
+            payableType: formData.payableType as "purchase" | "sale",
+            paymentMethod: formData.paymentMethod as
+              | "bank_transfer"
+              | "cheque"
+              | "cash"
+              | "mobile_money",
+            ...(formData.payableType === "purchase" && {
+              purchaseId: parseInt(formData.purchaseId),
+            }),
+            ...(formData.payableType === "sale" && {
+              saleId: parseInt(formData.saleId),
+            }),
+            paidAt: formData.paidAt ? new Date(formData.paidAt) : null,
+          };
 
       let result;
       if (payment) {
@@ -380,6 +399,21 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
               <option value="cheque">Cheque</option>
             </select>
           </div>
+          {/* Paid At */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Paid At <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              name="paidAt"
+              value={formData.paidAt}
+              onChange={handleFormChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              disabled={isSubmitting}
+            />
+          </div>
 
           {/* Transaction Reference (File Upload) */}
           <div>
@@ -418,11 +452,11 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
               isSubmitting ||
               !formData.amount ||
               !formData.paymentMethod ||
-              (!payment && (
-                !formData.payableType ||
-                (formData.payableType === "purchase" && !formData.purchaseId) ||
-                (formData.payableType === "sale" && !formData.saleId)
-              ))
+              (!payment &&
+                (!formData.payableType ||
+                  (formData.payableType === "purchase" &&
+                    !formData.purchaseId) ||
+                  (formData.payableType === "sale" && !formData.saleId)))
             }
           >
             {isSubmitting ? (

@@ -188,7 +188,7 @@ const DeliveryManagement: React.FC = () => {
       const searchLower = searchTerm.toLowerCase();
       return (
         delivery.deliveryReference.toLowerCase().includes(searchLower) ||
-        (delivery.driver?.user?.profile?.names
+        (delivery.driver?.profile?.names
           ?.toLowerCase()
           .includes(searchLower) ??
           false) ||
