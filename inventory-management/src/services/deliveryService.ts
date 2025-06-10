@@ -1,4 +1,4 @@
-import api  from './authService';
+import api from "./authService";
 
 // Keep all your existing interfaces
 export interface SaleItem {
@@ -36,7 +36,7 @@ export interface Delivery {
   quantity: string;
   purchaseId: number | null;
   saleId: number | null;
-  saleItemId: number | null; 
+  saleItemId: number | null;
   driverId: number;
   unitPrice: string;
   productId: number | null;
@@ -46,14 +46,15 @@ export interface Delivery {
   deletedAt: string | null;
   driver?: {
     id: number;
-    driverId: string;
-    licenseNumber: string;
-    user?: {
-      profile?: {
-        names: string;
-      };
+    username: string;
+    email: string;
+    profile?: {
+      names: string;
+      phoneNumber: string;
+      address: string;
     };
   };
+
   product?: {
     id: number;
     name: string;
@@ -76,13 +77,15 @@ export interface Delivery {
     expectedDeliveryDate?: string;
     totalPaid?: string;
     totalDelivered?: string;
-    supplier?: {
+    user?: {
       id: number;
-      supplierId: string;
-      district?: string;
-      sector?: string;
-      cell?: string;
-      tinNumber?: string;
+      username: string;
+      email: string;
+      profile?: {
+        names: string;
+        phoneNumber: string;
+        address: string;
+      };
     };
   } | null;
   sale?: {
@@ -139,7 +142,7 @@ export interface DeliveryResponse {
 export const deliveryService = {
   async createDelivery(deliveryData: CreateDeliveryData): Promise<Delivery> {
     try {
-      const response = await api.post('/deliveries', deliveryData);
+      const response = await api.post("/deliveries", deliveryData);
       return response.data;
     } catch (error) {
       console.error("Error creating delivery:", error);
@@ -147,10 +150,12 @@ export const deliveryService = {
     }
   },
 
-  async getAllDeliveries(filterOptions?: DeliveryFilterOptions): Promise<DeliveryResponse> {
+  async getAllDeliveries(
+    filterOptions?: DeliveryFilterOptions
+  ): Promise<DeliveryResponse> {
     try {
-      const response = await api.get('/deliveries', {
-        params: filterOptions
+      const response = await api.get("/deliveries", {
+        params: filterOptions,
       });
       return response.data;
     } catch (error) {
@@ -164,10 +169,13 @@ export const deliveryService = {
     }
   },
 
-  async getDeliveryById(id: number, includeDeleted: boolean = false): Promise<Delivery | null> {
+  async getDeliveryById(
+    id: number,
+    includeDeleted: boolean = false
+  ): Promise<Delivery | null> {
     try {
       const response = await api.get(`/deliveries/${id}`, {
-        params: { includeDeleted }
+        params: { includeDeleted },
       });
       return response.data;
     } catch (error) {
@@ -176,7 +184,10 @@ export const deliveryService = {
     }
   },
 
-  async updateDelivery(id: number, deliveryData: UpdateDeliveryData): Promise<Delivery> {
+  async updateDelivery(
+    id: number,
+    deliveryData: UpdateDeliveryData
+  ): Promise<Delivery> {
     try {
       const response = await api.put(`/deliveries/${id}`, deliveryData);
       return response.data;

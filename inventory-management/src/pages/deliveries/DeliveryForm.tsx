@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import Select from "react-select";
-import { Delivery, deliveryService, SaleItem } from "../../services/deliveryService";
+import {
+  Delivery,
+  deliveryService,
+  SaleItem,
+} from "../../services/deliveryService";
 import { toast } from "react-toastify";
-import api  from '../../services/authService';
-
+import api from "../../services/authService";
 
 interface DeliveryFormProps {
   editingDelivery: Delivery | null;
@@ -25,13 +28,12 @@ interface Warehouse {
 
 interface Driver {
   id: number;
-  driverId: string;
-  licenseNumber: string;
-  user?: {
-    profile?: {
-      names: string;
-    };
+  username: string;
+  email: string;
+  profile?: {
+    names: string;
   };
+  roles?: { name: string }[];
 }
 
 interface Purchase {
@@ -85,7 +87,9 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
-  const [remainingQuantity, setRemainingQuantity] = useState<number | null>(null);
+  const [remainingQuantity, setRemainingQuantity] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     if (editingDelivery) {
@@ -105,19 +109,27 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   // Update to check for the remaining quantity based on the correct relationship
   useEffect(() => {
     if (formData.direction === "in" && formData.purchaseId) {
-      const selectedPurchase = purchases.find(p => p.id.toString() === formData.purchaseId);
+      const selectedPurchase = purchases.find(
+        (p) => p.id.toString() === formData.purchaseId
+      );
       if (selectedPurchase) {
         const totalWeight = parseFloat(selectedPurchase.weight);
-        const totalDelivered = parseFloat(selectedPurchase.totalDelivered || "0");
+        const totalDelivered = parseFloat(
+          selectedPurchase.totalDelivered || "0"
+        );
         const remaining = totalWeight - totalDelivered;
         setRemainingQuantity(remaining > 0 ? remaining : 0);
       }
     } else if (formData.direction === "out" && formData.saleItemId) {
       // If a sale item is selected, calculate remaining quantity based on that specific item
-      const selectedSaleItem = saleItems.find(item => item.id.toString() === formData.saleItemId);
+      const selectedSaleItem = saleItems.find(
+        (item) => item.id.toString() === formData.saleItemId
+      );
       if (selectedSaleItem) {
         const totalQuantity = parseFloat(selectedSaleItem.quantity);
-        const totalDelivered = parseFloat(selectedSaleItem.totalDelivered || "0");
+        const totalDelivered = parseFloat(
+          selectedSaleItem.totalDelivered || "0"
+        );
         const remaining = totalQuantity - totalDelivered;
         setRemainingQuantity(remaining > 0 ? remaining : 0);
       }
@@ -129,7 +141,9 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   // Update to load sale items when a sale is selected
   useEffect(() => {
     if (formData.saleId) {
-      const selectedSale = sales.find(s => s.id.toString() === formData.saleId);
+      const selectedSale = sales.find(
+        (s) => s.id.toString() === formData.saleId
+      );
       if (selectedSale && selectedSale.items) {
         setSaleItems(selectedSale.items);
       } else {
@@ -142,10 +156,10 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
 
   const loadSaleItems = async (saleId: string) => {
     try {
-      const response = await api.get(`/sales/${saleId}`, { 
-        params: { include: "items.product" }
+      const response = await api.get(`/sales/${saleId}`, {
+        params: { include: "items.product" },
       });
-      
+
       if (response.data?.items) {
         setSaleItems(response.data.items);
       } else {
@@ -163,35 +177,36 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
       setLoadingWarehouses(true);
 
       // Fetch drivers with user profile included
-      const driversRes = await api.get('/drivers', {
-        params: { include: "user.profile" }
+      const driversRes = await api.get("/drivers", {
+        params: { include: "user.profile" },
       });
       setDrivers(driversRes.data?.data || driversRes.data || []);
 
       // Fetch warehouses
-      const warehousesRes = await api.get('/warehouse');
+      const warehousesRes = await api.get("/warehouse");
       setWarehouses(warehousesRes.data?.data || warehousesRes.data || []);
 
       if (formData.direction === "in") {
         setLoadingPurchases(true);
-        const purchasesRes = await api.get('/purchases', {
-          params: { 
+        const purchasesRes = await api.get("/purchases", {
+          params: {
             include: "product",
-            search: purchasesSearch
+            search: purchasesSearch,
           },
         });
         const data = purchasesRes.data?.data || purchasesRes.data || [];
         const filteredPurchases = data.filter(
-          (p: Purchase) => p.status !== "delivery_complete" && p.status !== "completed"
+          (p: Purchase) =>
+            p.status !== "delivery_complete" && p.status !== "completed"
         );
         setPurchases(filteredPurchases);
         setLoadingPurchases(false);
       } else if (formData.direction === "out") {
         setLoadingSales(true);
-        const salesRes = await api.get('/sales', {
-          params: { 
+        const salesRes = await api.get("/sales", {
+          params: {
             include: "items.product",
-            search: salesSearch
+            search: salesSearch,
           },
         });
         const data = salesRes.data?.data || salesRes.data || [];
@@ -215,7 +230,9 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   }, [formData.direction, purchasesSearch, salesSearch]);
 
   const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -249,7 +266,9 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         ...(formData.direction === "out" && formData.saleItemId
           ? { saleItemId: Number(formData.saleItemId) }
           : {}),
-        ...(formData.direction === "out" && formData.saleId && !formData.saleItemId
+        ...(formData.direction === "out" &&
+        formData.saleId &&
+        !formData.saleItemId
           ? { saleId: Number(formData.saleId) }
           : {}),
       };
@@ -273,19 +292,24 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
       }
 
       setShowAddForm(false);
-      
+
       // Call the onSuccess callback to refresh the list
       if (onSuccess) {
         onSuccess();
       }
     } catch (err: any) {
       console.error("Error saving delivery:", err);
-      
+
       // Handle INSUFFICIENT_STOCK error specifically
       if (err.response?.data?.code === "INSUFFICIENT_STOCK") {
         const errorData = err.response.data;
         toast.error(
-          `Insufficient stock available. Current: ${errorData.message.match(/Current: (\d+\.?\d*)/)?.[1] || 'N/A'} Kg, Required: ${errorData.message.match(/Required: (\d+\.?\d*)/)?.[1] || formData.quantity} Kg`,
+          `Insufficient stock available. Current: ${
+            errorData.message.match(/Current: (\d+\.?\d*)/)?.[1] || "N/A"
+          } Kg, Required: ${
+            errorData.message.match(/Required: (\d+\.?\d*)/)?.[1] ||
+            formData.quantity
+          } Kg`,
           {
             autoClose: 7000, // Show for longer time
           }
@@ -295,7 +319,11 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
           autoClose: 7000,
         });
       } else {
-        toast.error(err.response?.data?.message || err.message || "Failed to save delivery");
+        toast.error(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to save delivery"
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -304,17 +332,21 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
 
   const salesOptions = sales.map((sale) => ({
     value: sale.id,
-    label: `${sale.saleReference} (Total: ${sale.totalAmount || '0'})`,
+    label: `${sale.saleReference} (Total: ${sale.totalAmount || "0"})`,
   }));
 
   const saleItemOptions = saleItems.map((item) => ({
     value: item.id,
-    label: `${item.product?.name || 'Product'} - ${item.quantity} Kg (Delivered: ${item.totalDelivered || '0'} Kg)`,
+    label: `${item.product?.name || "Product"} - ${
+      item.quantity
+    } Kg (Delivered: ${item.totalDelivered || "0"} Kg)`,
   }));
 
   const purchasesOptions = purchases.map((purchase) => ({
     value: purchase.id,
-    label: `${purchase.purchaseReference} (${purchase.product?.name || "Unknown Product"})`,
+    label: `${purchase.purchaseReference} (${
+      purchase.product?.name || "Unknown Product"
+    })`,
   }));
 
   return (
@@ -375,8 +407,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                     }));
                   }}
                   value={purchasesOptions.find(
-                    (option) =>
-                      option.value.toString() === formData.purchaseId
+                    (option) => option.value.toString() === formData.purchaseId
                   )}
                   placeholder="Search and select purchase..."
                   className="basic-single"
@@ -387,7 +418,8 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 />
                 {!loadingPurchases && purchasesOptions.length === 0 && (
                   <p className="mt-1 text-sm text-red-600">
-                    No purchases available or all purchases are already completed.
+                    No purchases available or all purchases are already
+                    completed.
                   </p>
                 )}
               </div>
@@ -446,7 +478,8 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                         }));
                       }}
                       value={saleItemOptions.find(
-                        (option) => option.value.toString() === formData.saleItemId
+                        (option) =>
+                          option.value.toString() === formData.saleItemId
                       )}
                       placeholder="Select sale item..."
                       className="basic-single"
@@ -457,7 +490,8 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                     />
                     {formData.saleId && saleItemOptions.length === 0 && (
                       <p className="mt-1 text-sm text-red-600">
-                        No items available for this sale or all items are already delivered.
+                        No items available for this sale or all items are
+                        already delivered.
                       </p>
                     )}
                   </div>
@@ -488,11 +522,13 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 step="0.01"
                 max={remainingQuantity?.toString() || undefined}
               />
-              {remainingQuantity !== null && Number(formData.quantity) > remainingQuantity && (
-                <p className="mt-1 text-sm text-red-600">
-                  Quantity exceeds remaining amount ({remainingQuantity.toLocaleString()} Kg)
-                </p>
-              )}
+              {remainingQuantity !== null &&
+                Number(formData.quantity) > remainingQuantity && (
+                  <p className="mt-1 text-sm text-red-600">
+                    Quantity exceeds remaining amount (
+                    {remainingQuantity.toLocaleString()} Kg)
+                  </p>
+                )}
             </div>
 
             {/* Warehouse selection */}
@@ -539,18 +575,14 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 onChange={handleFormChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
-                disabled={
-                  !!editingDelivery || isSubmitting || loadingDrivers
-                }
+                disabled={!!editingDelivery || isSubmitting || loadingDrivers}
               >
                 <option value="">
-                  {loadingDrivers
-                    ? "Loading drivers..."
-                    : "Select a driver"}
+                  {loadingDrivers ? "Loading drivers..." : "Select a driver"}
                 </option>
                 {drivers.map((driver) => (
                   <option key={driver.id} value={driver.id}>
-                    {driver.user?.profile?.names || `Driver ${driver.driverId}`}
+                    {driver.profile?.names || driver.username}
                   </option>
                 ))}
               </select>
@@ -601,8 +633,11 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 !formData.warehouseId ||
                 (formData.direction === "in" && !formData.purchaseId) ||
                 (formData.direction === "out" && !formData.saleId) ||
-                (formData.direction === "out" && formData.saleId && !formData.saleItemId) ||
-                (remainingQuantity !== null && Number(formData.quantity) > remainingQuantity)
+                (formData.direction === "out" &&
+                  formData.saleId &&
+                  !formData.saleItemId) ||
+                (remainingQuantity !== null &&
+                  Number(formData.quantity) > remainingQuantity)
               }
             >
               {isSubmitting ? (

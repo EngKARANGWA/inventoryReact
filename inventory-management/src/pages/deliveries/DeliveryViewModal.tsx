@@ -119,7 +119,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                   <div>
                     <p className="text-xs text-gray-500">Driver</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.driver?.user?.profile?.names ||
+                      {selectedDelivery.driver?.profile?.names ||
                         "N/A"}
                     </p>
                   </div>
@@ -206,7 +206,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                   <div>
                     <p className="text-xs text-gray-500">Supplier</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.purchase?.supplier?.supplierId ||
+                      {selectedDelivery.purchase?.user?.profile?.names ||
                         "N/A"}
                     </p>
                   </div>
