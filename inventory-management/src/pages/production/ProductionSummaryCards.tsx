@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  Factory,
-  Banknote,
-  Activity,
-} from "lucide-react";
+import { Factory, Banknote, Activity } from "lucide-react";
 import { formatCurrency } from "./utils";
 import { Production, ProductionCost, ProductionOutcome } from "./types"; // Import your types
 
@@ -20,15 +16,18 @@ const ProductionSummaryCards: React.FC<ProductionSummaryCardsProps> = ({
 }) => {
   // Calculate metrics from productions data
   const metrics = productions.reduce(
-    (acc: {
-      totalQuantity: number;
-      totalInputQuantity: number;
-      totalNetCost: number;
-      totalLoss: number;
-      totalEfficiency: number;
-      efficiencyCount: number;
-      byproductRevenue: number;
-    }, production: Production) => {
+    (
+      acc: {
+        totalQuantity: number;
+        totalInputQuantity: number;
+        totalNetCost: number;
+        totalLoss: number;
+        totalEfficiency: number;
+        efficiencyCount: number;
+        byproductRevenue: number;
+      },
+      production: Production
+    ) => {
       const totalOutcome = production.totalOutcome || 0;
       const usedQuantity = production.usedQuantity || 0;
       const efficiency = production.efficiency
@@ -38,8 +37,9 @@ const ProductionSummaryCards: React.FC<ProductionSummaryCardsProps> = ({
 
       // Calculate production cost
       const materialCost =
-        production.mainProductUnitCost && production.usedQuantity
-          ? production.mainProductUnitCost * production.usedQuantity
+        production.mainProductUnitPrice && production.usedQuantity
+          ? Number(production.mainProductUnitPrice) *
+            Number(production.usedQuantity)
           : 0;
 
       const additionalCosts = (production.productionCost || []).reduce(
@@ -51,10 +51,12 @@ const ProductionSummaryCards: React.FC<ProductionSummaryCardsProps> = ({
       // Calculate byproduct revenue
       const byproductRevenue = (production.outcomes || [])
         .filter(
-          (outcome: ProductionOutcome) => outcome.outcomeType === "byproduct" && outcome.unitPrice
+          (outcome: ProductionOutcome) =>
+            outcome.outcomeType === "byproduct" && outcome.unitPrice
         )
         .reduce(
-          (sum: number, outcome: ProductionOutcome) => sum + outcome.quantity * (outcome.unitPrice || 0),
+          (sum: number, outcome: ProductionOutcome) =>
+            sum + outcome.quantity * (outcome.unitPrice || 0),
           0
         );
 

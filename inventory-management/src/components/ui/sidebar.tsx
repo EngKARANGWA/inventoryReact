@@ -17,6 +17,7 @@ import {
   HandCoins,
   Banknote,
   Settings,
+  Coins,
 } from 'lucide-react';
 import { getCurrentUser } from "../../services/authService";
 
@@ -82,6 +83,12 @@ const allNavigationItems: NavItem[] = [
     name: 'Products', 
     href: '/dashboard/products', 
     icon: Package 
+  },
+  { 
+    name: 'Petit Cash', 
+    href: '/dashboard/ptcash', 
+    icon: Coins,
+    allowedRoles: ['ADMIN', 'MANAGER', 'CASHIER']
   },
   { 
     name: 'Stock', 

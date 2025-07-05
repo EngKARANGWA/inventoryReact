@@ -62,7 +62,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({ ...formData, username: formData.email });
   };
 
   const handleChange = (field: keyof FormData, value: string) => {
@@ -122,7 +122,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
                 placeholder="Enter Full names"
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 User Name
               </label>
@@ -134,7 +134,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter full name"
               />
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -209,7 +209,7 @@ case "manager":
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 User Name
               </label>
@@ -221,7 +221,7 @@ case "manager":
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
               />
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -304,7 +304,7 @@ case "manager":
                 placeholder="Enter full Name"
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 User Name
               </label>
@@ -316,7 +316,7 @@ case "manager":
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
               />
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone Number
@@ -391,7 +391,7 @@ case "manager":
                 placeholder="Enter full name"
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 User Name
               </label>
@@ -403,7 +403,7 @@ case "manager":
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter user name"
               />
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone Number
@@ -494,7 +494,7 @@ return (
     placeholder="Enter full name"
   />
 </div>
-<div>
+{/* <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     User Name
   </label>
@@ -506,7 +506,7 @@ return (
     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     placeholder="Enter user name"
   />
-</div>
+</div> */}
 <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Phone Number
@@ -581,7 +581,7 @@ return (
     placeholder="Enter full Name"
   />
 </div>
-<div>
+{/* <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     User Name
   </label>
@@ -593,7 +593,7 @@ return (
     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     placeholder="Enter user name"
   />
-</div>
+</div> */}
 <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Phone Number
@@ -668,7 +668,7 @@ return (
     placeholder="Enter full name"
   />
 </div>
-<div>
+{/* <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     User Name
   </label>
@@ -680,7 +680,7 @@ return (
     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     placeholder="Enter user name"
   />
-</div>
+</div> */}
 <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Phone Number
@@ -768,7 +768,7 @@ return (
     placeholder="Enter full names"
   />
 </div>
-<div>
+{/* <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     User Name
   </label>
@@ -780,7 +780,7 @@ return (
     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     placeholder="Enter user name"
   />
-</div>
+</div> */}
 <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Email
@@ -924,7 +924,7 @@ return (
   />
 </div>
 
-<div>
+{/* <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     User Name
   </label>
@@ -936,7 +936,7 @@ return (
     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     placeholder="User Name"
   />
-</div>
+</div> */}
 <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Phone Number
@@ -998,7 +998,7 @@ return (
     placeholder="Enter Full Names"
   />
 </div>
-<div>
+{/* <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     User Name
   </label>
@@ -1010,7 +1010,7 @@ return (
     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     placeholder="User Name"
   />
-</div>
+</div> */}
 <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Email

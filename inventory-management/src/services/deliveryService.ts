@@ -94,8 +94,13 @@ export interface Delivery {
     saleReference?: string;
     note?: string;
     status?: string;
+    totalPaid: string;
+    totalAmount: string;
     client?: {
       name?: string;
+      profile?: {
+        names: string;
+      }
     };
     items?: SaleItem[];
   } | null;

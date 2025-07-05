@@ -1,15 +1,19 @@
-import React from 'react';
-import {  
-  Activity, 
-  FileText, 
-  X, 
-  ShoppingCart, 
+import React from "react";
+import {
+  Activity,
+  FileText,
+  X,
+  ShoppingCart,
   Truck as TruckIcon,
   CheckCircle,
   CreditCard,
   Clock,
-  List
-} from 'lucide-react';
+  List,
+} from "lucide-react";
+import SalePDFReport from "./SalePDFReport";
+import ReactDOMServer from "react-dom/server";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 
 interface SaleDetailsModalProps {
   showViewModal: boolean;
@@ -57,32 +61,66 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
   const calculateTotals = () => {
     let totalQuantity = 0;
     let totalValue = 0;
-    
+
     if (selectedSale.items && selectedSale.items.length > 0) {
       selectedSale.items.forEach((item: any) => {
         totalQuantity += parseFloat(item.quantity || 0);
-        totalValue += parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0);
+        totalValue +=
+          parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0);
       });
     }
-    
+
     return { totalQuantity, totalValue };
   };
 
   const { totalQuantity, totalValue } = calculateTotals();
 
-  const totalDelivered = selectedSale.items?.reduce((sum: number, item: any) => 
-    sum + parseFloat(item.totalDelivered || 0), 0) || 0;
+  const totalDelivered =
+    selectedSale.items?.reduce(
+      (sum: number, item: any) => sum + parseFloat(item.totalDelivered || 0),
+      0
+    ) || 0;
 
-  const deliveryProgressPercentage = totalQuantity > 0 
-    ? Math.min(100, (totalDelivered / totalQuantity) * 100)
-    : 0;
+  const deliveryProgressPercentage =
+    totalQuantity > 0
+      ? Math.min(100, (totalDelivered / totalQuantity) * 100)
+      : 0;
 
-  const paymentProgressPercentage = totalValue > 0
-    ? Math.min(100, (parseFloat(selectedSale.totalPaid || 0) / totalValue) * 100)
-    : 0;
+  const paymentProgressPercentage =
+    totalValue > 0
+      ? Math.min(
+          100,
+          (parseFloat(selectedSale.totalPaid || 0) / totalValue) * 100
+        )
+      : 0;
 
   const remainingQuantity = totalQuantity - totalDelivered;
   const remainingPayment = totalValue - parseFloat(selectedSale.totalPaid || 0);
+
+  const exportToPDF = async () => {
+    if (!selectedSale) return;
+    const exportDate = new Date().toLocaleDateString();
+
+    const htmlContent = ReactDOMServer.renderToStaticMarkup(
+      <SalePDFReport sale={selectedSale} exportDate={exportDate} />
+    );
+
+    const container = document.createElement("div");
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
+
+    const opt = {
+      margin: [0.5, 0.5, 0.5, 0.5],
+      filename: `Sale_${selectedSale.saleReference}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    };
+
+    await html2pdf().set(opt).from(container).save();
+    document.body.removeChild(container);
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -146,7 +184,9 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
                   <p className="text-sm text-gray-500">Expected Delivery</p>
                   <p className="text-sm font-medium text-gray-900">
                     {selectedSale.expectedDeliveryDate
-                      ? new Date(selectedSale.expectedDeliveryDate).toLocaleDateString()
+                      ? new Date(
+                          selectedSale.expectedDeliveryDate
+                        ).toLocaleDateString()
                       : "Not specified"}
                   </p>
                 </div>
@@ -199,7 +239,7 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
               <List className="w-4 h-4 mr-2 text-green-500" />
               Sale Items ({selectedSale.items?.length || 0})
             </h3>
-            
+
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -227,7 +267,10 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {selectedSale.items?.map((item: any, index: number) => (
-                      <tr key={item.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <tr
+                        key={item.id || index}
+                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                      >
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                           {index + 1}
                         </td>
@@ -248,19 +291,33 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
                           {parseFloat(item.unitPrice).toLocaleString()} RWF/Kg
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {(parseFloat(item.quantity) * parseFloat(item.unitPrice)).toLocaleString()} RWF
+                          {(
+                            parseFloat(item.quantity) *
+                            parseFloat(item.unitPrice)
+                          ).toLocaleString()}{" "}
+                          RWF
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {parseFloat(item.totalDelivered || 0).toLocaleString()} Kg
+                            {parseFloat(
+                              item.totalDelivered || 0
+                            ).toLocaleString()}{" "}
+                            Kg
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                             <div
                               className="bg-blue-600 h-1.5 rounded-full"
                               style={{
-                                width: `${parseFloat(item.quantity) > 0 
-                                  ? Math.min(100, (parseFloat(item.totalDelivered || 0) / parseFloat(item.quantity)) * 100) 
-                                  : 0}%`,
+                                width: `${
+                                  parseFloat(item.quantity) > 0
+                                    ? Math.min(
+                                        100,
+                                        (parseFloat(item.totalDelivered || 0) /
+                                          parseFloat(item.quantity)) *
+                                          100
+                                      )
+                                    : 0
+                                }%`,
                               }}
                             ></div>
                           </div>
@@ -270,7 +327,10 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
                   </tbody>
                   <tfoot className="bg-gray-50 border-t-2 border-gray-200">
                     <tr>
-                      <td colSpan={2} className="px-4 py-3 text-sm font-medium text-gray-900">
+                      <td
+                        colSpan={2}
+                        className="px-4 py-3 text-sm font-medium text-gray-900"
+                      >
                         Total
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
@@ -289,6 +349,85 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Delivery Records Section */}
+          {selectedSale.deliveries && selectedSale.deliveries.length > 0 && (
+            <div>
+              <h3 className="text-base font-medium text-gray-900 mb-3 flex items-center">
+                <TruckIcon className="w-4 h-4 mr-2 text-amber-500" />
+                Delivery Records ({selectedSale.deliveries.length})
+              </h3>
+
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                          Ref
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                          Product
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                          Quantity
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                          Unit Price
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                          Delivered At
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                          Warehouse
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                          Driver
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {selectedSale.deliveries.map((delivery: any) => (
+                        <tr key={delivery.id}>
+                          <td className="px-4 py-3 text-gray-900 font-medium">
+                            {delivery.deliveryReference}
+                          </td>
+                          <td className="px-4 py-3 text-gray-900">
+                            {delivery.product?.name || "N/A"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-900">
+                            {parseFloat(
+                              delivery.quantity || 0
+                            ).toLocaleString()}{" "}
+                            Kg
+                          </td>
+                          <td className="px-4 py-3 text-gray-900">
+                            {parseFloat(
+                              delivery.unitPrice || 0
+                            ).toLocaleString()}{" "}
+                            RWF
+                          </td>
+                          <td className="px-4 py-3 text-gray-900">
+                            {delivery.deliveredAt
+                              ? new Date(delivery.deliveredAt).toLocaleString()
+                              : "Pending"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-900">
+                            {delivery.warehouse?.name || "N/A"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-900">
+                            {delivery.driver?.profile?.names ||
+                              delivery.driver?.username ||
+                              "N/A"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -338,7 +477,8 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-500">Total Paid</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {parseFloat(selectedSale.totalPaid || 0).toLocaleString()} RWF
+                    {parseFloat(selectedSale.totalPaid || 0).toLocaleString()}{" "}
+                    RWF
                   </p>
                 </div>
                 <div>
@@ -382,6 +522,14 @@ export const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({
         </div>
 
         <div className="mt-6 flex justify-end">
+          <button
+            onClick={exportToPDF}
+            className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 flex items-center mr-2"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Export as PDF
+          </button>
+
           <button
             onClick={() => setShowViewModal(false)}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200"

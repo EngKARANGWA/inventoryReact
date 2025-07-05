@@ -9,7 +9,12 @@ import {
   CreditCard,
   DollarSign,
   ShoppingCart,
+  FileTextIcon,
 } from "lucide-react";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
+import PaymentPDFReport from "./PaymentPDFReport";
+import { useRef } from "react";
 
 interface PaymentViewModalProps {
   payment: Payment;
@@ -21,6 +26,22 @@ const PaymentViewModal: React.FC<PaymentViewModalProps> = ({
   onClose,
 }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  const handleExportPDF = () => {
+    if (!reportRef.current) return;
+
+    const opt = {
+      margin: 0.5,
+      filename: `payment_${payment.paymentReference}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf().set(opt).from(reportRef.current).save();
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -343,7 +364,8 @@ const PaymentViewModal: React.FC<PaymentViewModalProps> = ({
                                 {formatNumber(item.unitPrice)} RWF
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                {formatNumber(item.quantity * item.unitPrice)} RWF
+                                {formatNumber(item.quantity * item.unitPrice)}{" "}
+                                RWF
                               </td>
                             </tr>
                           ))}
@@ -357,8 +379,23 @@ const PaymentViewModal: React.FC<PaymentViewModalProps> = ({
           </div>
         </div>
       </div>
+      <div style={{ display: "none" }}>
+        <PaymentPDFReport
+          payment={payment}
+          exportDate={new Date().toLocaleString()}
+          ref={reportRef}
+        />
+      </div>
 
       <div className="mt-6 flex justify-end">
+        <button
+          onClick={handleExportPDF}
+          className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 flex items-center mr-2"
+        >
+          <FileTextIcon className="w-4 h-4 mr-2" />
+          Export to PDF
+        </button>
+
         <button
           onClick={() => {
             onClose();

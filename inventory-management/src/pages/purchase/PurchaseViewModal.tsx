@@ -5,14 +5,14 @@ import {
   Scale,
   Truck as TruckIcon,
   DollarSign,
-  CheckCircle,
-  CreditCard,
-  Clock,
   Activity,
-  Building,
-  User,
+  FileText,
 } from "lucide-react";
 import { Purchase, Payment, Delivery } from "../../services/purchaseService";
+import PurchasePDFReport from "./PurchasePDFReport";
+import ReactDOMServer from "react-dom/server";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 
 interface PurchaseViewModalProps {
   isOpen: boolean;
@@ -26,14 +26,14 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
   purchase,
 }) => {
   if (!isOpen || !purchase) return null;
-  
+
   // Safely access payments array with proper type casting
   const getPaymentsArray = (): Payment[] => {
     if (Array.isArray(purchase.payments)) {
       return purchase.payments;
     }
     // If it's an object with numeric keys (sometimes happens with API responses)
-    if (purchase.payments && typeof purchase.payments === 'object') {
+    if (purchase.payments && typeof purchase.payments === "object") {
       return Object.values(purchase.payments) as Payment[];
     }
     return [];
@@ -45,7 +45,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
       return purchase.deliveries;
     }
     // If it's an object with numeric keys (sometimes happens with API responses)
-    if (purchase.deliveries && typeof purchase.deliveries === 'object') {
+    if (purchase.deliveries && typeof purchase.deliveries === "object") {
       return Object.values(purchase.deliveries) as Delivery[];
     }
     return [];
@@ -53,9 +53,15 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
 
   // Debug logs to check data structure
   console.log("Purchase object in modal:", purchase);
-  console.log("Has payments array?", purchase.payments ? `Yes (${getPaymentsArray().length})` : "No");
-  console.log("Has deliveries array?", purchase.deliveries ? `Yes (${getDeliveriesArray().length})` : "No");
-  
+  console.log(
+    "Has payments array?",
+    purchase.payments ? `Yes (${getPaymentsArray().length})` : "No"
+  );
+  console.log(
+    "Has deliveries array?",
+    purchase.deliveries ? `Yes (${getDeliveriesArray().length})` : "No"
+  );
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "all_completed":
@@ -74,31 +80,35 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "all_completed":
-      case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case "cancelled":
-        return <X className="w-4 h-4 text-red-500" />;
-      case "payment_completed":
-        return <CreditCard className="w-4 h-4 text-blue-500" />;
-      case "delivery_complete":
-        return <TruckIcon className="w-4 h-4 text-amber-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
-    }
-  };
+  // const getStatusIcon = (status: string) => {
+  //   switch (status.toLowerCase()) {
+  //     case "all_completed":
+  //     case "completed":
+  //       return <CheckCircle className="w-4 h-4 text-green-500" />;
+  //     case "cancelled":
+  //       return <X className="w-4 h-4 text-red-500" />;
+  //     case "payment_completed":
+  //       return <CreditCard className="w-4 h-4 text-blue-500" />;
+  //     case "delivery_complete":
+  //       return <TruckIcon className="w-4 h-4 text-amber-500" />;
+  //     default:
+  //       return <Clock className="w-4 h-4 text-gray-500" />;
+  //   }
+  // };
 
-  const remainingWeight = 
+  const remainingWeight =
     parseFloat(purchase.weight) - parseFloat(purchase.totalDelivered);
-  
-  const deliveryProgressPercentage = 
-    Math.min(100, (parseFloat(purchase.totalDelivered) / parseFloat(purchase.weight)) * 100);
-  
+
+  const deliveryProgressPercentage = Math.min(
+    100,
+    (parseFloat(purchase.totalDelivered) / parseFloat(purchase.weight)) * 100
+  );
+
   const calculateTotalValue = () => {
     if (purchase.unitPrice) {
-      return (parseFloat(purchase.weight) * parseFloat(purchase.unitPrice)).toLocaleString();
+      return (
+        parseFloat(purchase.weight) * parseFloat(purchase.unitPrice)
+      ).toLocaleString();
     }
     return "N/A";
   };
@@ -106,6 +116,29 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
   const deliveries = getDeliveriesArray();
   const payments = getPaymentsArray();
 
+  const exportToPDF = async () => {
+    if (!purchase) return;
+    const exportDate = new Date().toLocaleDateString();
+    const htmlContent = ReactDOMServer.renderToStaticMarkup(
+      <PurchasePDFReport purchase={purchase} exportDate={exportDate} />
+    );
+
+    const container = document.createElement("div");
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
+
+    const opt = {
+      margin: [0.5, 0.5, 0.5, 0.5],
+      filename: `Purchase_${purchase.purchaseReference}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    };
+
+    await html2pdf().set(opt).from(container).save();
+    document.body.removeChild(container);
+  };
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -137,10 +170,9 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                   purchase.status
                 )}`}
               >
-                {getStatusIcon(purchase.status)}
-                <span className="ml-1">
-                  {purchase.status.replace(/_/g, " ")}
-                </span>
+                {purchase.status === "approved"
+                  ? "initiated"
+                  : purchase.status.replace(/_/g, " ")}
               </span>
             </div>
           </div>
@@ -239,8 +271,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-500">Supplier Name</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {purchase.user?.profile?.names ||
-                      "Unknown Supplier"}
+                    {purchase.user?.profile?.names || "Unknown Supplier"}
                   </p>
                 </div>
                 <div>
@@ -350,7 +381,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {deliveries.map((delivery) => (
+                      {deliveries.map((delivery: any) => (
                         <tr key={delivery.id} className="hover:bg-gray-50">
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                             {delivery.deliveryReference}
@@ -365,10 +396,12 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                             </span>
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            {delivery.driver?.user?.profile?.names || "N/A"}
+                            {delivery.driver?.profile?.names || "N/A"}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            {parseFloat(delivery.quantity || '0').toLocaleString()}
+                            {parseFloat(
+                              delivery.quantity || "0"
+                            ).toLocaleString()}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                             {delivery.product?.name || "N/A"}
@@ -378,7 +411,9 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                             {delivery.deliveredAt
-                              ? new Date(delivery.deliveredAt).toLocaleDateString()
+                              ? new Date(
+                                  delivery.deliveredAt
+                                ).toLocaleDateString()
                               : "Not delivered"}
                           </td>
                         </tr>
@@ -446,7 +481,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                             {payment.paidAt
                               ? new Date(payment.paidAt).toLocaleDateString()
-                              : "Pending"}
+                              : "N/A"}
                           </td>
                         </tr>
                       ))}
@@ -459,85 +494,17 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
                 </div>
               )}
             </div>
-            
-            {/* Warehouse Information Section */}
-            {deliveries.length > 0 && deliveries[0]?.warehouse && (
-              <div className="border-t border-gray-200 p-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                  <Building className="w-4 h-4 mr-2 text-gray-500" />
-                  Warehouse Information
-                </h4>
-                
-                <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500">Warehouse Name</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {deliveries[0].warehouse?.name || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Location</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {deliveries[0].warehouse?.location || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Capacity</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {deliveries[0].warehouse?.capacity
-                        ? deliveries[0].warehouse.capacity.toLocaleString() + " Kg"
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {deliveries[0].warehouse?.status || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Driver Information Section */}
-            {deliveries.length > 0 && deliveries[0]?.driver && (
-              <div className="border-t border-gray-200 p-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                  <User className="w-4 h-4 mr-2 text-gray-500" />
-                  Driver Information
-                </h4>
-                
-                <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500">Driver Name</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {deliveries[0].driver?.user?.profile?.names || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Driver ID</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {deliveries[0].driver?.driverId || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">License Number</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {deliveries[0].driver?.licenseNumber || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Contact</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {deliveries[0].driver?.user?.profile?.phoneNumber || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="mt-6 flex justify-end">
+            <button
+              onClick={exportToPDF}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 flex items-center mr-2"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Export as PDF
+            </button>
+
             <button
               onClick={onClose}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200"

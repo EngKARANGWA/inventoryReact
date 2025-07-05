@@ -1,4 +1,3 @@
-// components/production/ProductionManagement.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Eye,

@@ -25,6 +25,7 @@ import UnauthorizedPage from "./pages/errors/UnauthorizedPage";
 import NotFoundPage from "./pages/errors/NotFoundPage";
 import AuthPage from "./pages/auth/AuthPage";
 import UserProfilepage from "./pages/profile/ProfilePage";
+import SmallExpenseManagement from "./pages/SmallExpenses/SmallExpenseManagement";
 
 // Role constants for better maintainability
 const ROLES = {
@@ -257,6 +258,17 @@ function AppRoutes() {
                 allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.STOCKKEEPER]}
               >
                 <StockMovementManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/ptcash"
+            element={
+              <ProtectedRoute
+                allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER]}
+              >
+                <SmallExpenseManagement />
               </ProtectedRoute>
             }
           />

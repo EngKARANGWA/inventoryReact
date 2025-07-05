@@ -1,7 +1,19 @@
-import React from "react";
-import { X, Truck, Package, Warehouse, Check, Clock, ArrowDown, ArrowUp } from "lucide-react";
+import React, { useRef } from "react";
+import {
+  X,
+  Truck,
+  Package,
+  Warehouse,
+  Check,
+  Clock,
+  ArrowDown,
+  ArrowUp,
+  FileTextIcon,
+} from "lucide-react";
 import { Delivery } from "../../services/deliveryService";
-
+// @ts-ignore
+import html2pdf from "html2pdf.js";
+import DeliveryPDFReport from "./DeliveryPDFReport";
 interface DeliveryViewModalProps {
   selectedDelivery: Delivery;
   setShowViewModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -19,6 +31,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
       useGrouping: true,
     }).format(num);
   };
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -52,6 +65,20 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
     ) : (
       <ArrowUp className="w-4 h-4 text-red-500" />
     );
+  };
+
+  const handleExportPDF = () => {
+    if (!reportRef.current) return;
+
+    const opt = {
+      margin: 0.5,
+      filename: `delivery_${selectedDelivery.deliveryReference || selectedDelivery.id}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf().set(opt).from(reportRef.current).save();
   };
 
   return (
@@ -119,8 +146,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                   <div>
                     <p className="text-xs text-gray-500">Driver</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.driver?.profile?.names ||
-                        "N/A"}
+                      {selectedDelivery.driver?.profile?.names || "N/A"}
                     </p>
                   </div>
                 </div>
@@ -133,9 +159,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                 <div>
                   <p className="text-xs text-gray-500">Delivered At</p>
                   <p className="text-sm font-medium">
-                    {new Date(
-                      selectedDelivery.deliveredAt
-                    ).toLocaleString()}
+                    {new Date(selectedDelivery.deliveredAt).toLocaleString()}
                   </p>
                 </div>
                 <div>
@@ -156,9 +180,9 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                 <div>
                   <p className="text-xs text-gray-500">Product</p>
                   <p className="text-sm font-medium">
-                    {selectedDelivery.product?.name || 
-                     selectedDelivery.saleItem?.product?.name || 
-                     "N/A"}
+                    {selectedDelivery.product?.name ||
+                      selectedDelivery.saleItem?.product?.name ||
+                      "N/A"}
                     {selectedDelivery.product?.description && (
                       <span className="block text-xs text-gray-500 mt-1">
                         {selectedDelivery.product.description}
@@ -199,15 +223,13 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                   <div>
                     <p className="text-xs text-gray-500">Reference</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.purchase?.purchaseReference ||
-                        "N/A"}
+                      {selectedDelivery.purchase?.purchaseReference || "N/A"}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Supplier</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.purchase?.user?.profile?.names ||
-                        "N/A"}
+                      {selectedDelivery.purchase?.user?.profile?.names || "N/A"}
                     </p>
                   </div>
                 </div>
@@ -219,9 +241,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-xs text-gray-500">
-                      Expected Delivery
-                    </p>
+                    <p className="text-xs text-gray-500">Expected Delivery</p>
                     <p className="text-sm font-medium">
                       {selectedDelivery.purchase?.expectedDeliveryDate
                         ? new Date(
@@ -246,25 +266,27 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                   <div>
                     <p className="text-xs text-gray-500">Sale Reference</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.sale?.saleReference || 
-                       selectedDelivery.saleItem?.sale?.saleReference || 
-                       "N/A"}
+                      {selectedDelivery.sale?.saleReference ||
+                        selectedDelivery.saleItem?.sale?.saleReference ||
+                        "N/A"}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Client</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.sale?.client?.name || 
-                       selectedDelivery.saleItem?.sale?.client?.name || 
-                       "N/A"}
+                      {selectedDelivery.sale?.client?.name ||
+                        selectedDelivery.saleItem?.sale?.client?.name ||
+                        "N/A"}
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Add sale item specific information if available */}
                 {selectedDelivery.saleItem && (
                   <div className="bg-blue-50 p-3 rounded-md">
-                    <h4 className="text-sm font-medium text-blue-700 mb-2">Sale Item Details</h4>
+                    <h4 className="text-sm font-medium text-blue-700 mb-2">
+                      Sale Item Details
+                    </h4>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <p className="text-xs text-gray-500">Product</p>
@@ -275,7 +297,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                       <div>
                         <p className="text-xs text-gray-500">Quantity</p>
                         <p className="text-sm font-medium">
-                          {selectedDelivery.saleItem.quantity 
+                          {selectedDelivery.saleItem.quantity
                             ? `${selectedDelivery.saleItem.quantity} Kg`
                             : "N/A"}
                         </p>
@@ -283,7 +305,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                       <div>
                         <p className="text-xs text-gray-500">Unit Price</p>
                         <p className="text-sm font-medium">
-                          {selectedDelivery.saleItem.unitPrice 
+                          {selectedDelivery.saleItem.unitPrice
                             ? `${selectedDelivery.saleItem.unitPrice} RWF/Kg`
                             : "N/A"}
                         </p>
@@ -291,7 +313,7 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                       <div>
                         <p className="text-xs text-gray-500">Delivered</p>
                         <p className="text-sm font-medium">
-                          {selectedDelivery.saleItem.totalDelivered 
+                          {selectedDelivery.saleItem.totalDelivered
                             ? `${selectedDelivery.saleItem.totalDelivered} Kg`
                             : "0 Kg"}
                         </p>
@@ -300,19 +322,21 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                     {selectedDelivery.saleItem.note && (
                       <div className="mt-2">
                         <p className="text-xs text-gray-500">Note</p>
-                        <p className="text-sm">{selectedDelivery.saleItem.note}</p>
+                        <p className="text-sm">
+                          {selectedDelivery.saleItem.note}
+                        </p>
                       </div>
                     )}
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <p className="text-xs text-gray-500">Sale Status</p>
                     <p className="text-sm font-medium">
-                      {selectedDelivery.sale?.status || 
-                       selectedDelivery.saleItem?.sale?.status || 
-                       "N/A"}
+                      {selectedDelivery.sale?.status ||
+                        selectedDelivery.saleItem?.sale?.status ||
+                        "N/A"}
                     </p>
                   </div>
                 </div>
@@ -320,9 +344,9 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
                 <div>
                   <p className="text-xs text-gray-500">Notes</p>
                   <p className="text-sm font-medium">
-                    {selectedDelivery.sale?.note || 
-                     selectedDelivery.saleItem?.note || 
-                     "N/A"}
+                    {selectedDelivery.sale?.note ||
+                      selectedDelivery.saleItem?.note ||
+                      "N/A"}
                   </p>
                 </div>
               </div>
@@ -330,7 +354,23 @@ const DeliveryViewModal: React.FC<DeliveryViewModalProps> = ({
           </div>
         </div>
 
+        <div style={{ display: "none" }}>
+          <DeliveryPDFReport
+            ref={reportRef}
+            delivery={selectedDelivery}
+            exportDate={new Date().toLocaleString()}
+          />
+        </div>
+
         <div className="mt-6 flex justify-end">
+          <button
+            onClick={handleExportPDF}
+            className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 flex items-center mr-2"
+          >
+            <FileTextIcon className="w-4 h-4 mr-2" />
+            Export to PDF
+          </button>
+
           <button
             onClick={() => setShowViewModal(false)}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200"
