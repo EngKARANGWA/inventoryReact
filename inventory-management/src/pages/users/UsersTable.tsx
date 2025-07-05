@@ -205,7 +205,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {user.roles?.[0]?.name !== "ADMIN" ? (
+                    {user.email !== "admin@admin.com" ? (
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => onViewDetails(user)}
