@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
+import FiltersPanel from "./FiltersPanel";
 import {
   Search,
   Filter,
@@ -32,8 +33,12 @@ import PurchaseForm from "./PurchaseForm";
 import PurchaseViewModal from "./PurchaseViewModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import useMediaQuery from "../../hooks/useMediaQuery";
+//@ts-ignore
+import html2pdf from "html2pdf.js";
+import PurchasePDFReport from "./PurchasePDFReport";
 
 const PurchaseManagement: React.FC = () => {
+  const pdfRef = useRef<HTMLDivElement>(null);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [totalPurchases, setTotalPurchases] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -83,6 +88,17 @@ const PurchaseManagement: React.FC = () => {
     expectedDeliveryDate: "",
   });
 
+  const [suppliers, setSuppliers] = React.useState<User[]>([]);
+  const [loadingSuppliers, setLoadingSuppliers] = React.useState(false);
+
+  React.useEffect(() => {
+    setLoadingSuppliers(true);
+    purchaseService
+      .getAllSupplierUsers() // or userService.getAllSuppliers()
+      .then(setSuppliers)
+      .finally(() => setLoadingSuppliers(false));
+  }, []);
+
   const handleViewPurchase = async (purchase: Purchase) => {
     try {
       // Store the basic purchase info immediately for better UX
@@ -116,27 +132,20 @@ const PurchaseManagement: React.FC = () => {
 
   const fetchPurchases = useCallback(async () => {
     setLoading(true);
-    // setError(null);
-
     try {
+      const { userId, ...restFilters } = filters;
       const response = await purchaseService.getAllPurchases({
-        ...filters,
+        ...restFilters,
         search: searchTerm,
       });
-
       if (Array.isArray(response)) {
         setPurchases(response);
         setTotalPurchases(response.length);
       } else {
-        console.error("Error: API response is not an array", response);
-        toast.error("Received invalid data format from server");
         setPurchases([]);
         setTotalPurchases(0);
       }
     } catch (err) {
-      console.error("Error fetching purchases:", err);
-      toast.info("Failed to fetch purchases. Please try again later.");
-      toast.error("Failed to load purchases");
       setPurchases([]);
       setTotalPurchases(0);
     } finally {
@@ -146,7 +155,7 @@ const PurchaseManagement: React.FC = () => {
 
   useEffect(() => {
     fetchPurchases();
-  }, [fetchPurchases]);
+  }, []);
 
   useEffect(() => {
     if (showAddForm) {
@@ -308,12 +317,14 @@ const PurchaseManagement: React.FC = () => {
     }
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFilters((prev: PurchaseFilterOptions) => ({
       ...prev,
       [name]:
-        name === "supplierId" || name === "productId"
+        name === "userId" || name === "productId"
           ? value
             ? Number(value)
             : undefined
@@ -367,19 +378,47 @@ const PurchaseManagement: React.FC = () => {
   }, [purchases, sortConfig]);
 
   const filteredPurchases = React.useMemo(() => {
-    if (!searchTerm) return sortedPurchases;
+    let result = sortedPurchases;
 
-    return sortedPurchases.filter((purchase) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        purchase.purchaseReference.toLowerCase().includes(searchLower) ||
-        purchase.user?.profile?.names?.toLowerCase().includes(searchLower) ||
-        purchase.product?.name?.toLowerCase().includes(searchLower) ||
-        purchase.description?.toLowerCase().includes(searchLower) ||
-        purchase.status.toLowerCase().includes(searchLower)
+    if (filters.userId) {
+      result = result.filter(
+        (purchase) => String(purchase.userId) === String(filters.userId)
       );
-    });
-  }, [sortedPurchases, searchTerm]);
+    }
+
+    // Filter by date interval
+    if (filters.startDate) {
+      result = result.filter(
+        (purchase) =>
+          new Date(purchase.createdAt) >= new Date(filters.startDate!)
+      );
+    }
+    if (filters.endDate) {
+      result = result.filter(
+        (purchase) => new Date(purchase.createdAt) <= new Date(filters.endDate!)
+      );
+    }
+
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      result = result.filter(
+        (purchase) =>
+          purchase.purchaseReference.toLowerCase().includes(searchLower) ||
+          purchase.user?.profile?.names?.toLowerCase().includes(searchLower) ||
+          purchase.product?.name?.toLowerCase().includes(searchLower) ||
+          purchase.description?.toLowerCase().includes(searchLower) ||
+          purchase.status.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return result;
+  }, [
+    sortedPurchases,
+    filters.userId,
+    filters.startDate,
+    filters.endDate,
+    searchTerm,
+  ]);
 
   // Calculate summary statistics
   const totalAmount = purchases.reduce((sum, p) => {
@@ -404,13 +443,28 @@ const PurchaseManagement: React.FC = () => {
   );
 
   const handleExportData = () => {
-    toast.info("Data export feature will be implemented soon!");
+    if (!pdfRef.current) return;
+    const options = {
+      margin: 0.5,
+      filename: `purchases_${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+    };
+    html2pdf().set(options).from(pdfRef.current).save();
   };
 
   const toggleViewType = () => {
     setViewType((prev) => (prev === "table" ? "cards" : "table"));
   };
 
+  const handleApplyFilters = () => {
+    // fetchPurchases();
+  };
+
+  const handleToggleFilters = () => {
+    setShowFilters((prev) => !prev);
+  };
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar />
@@ -586,83 +640,16 @@ const PurchaseManagement: React.FC = () => {
               </div>
 
               {/* Filters Panel */}
-              {showFilters && (
-                <div
-                  id="filters-panel"
-                  className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 transition-all"
-                >
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <Filter size={16} className="mr-2" />
-                    Filters
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
-                      </label>
-                      <select
-                        name="status"
-                        value={filters.status}
-                        onChange={handleFilterChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      >
-                        <option value="">All Statuses</option>
-                        <option value="draft">Draft</option>
-                        <option value="approved">Approved</option>
-                        <option value="payment_completed">
-                          Payment Completed
-                        </option>
-                        <option value="delivery_complete">
-                          Delivery Complete
-                        </option>
-                        <option value="all_completed">All Completed</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Items per page
-                      </label>
-                      <select
-                        name="pageSize"
-                        value={filters.pageSize}
-                        onChange={handleFilterChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Supplier
-                      </label>
-                      <select
-                        name="userId"
-                        value={filters.userId}
-                        onChange={handleFilterChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      >
-                        <option value="">All Suppliers</option>
-                        {users.map((user) => (
-                          <option key={user.id} value={user.id}>
-                            {user.profile?.names || "Unknown Supplier"}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex items-end">
-                      <button
-                        onClick={fetchPurchases}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        Apply Filters
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <FiltersPanel
+                filters={filters}
+                users={suppliers}
+                loadingUsers={loadingSuppliers}
+                showFilters={showFilters}
+                onFilterChange={handleFilterChange}
+                onApplyFilters={handleApplyFilters}
+                onToggleFilters={handleToggleFilters}
+                isMobile={isMobile}
+              />
             </div>
 
             {/* Empty State */}
@@ -921,6 +908,13 @@ const PurchaseManagement: React.FC = () => {
         isSubmitting={isSubmitting}
       />
 
+      <div style={{ display: "none" }}>
+        <PurchasePDFReport
+          ref={pdfRef}
+          purchases={filteredPurchases}
+          exportDate={new Date().toLocaleString()}
+        />
+      </div>
       <ToastContainer
         position="top-right"
         autoClose={5000}

@@ -173,6 +173,8 @@ export interface PurchaseFilterOptions {
   userId?: number;
   productId?: number;
   search?: string;
+  startDate?: string;
+  endDate?: string;  
 }
 
 interface ApiError extends Error {

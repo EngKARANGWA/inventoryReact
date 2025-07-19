@@ -87,8 +87,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
                 </option>
                 {users.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.profile?.names || "Unknown Supplier"} (
-                    {user.id})
+                    {user.profile?.names || "Unknown Supplier"}
                   </option>
                 ))}
               </select>
@@ -124,7 +123,6 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
                     {product.name} ({product.type})
-                    {product.description && ` - ${product.description}`}
                   </option>
                 ))}
               </select>
