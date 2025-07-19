@@ -85,7 +85,7 @@ const allNavigationItems: NavItem[] = [
     icon: Package 
   },
   { 
-    name: 'Petit Cash', 
+    name: 'Petty Cash', 
     href: '/dashboard/ptcash', 
     icon: Coins,
     allowedRoles: ['ADMIN', 'MANAGER', 'CASHIER']

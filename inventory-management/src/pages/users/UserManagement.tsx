@@ -42,6 +42,8 @@ const UserManagement: React.FC = () => {
     direction: "ascending" | "descending";
   } | null>(null);
 
+  const [detailsUser, setDetailsUser] = useState<User | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   // Helper function to map role names to form identifiers
   const mapRoleNameToIdentifier = (roleName: string): string => {
     if (!roleName) return "";
@@ -66,6 +68,18 @@ const UserManagement: React.FC = () => {
     return roleMap[normalizedRole] || roleName.toLowerCase();
   };
 
+  const handleViewDetails = async (user: User) => {
+    setDetailsLoading(true);
+    try {
+      const fullUser = await userService.getUserById(user.id);
+      setDetailsUser(fullUser);
+      setShowDetailsModal(true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to fetch user details");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
   // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
@@ -116,7 +130,8 @@ const UserManagement: React.FC = () => {
       result = result.filter(
         (user) =>
           user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.profile?.names?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -161,6 +176,17 @@ const UserManagement: React.FC = () => {
       ...prev,
       page: 1,
     }));
+  };
+
+  const handleRestoreUser = async (user: User) => {
+    try {
+      await userService.restoreUser(user.id);
+      // Refresh users list after restore
+      fetchUsers();
+      toast.success("User restored successfully!");
+    } catch (error) {
+      toast.error("Failed to restore user.");
+    }
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -569,15 +595,17 @@ const UserManagement: React.FC = () => {
               error={error}
               searchTerm={searchTerm}
               onRequestSort={requestSort}
+              onRestoreUser={handleRestoreUser}
               sortConfig={sortConfig}
               onEditUser={(user) => handleUserAction("edit", user)}
               onDeleteUser={handleDeleteUser}
               onResetPassword={(user) =>
                 handleUserAction("reset-password", user)
               }
+              onViewDetails={handleViewDetails}
               onUpdateStatus={(user) => handleUserAction("update-status", user)}
               onManageRoles={(user) => handleUserAction("manage-roles", user)}
-              onViewDetails={(user) => handleUserAction("view-details", user)}
+              // onViewDetails={(user) => handleUserAction("view-details", user)}
               totalUsers={totalUsers}
               currentPage={filters.page}
               pageSize={filters.pageSize}
@@ -633,42 +661,22 @@ const UserManagement: React.FC = () => {
         />
       )}
 
-      {showDetailsModal && editingUser && (
+      {detailsLoading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-6 rounded shadow">
+            Loading user details...
+          </div>
+        </div>
+      )}
+      {showDetailsModal && detailsUser && (
         <UserDetailsModal
-          user={{
-            id: String(editingUser.id),
-            name: editingUser.username || "",
-            email: editingUser.email || "",
-            role: editingUser.roles?.[0]?.name || editingUser.role || "",
-            status:
-              editingUser.accountStatus || editingUser.accountStatus || "",
-            createdAt: editingUser.createdAt,
-            lastLogin: editingUser.lastLogin,
-            profile: editingUser.profile
-              ? {
-                  id: editingUser.profile.id,
-                  names: editingUser.profile.names,
-                  phoneNumber: editingUser.profile.phoneNumber,
-                  address: editingUser.profile.address,
-                  status: editingUser.profile.status,
-                  createdAt: editingUser.profile.createdAt,
-                  updatedAt: editingUser.profile.updatedAt,
-                }
-              : undefined,
-            roles: editingUser.roles?.map((role) => ({
-              id: role.id,
-              name: role.name,
-              description: role.description,
-              createdAt: role.createdAt,
-            })),
-          }}
+          user={detailsUser}
           onClose={() => {
             setShowDetailsModal(false);
-            setEditingUser(null);
+            setDetailsUser(null);
           }}
         />
       )}
-
       {showResetPasswordModal && editingUser && (
         <ResetPasswordModal
           userId={editingUser.id}

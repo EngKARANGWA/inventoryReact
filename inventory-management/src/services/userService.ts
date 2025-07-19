@@ -41,6 +41,7 @@ export interface User {
   stockKeeperId?: string;
   clientId?: string;
   role?: string;
+  deletedAt?: string;
 }
 
 // Cashier interface
@@ -108,6 +109,16 @@ const extractData = (response: AxiosResponse): any => {
   }
   return response;
 };
+
+function getErrorMessage(error: any): string {
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  return "An unexpected error occurred. Please try again.";
+}
 
 const mapUserData = (user: any) => {
   return {
@@ -189,15 +200,10 @@ export const userService = {
         ...paginationData,
         data: usersData.map(mapUserData),
       };
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      return {
-        total: 0,
-        page: 1,
-        pageSize: 10,
-        totalPages: 0,
-        data: [],
-      };
+    } catch (error: any) {
+      const message = getErrorMessage(error);
+      console.error("Error fetching users:", message);
+      throw new Error(message);
     }
   },
 
@@ -207,9 +213,10 @@ export const userService = {
       const response = await api.get(`${API_BASE_URL}/users/${userId}`);
       const user = extractData(response);
       return mapUserData(user);
-    } catch (error) {
-      console.error(`Error fetching user ${userId}:`, error);
-      return null;
+    } catch (error: any) {
+      const message = getErrorMessage(error);
+      console.error(`Error fetching user ${userId}:`, message);
+      throw new Error(message);
     }
   },
 
@@ -250,9 +257,10 @@ export const userService = {
 
       const response = await api.post(`${API_BASE_URL}${endpoint}`, userData);
       return extractData(response);
-    } catch (error: unknown) {
-      console.error("Error creating user:", error);
-      throw error;
+    } catch (error: any) {
+      const message = getErrorMessage(error);
+      console.error("Error creating user:", message);
+      throw new Error(message);
     }
   },
 
@@ -346,12 +354,10 @@ export const userService = {
       );
       const response = await api.put(endpoint, dataToSend);
       return extractData(response);
-    } catch (error: unknown) {
-      console.error(`Error updating user:`, error);
-      if (error instanceof Error) {
-        throw new Error(error.message);
-      }
-      throw new Error("An unknown error occurred");
+    } catch (error: any) {
+      const message = getErrorMessage(error);
+      console.error(`Error updating user:`, message);
+      throw new Error(message);
     }
   },
 
@@ -399,9 +405,10 @@ export const userService = {
       console.log(`Deleting user with role ${role} at endpoint: ${endpoint}`);
       const response = await api.delete(endpoint);
       return extractData(response);
-    } catch (error) {
-      console.error(`Error deleting user ${userId}:`, error);
-      throw error;
+    } catch (error: any) {
+      const message = getErrorMessage(error);
+      console.error(`Error deleting user ${userId}:`, message);
+      throw new Error(message);
     }
   },
 
@@ -452,9 +459,10 @@ export const userService = {
       const response = await api.get(endpoint);
       const users = extractData(response);
       return users.map(mapUserData);
-    } catch (error) {
-      console.error(`Error fetching users by role ${role}:`, error);
-      return [];
+    } catch (error: any) {
+      const message = getErrorMessage(error);
+      console.error(`Error fetching users by role ${role}:`, message);
+      throw new Error(message);
     }
   },
 
@@ -465,9 +473,10 @@ export const userService = {
         profileData
       );
       return extractData(response);
-    } catch (error) {
-      console.error(`Error updating profile ${profileId}:`, error);
-      throw error;
+    } catch (error: any) {
+      const message = getErrorMessage(error);
+      console.error(`Error updating profile ${profileId}:`, message);
+      throw new Error(message);
     }
   },
 
@@ -475,9 +484,10 @@ export const userService = {
     try {
       const response = await api.get(`${API_BASE_URL}/profiles/${profileId}`);
       return extractData(response);
-    } catch (error) {
-      console.error(`Error fetching profile ${profileId}:`, error);
-      return null;
+    } catch (error: any) {
+      const message = getErrorMessage(error);
+      console.error(`Error fetching profile ${profileId}:`, message);
+      throw new Error(message);
     }
   },
 
@@ -488,10 +498,11 @@ export const userService = {
         `${API_BASE_URL}/users/${userId}/reset-password`
       );
       return extractData(response);
-    } catch (error) {
-      console.error(`Error resetting password for user ${userId}:`, error);
-      throw error;
-    }
+    } catch (error: any) {
+    const message = getErrorMessage(error);
+    console.error(`Error resetting password for user ${userId}:`, message);
+    throw new Error(message);
+  }
   },
 
   // Update user status (activate/deactivate)
@@ -516,10 +527,11 @@ export const userService = {
     try {
       const response = await api.get(`${API_BASE_URL}/users/${userId}/roles`);
       return extractData(response);
-    } catch (error) {
-      console.error(`Error fetching roles for user ${userId}:`, error);
-      throw error;
-    }
+    } catch (error: any) {
+    const message = getErrorMessage(error);
+    console.error(`Error fetching roles for user ${userId}:`, message);
+    throw new Error(message);
+  }
   },
 
   // Assign roles to user
@@ -532,10 +544,11 @@ export const userService = {
         roles,
       });
       return extractData(response);
-    } catch (error) {
-      console.error(`Error assigning roles to user ${userId}:`, error);
-      throw error;
-    }
+    } catch (error: any) {
+    const message = getErrorMessage(error);
+    console.error(`Error assigning roles to user ${userId}:`, message);
+    throw new Error(message);
+  }
   },
 
   // Remove roles from user
@@ -553,10 +566,11 @@ export const userService = {
         }
       );
       return extractData(response);
-    } catch (error) {
-      console.error(`Error removing roles from user ${userId}:`, error);
-      throw error;
-    }
+    } catch (error: any) {
+    const message = getErrorMessage(error);
+    console.error(`Error removing roles from user ${userId}:`, message);
+    throw new Error(message);
+  }
   },
 
   // Restore a user
@@ -566,10 +580,11 @@ export const userService = {
         `${API_BASE_URL}/users/${userId}/restore`
       );
       return extractData(response);
-    } catch (error) {
-      console.error(`Error restoring user ${userId}:`, error);
-      throw error;
-    }
+    } catch (error: any) {
+    const message = getErrorMessage(error);
+    console.error(`Error restoring user ${userId}:`, message);
+    throw new Error(message);
+  }
   },
 
   // Get user statistics
@@ -577,10 +592,11 @@ export const userService = {
     try {
       const response = await api.get(`${API_BASE_URL}/users/stats`);
       return extractData(response);
-    } catch (error) {
-      console.error("Error fetching user stats:", error);
-      return {};
-    }
+    } catch (error: any) {
+    const message = getErrorMessage(error);
+    console.error("Error fetching user stats:", message);
+    throw new Error(message);
+  }
   },
 
   // Cashier API methods
@@ -589,10 +605,11 @@ export const userService = {
     try {
       const response = await api.get(`${API_BASE_URL}/cashier`);
       return extractData(response);
-    } catch (error) {
-      console.error("Error fetching cashiers:", error);
-      return [];
-    }
+    } catch (error: any) {
+    const message = getErrorMessage(error);
+    console.error("Error fetching cashiers:", message);
+    throw new Error(message);
+  }
   },
 
   // Get a single cashier by ID
@@ -600,10 +617,11 @@ export const userService = {
     try {
       const response = await api.get(`${API_BASE_URL}/cashier/${cashierId}`);
       return extractData(response);
-    } catch (error) {
-      console.error(`Error fetching cashier ${cashierId}:`, error);
-      return null;
-    }
+    } catch (error: any) {
+    const message = getErrorMessage(error);
+    console.error(`Error fetching cashier ${cashierId}:`, message);
+    throw new Error(message);
+  }
   },
 
   // Create a new cashier

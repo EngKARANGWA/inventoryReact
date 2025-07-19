@@ -1,5 +1,14 @@
 import React from "react";
-import { Edit2, Trash2, Eye, Phone, Key, UserCheck, Users } from "lucide-react";
+import {
+  Edit2,
+  Trash2,
+  Eye,
+  Phone,
+  Key,
+  UserCheck,
+  Users,
+  ArchiveRestore,
+} from "lucide-react";
 import PaginationControls from "./PaginationControls";
 import { User } from "../../services/userService";
 import { toast } from "react-toastify";
@@ -20,6 +29,7 @@ interface UsersTableProps {
   onUpdateStatus: (user: User) => void;
   onManageRoles: (user: User) => void;
   onViewDetails: (user: User) => void;
+  onRestoreUser: (user: User) => void;
   totalUsers: number;
   currentPage: number;
   pageSize: number;
@@ -38,6 +48,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
   onResetPassword,
   onUpdateStatus,
   onManageRoles,
+  onRestoreUser,
   onViewDetails,
   totalUsers,
   currentPage,
@@ -156,7 +167,12 @@ const UsersTable: React.FC<UsersTableProps> = ({
               </tr>
             ) : (
               users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+                <tr
+                  key={user.id}
+                  className={`hover:bg-gray-50 ${
+                    user.deletedAt ? "opacity-60 line-through" : ""
+                  }`}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
@@ -166,9 +182,11 @@ const UsersTable: React.FC<UsersTableProps> = ({
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
+                          {user.profile?.names}
+                        </div>
+                        <div className="text-sm text-gray-500">
                           {user.username}
                         </div>
-                        <div className="text-sm text-gray-500">{user.id}</div>
                       </div>
                     </div>
                   </td>
@@ -189,8 +207,10 @@ const UsersTable: React.FC<UsersTableProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.status === "active" ||
-                        user.accountStatus === "active"
+                        user.deletedAt
+                          ? "bg-gray-300 text-gray-700"
+                          : user.status === "active" ||
+                            user.accountStatus === "active"
                           ? "bg-green-100 text-green-800"
                           : user.status === "inactive" ||
                             user.accountStatus === "inactive"
@@ -201,7 +221,9 @@ const UsersTable: React.FC<UsersTableProps> = ({
                           : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {user.status || user.accountStatus}
+                      {user.deletedAt
+                        ? "Deleted"
+                        : user.status || user.accountStatus}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -216,7 +238,6 @@ const UsersTable: React.FC<UsersTableProps> = ({
                         </button>
                         <button
                           onClick={() => {
-                            // onEditUser(user);
                             toast.info("Edit feature to be implemented soon", {
                               position: "top-right",
                               autoClose: 3000,
@@ -248,6 +269,16 @@ const UsersTable: React.FC<UsersTableProps> = ({
                         >
                           <Users className="h-5 w-5" />
                         </button>
+
+                        {user.deletedAt && (
+                          <button
+                            onClick={() => onRestoreUser(user)}
+                            className="text-green-600 hover:text-green-900"
+                            title="Restore User"
+                          >
+                            <ArchiveRestore className="h-5 w-5" />
+                          </button>
+                        )}
                         <button
                           onClick={() =>
                             user.id && onDeleteUser(String(user.id))
