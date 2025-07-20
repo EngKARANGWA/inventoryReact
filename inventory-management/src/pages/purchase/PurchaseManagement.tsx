@@ -35,7 +35,7 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import useMediaQuery from "../../hooks/useMediaQuery";
 //@ts-ignore
 import html2pdf from "html2pdf.js";
-import PurchasePDFReport from "./PurchasePDFReport";
+import PurchasePDFReport from "./PurchasePDFFullReport";
 
 const PurchaseManagement: React.FC = () => {
   const pdfRef = useRef<HTMLDivElement>(null);

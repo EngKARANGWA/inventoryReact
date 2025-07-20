@@ -1,20 +1,18 @@
-import { forwardRef } from "react";
-import { Purchase } from "../../services/purchaseService";
+import React, { forwardRef } from "react";
+import { Production } from "./types";
 
 interface Props {
-  purchases: Purchase[];
+  productions: Production[];
   exportDate: string;
 }
 
-const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
-  ({ purchases, exportDate }, ref) => {
-    const formatAmount = (val: number | string | undefined) => {
-      const amount = Number(val) || 0;
+const ProductionPDFFullReport = forwardRef<HTMLDivElement, Props>(
+  ({ productions, exportDate }, ref) => {
+    const formatNumber = (val: number | string | undefined) => {
+      const num = Number(val) || 0;
       return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "RWF",
         minimumFractionDigits: 0,
-      }).format(amount);
+      }).format(num);
     };
 
     const formatDate = (dateString?: string) => {
@@ -23,23 +21,20 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
       return (
         date.toLocaleDateString() +
         " " +
-        date.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
+        date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       );
     };
 
     // Totals
-    const totalAmount = purchases.reduce(
-      (sum, p) => sum + Number(p.weight || 0) * Number(p.unitPrice || 0),
+    const totalOutcome = productions.reduce(
+      (sum, p) => sum + Number(p.totalOutcome || 0),
       0
     );
-    const totalPaid = purchases.reduce(
-      (sum, p) => sum + Number(p.totalPaid || 0),
-      0
-    );
-    const totalUnpaid = totalAmount - totalPaid;
+    const avgEfficiency =
+      productions.length > 0
+        ? productions.reduce((sum, p) => sum + Number(p.efficiency || 0), 0) /
+          productions.length
+        : 0;
 
     return (
       <div
@@ -71,7 +66,7 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
             marginBottom: "16px",
           }}
         >
-          Purchases Report
+          Production Batches Report
         </h2>
         <p
           style={{
@@ -83,7 +78,7 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
           Exported at: {exportDate}
         </p>
 
-        {/* Purchases Table */}
+        {/* Productions Table */}
         <table
           style={{
             width: "100%",
@@ -107,42 +102,32 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
               <th
                 style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}
               >
-                Supplier
-              </th>
-              <th
-                style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}
-              >
                 Product
               </th>
               <th
-                style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}
+                style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}
               >
-                Weight (kg)
+                Raw Material
               </th>
               <th
                 style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}
               >
-                Unit Price
+                Input (kg)
               </th>
               <th
                 style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}
               >
-                Total
+                Output (kg)
               </th>
               <th
                 style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}
               >
-                Paid
-              </th>
-              <th
-                style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}
-              >
-                Unpaid
+                Efficiency (%)
               </th>
               <th
                 style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}
               >
-                Status
+                Warehouse
               </th>
               <th
                 style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}
@@ -152,49 +137,32 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
             </tr>
           </thead>
           <tbody>
-            {purchases.map((p) => {
-              const total = Number(p.weight || 0) * Number(p.unitPrice || 0);
-              const paid = Number(p.totalPaid || 0);
-              const unpaid = total - paid;
-              return (
-                <tr
-                  key={p.id}
-                  style={{
-                    borderBottom: "1px solid #e2e8f0",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <td style={{ padding: "8px" }}>{p.purchaseReference}</td>
-                  <td style={{ padding: "8px" }}>
-                    {p.user?.profile?.names || "—"}
-                  </td>
-                  <td style={{ padding: "8px" }}>
-                    {p.product?.name || "—"}
-                  </td>
-                  <td style={{ padding: "8px", textAlign: "right" }}>
-                    {p.weight}
-                  </td>
-                  <td style={{ padding: "8px", textAlign: "right" }}>
-                    {formatAmount(Number(p.unitPrice))}
-                  </td>
-                  <td style={{ padding: "8px", textAlign: "right" }}>
-                    {formatAmount(total)}
-                  </td>
-                  <td style={{ padding: "8px", textAlign: "right" }}>
-                    {formatAmount(paid)}
-                  </td>
-                  <td style={{ padding: "8px", textAlign: "right" }}>
-                    {formatAmount(unpaid)}
-                  </td>
-                  <td style={{ padding: "8px" }}>
-                    {p.status}
-                  </td>
-                  <td style={{ padding: "8px" }}>
-                    {formatDate(p.createdAt)}
-                  </td>
-                </tr>
-              );
-            })}
+            {productions.map((p) => (
+              <tr
+                key={p.id}
+                style={{
+                  borderBottom: "1px solid #e2e8f0",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <td style={{ padding: "8px" }}>{p.referenceNumber}</td>
+                <td style={{ padding: "8px" }}>{p.product?.name || "—"}</td>
+                <td style={{ padding: "8px" }}>{p.mainProduct?.name || "—"}</td>
+                <td style={{ padding: "8px", textAlign: "right" }}>
+                  {formatNumber(Number(p.usedQuantity))}
+                </td>
+                <td style={{ padding: "8px", textAlign: "right" }}>
+                  {formatNumber(p.totalOutcome)}
+                </td>
+                <td style={{ padding: "8px", textAlign: "right" }}>
+                  {p.efficiency !== undefined && p.efficiency !== null
+                    ? Number(p.efficiency).toFixed(1)
+                    : "—"}
+                </td>
+                <td style={{ padding: "8px" }}>{p.warehouse?.name || "—"}</td>
+                <td style={{ padding: "8px" }}>{formatDate(p.date)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
@@ -211,7 +179,7 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
           <tbody>
             <tr>
               <td style={{ padding: "8px", borderBottom: "1px solid #e2e8f0" }}>
-                <strong>Total Amount:</strong>
+                <strong>Total Output:</strong>
               </td>
               <td
                 style={{
@@ -221,10 +189,10 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
                   color: "#16a34a",
                 }}
               >
-                {formatAmount(totalAmount)}
+                {formatNumber(totalOutcome)} kg
               </td>
               <td style={{ padding: "8px", borderBottom: "1px solid #e2e8f0" }}>
-                <strong>Total Paid:</strong>
+                <strong>Average Efficiency:</strong>
               </td>
               <td
                 style={{
@@ -234,20 +202,7 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
                   color: "#2563eb",
                 }}
               >
-                {formatAmount(totalPaid)}
-              </td>
-              <td style={{ padding: "8px", borderBottom: "1px solid #e2e8f0" }}>
-                <strong>Total Unpaid:</strong>
-              </td>
-              <td
-                style={{
-                  padding: "8px",
-                  borderBottom: "1px solid #e2e8f0",
-                  textAlign: "right",
-                  color: "#dc2626",
-                }}
-              >
-                {formatAmount(totalUnpaid)}
+                {avgEfficiency ? avgEfficiency.toFixed(1) : "0.0"} %
               </td>
             </tr>
           </tbody>
@@ -257,4 +212,4 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
   }
 );
 
-export default PurchasePDFReport;
+export default ProductionPDFFullReport;

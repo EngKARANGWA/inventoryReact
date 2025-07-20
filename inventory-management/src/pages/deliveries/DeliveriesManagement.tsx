@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import { ToastContainer, toast } from "react-toastify";
@@ -14,9 +14,12 @@ import DeliveryControls from "./DeliveryControls";
 import EmptyState from "./EmptyState";
 import { Truck } from "lucide-react";
 import { DeliveryFilters } from "./types";
-
+import DeliveryPDFFullReport from "./DeliveryPDFFullReport";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 
 const DeliveryManagement: React.FC = () => {
+  const pdfRef = useRef<HTMLDivElement>(null);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [totalDeliveries, setTotalDeliveries] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -113,17 +116,32 @@ const DeliveryManagement: React.FC = () => {
       await deliveryService.deleteDelivery(deliveryId);
       toast.success("Delivery deleted successfully");
       setShowConfirmDelete(null);
-      
+
       // Refresh the list after deleting
       fetchDeliveries();
     } catch (err: any) {
       console.error("Error deleting delivery:", err);
-      toast.error(err.response?.data?.message || err.message || "Failed to delete delivery");
+      toast.error(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to delete delivery"
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleExportData = () => {
+    if (!pdfRef.current) return;
+    const options = {
+      margin: 0.5,
+      filename: `deliveries_${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+    };
+    html2pdf().set(options).from(pdfRef.current).save();
+  };
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters((prev) => ({
@@ -164,42 +182,80 @@ const DeliveryManagement: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedDeliveries = React.useMemo(() => {
-    if (!sortConfig) return deliveries;
-
-    return [...deliveries].sort((a, b) => {
-      const aValue = a[sortConfig.key] ?? "";
-      const bValue = b[sortConfig.key] ?? "";
-
-      if (aValue < bValue) {
-        return sortConfig.direction === "ascending" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === "ascending" ? 1 : -1;
-      }
-      return 0;
-    });
-  }, [deliveries, sortConfig]);
-
   const filteredDeliveries = React.useMemo(() => {
-    if (!searchTerm) return sortedDeliveries;
+    let result = deliveries;
 
-    return sortedDeliveries.filter((delivery) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        delivery.deliveryReference.toLowerCase().includes(searchLower) ||
-        (delivery.driver?.profile?.names
-          ?.toLowerCase()
-          .includes(searchLower) ??
-          false) ||
-        (delivery.product?.name.toLowerCase().includes(searchLower) ?? false) ||
-        (delivery.warehouse?.name.toLowerCase().includes(searchLower) ??
-          false) ||
-        delivery.direction.toLowerCase().includes(searchLower) ||
-        delivery.status.toLowerCase().includes(searchLower)
+    // Direction filter
+    if (filters.direction) {
+      result = result.filter((d) => d.direction === filters.direction);
+    }
+
+    // Product filter
+    if (filters.productId) {
+      result = result.filter((d) => d.product?.id === filters.productId);
+    }
+
+    // Warehouse filter
+    if (filters.warehouseId) {
+      result = result.filter((d) => d.warehouse?.id === filters.warehouseId);
+    }
+
+    // Driver filter
+    if (filters.driverId) {
+      result = result.filter((d) => d.driver?.id === filters.driverId);
+    }
+
+    // Status filter
+    if (filters.status) {
+      result = result.filter((d) => d.status === filters.status);
+    }
+
+    // Date range filter
+    if (filters.dateFrom) {
+      result = result.filter(
+        (d) => new Date(d.deliveredAt) >= new Date(filters.dateFrom)
       );
-    });
-  }, [sortedDeliveries, searchTerm]);
+    }
+    if (filters.dateTo) {
+      result = result.filter(
+        (d) => new Date(d.deliveredAt) <= new Date(filters.dateTo)
+      );
+    }
+
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      result = result.filter(
+        (delivery) =>
+          delivery.deliveryReference.toLowerCase().includes(searchLower) ||
+          (delivery.driver?.profile?.names
+            ?.toLowerCase()
+            .includes(searchLower) ??
+            false) ||
+          (delivery.product?.name?.toLowerCase().includes(searchLower) ??
+            false) ||
+          (delivery.warehouse?.name?.toLowerCase().includes(searchLower) ??
+            false) ||
+          delivery.direction.toLowerCase().includes(searchLower) ||
+          delivery.status.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Sorting
+    if (sortConfig) {
+      result = [...result].sort((a, b) => {
+        const aValue = a[sortConfig.key] ?? "";
+        const bValue = b[sortConfig.key] ?? "";
+        if (aValue < bValue)
+          return sortConfig.direction === "ascending" ? -1 : 1;
+        if (aValue > bValue)
+          return sortConfig.direction === "ascending" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [deliveries, filters, searchTerm, sortConfig]);
 
   const currentPage = filters.page || 1;
   const pageSize = filters.pageSize || 10;
@@ -248,9 +304,7 @@ const DeliveryManagement: React.FC = () => {
               toggleViewType={() =>
                 setViewType((prev) => (prev === "table" ? "cards" : "table"))
               }
-              handleExportData={() =>
-                toast.info("Data export feature will be implemented soon!")
-              }
+              handleExportData={handleExportData}
               handleRefresh={handleRefresh}
               handleAddClick={handleAddClick}
               filters={filters}
@@ -335,7 +389,13 @@ const DeliveryManagement: React.FC = () => {
           handleDeleteDelivery={handleDeleteDelivery}
         />
       )}
-
+      <div style={{ display: "none" }}>
+        <DeliveryPDFFullReport
+          ref={pdfRef}
+          deliveries={filteredDeliveries}
+          exportDate={new Date().toLocaleString()}
+        />
+      </div>
       <ToastContainer
         position="top-right"
         autoClose={5000}

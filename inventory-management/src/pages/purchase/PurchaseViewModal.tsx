@@ -120,7 +120,7 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
     if (!purchase) return;
     const exportDate = new Date().toLocaleDateString();
     const htmlContent = ReactDOMServer.renderToStaticMarkup(
-      <PurchasePDFReport purchase={purchase} exportDate={exportDate} />
+      <PurchasePDFReport purchases={[purchase]} exportDate={exportDate} />
     );
 
     const container = document.createElement("div");
@@ -497,13 +497,13 @@ const PurchaseViewModal: React.FC<PurchaseViewModalProps> = ({
           </div>
 
           <div className="mt-6 flex justify-end">
-            <button
+            {/* <button
               onClick={exportToPDF}
               className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 flex items-center mr-2"
             >
               <FileText className="w-4 h-4 mr-2" />
               Export as PDF
-            </button>
+            </button> */}
 
             <button
               onClick={onClose}

@@ -45,6 +45,7 @@ interface ProductionActionBarProps {
   ) => void;
   onApplyFilters: () => void;
   onClearFilters: () => void;
+  onExport: () => void;
 }
 
 const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
@@ -63,10 +64,12 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
   onFilterChange,
   onApplyFilters,
   onClearFilters,
+  onExport
 }) => {
-  // Separate products by type for better filtering
-  const finishedProducts = products.filter(p => p.type === 'finished_product');
-  const rawMaterials = products.filter(p => p.type === 'raw_material');
+  const finishedProducts = products.filter(
+    (p) => p.type === "finished_product"
+  );
+  const rawMaterials = products.filter((p) => p.type === "raw_material");
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
@@ -116,7 +119,7 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
           </button>
 
           <button
-            onClick={() => console.log("Export feature coming soon!")}
+            onClick={onExport}
             className="flex items-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
             title="Export data"
           >
@@ -235,35 +238,6 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
               />
             </div>
 
-            {/* Outcome Range */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Min Outcome
-              </label>
-              <input
-                type="number"
-                name="minOutcome"
-                value={filters.minOutcome || ""}
-                onChange={onFilterChange}
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Max Outcome
-              </label>
-              <input
-                type="number"
-                name="maxOutcome"
-                value={filters.maxOutcome || ""}
-                onChange={onFilterChange}
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              />
-            </div>
-
             {/* Date Range Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -309,33 +283,6 @@ const ProductionActionBar: React.FC<ProductionActionBarProps> = ({
                   </option>
                 ))}
               </select>
-            </div>
-
-            {/* Additional Filters */}
-            <div className="col-span-2">
-              <div className="flex gap-4">
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    name="hasLoss"
-                    checked={filters.hasLoss || false}
-                    onChange={onFilterChange}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Has Loss</span>
-                </label>
-
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    name="hasByproduct"
-                    checked={filters.hasByproduct || false}
-                    onChange={onFilterChange}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Has Byproduct</span>
-                </label>
-              </div>
             </div>
           </div>
 

@@ -1,27 +1,24 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  Eye,
-  Edit2,
-  Trash2,
-  Factory,
-} from "lucide-react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Eye, Edit2, Trash2, Factory } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { Production, Product, Warehouse, FilterParams } from "./types";
 import { formatDate, formatNumber } from "./utils";
 import { productionService } from "../../services/productionServices";
 import { Header } from "../../components/ui/header";
 import { Sidebar } from "../../components/ui/sidebar";
-
+import ProductionPDFFullReport from "./ProductionPDFFullReport";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 import "react-toastify/dist/ReactToastify.css";
 import ProductionForm from "./ProductionForm";
 import ProductionViewModal from "./ProductionViewModal";
 import ProductionTable from "./ProductionTable";
 import ProductionSummaryCards from "./ProductionSummaryCards";
 import ProductionActionBar from "./ProductionActionBar";
-import api from '../../services/authService'
-
+import api from "../../services/authService";
 
 const ProductionManagement: React.FC = () => {
+  const pdfRef = useRef<HTMLDivElement>(null);
   const [allProductions, setAllProductions] = useState<Production[]>([]);
   const [productions, setProductions] = useState<Production[]>([]);
   const [totalProductions, setTotalProductions] = useState(0);
@@ -61,9 +58,9 @@ const ProductionManagement: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching productions...');
+      console.log("Fetching productions...");
       const { rows } = await productionService.getAllProductions(1, 1000);
-      console.log('Productions fetched:', rows);
+      console.log("Productions fetched:", rows);
       setAllProductions(rows as Production[]);
     } catch (err) {
       console.error("Error fetching productions:", err);
@@ -78,7 +75,7 @@ const ProductionManagement: React.FC = () => {
   const fetchProducts = useCallback(async () => {
     setLoadingProducts(true);
     try {
-      const response = await api.get('/products', {
+      const response = await api.get("/products", {
         params: { activeOnly: true },
       });
       const productsData = Array.isArray(response.data)
@@ -97,7 +94,7 @@ const ProductionManagement: React.FC = () => {
   const fetchWarehouses = useCallback(async () => {
     setLoadingWarehouses(true);
     try {
-      const response = await api.get('/warehouse', {
+      const response = await api.get("/warehouse", {
         params: { activeOnly: true },
       });
       const warehousesData = Array.isArray(response.data)
@@ -114,11 +111,7 @@ const ProductionManagement: React.FC = () => {
   }, []);
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([
-      fetchProductions(),
-      fetchProducts(),
-      fetchWarehouses()
-    ]);
+    await Promise.all([fetchProductions(), fetchProducts(), fetchWarehouses()]);
   }, [fetchProductions, fetchProducts, fetchWarehouses]);
 
   useEffect(() => {
@@ -131,70 +124,78 @@ const ProductionManagement: React.FC = () => {
     // Apply search term
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      filteredData = filteredData.filter(production => 
-        production.referenceNumber?.toLowerCase().includes(searchLower) ||
-        production.product?.name?.toLowerCase().includes(searchLower) ||
-        production.notes?.toLowerCase().includes(searchLower) ||
-        production.mainProduct?.name?.toLowerCase().includes(searchLower)
+      filteredData = filteredData.filter(
+        (production) =>
+          production.referenceNumber?.toLowerCase().includes(searchLower) ||
+          production.product?.name?.toLowerCase().includes(searchLower) ||
+          production.notes?.toLowerCase().includes(searchLower) ||
+          production.mainProduct?.name?.toLowerCase().includes(searchLower)
       );
     }
 
     // Apply filters
     if (filters.productId) {
-      filteredData = filteredData.filter(production => 
-        production.productId === Number(filters.productId)
+      filteredData = filteredData.filter(
+        (production) => production.productId === Number(filters.productId)
       );
     }
     if (filters.mainProductId) {
-      filteredData = filteredData.filter(production => 
-        production.mainProductId === Number(filters.mainProductId)
+      filteredData = filteredData.filter(
+        (production) =>
+          production.mainProductId === Number(filters.mainProductId)
       );
     }
     if (filters.warehouseId) {
-      filteredData = filteredData.filter(production => 
-        production.warehouseId === Number(filters.warehouseId)
+      filteredData = filteredData.filter(
+        (production) => production.warehouseId === Number(filters.warehouseId)
       );
     }
-    if (filters.dateFrom && typeof filters.dateFrom === 'string') {
-      const fromDate = new Date(filters.dateFrom);
-      filteredData = filteredData.filter(production => 
-        new Date(production.date) >= fromDate
+    if (filters.startDate && typeof filters.startDate === "string") {
+      const fromDate = new Date(filters.startDate);
+      filteredData = filteredData.filter(
+        (production) => new Date(production.date) >= fromDate
       );
     }
-    if (filters.dateTo && typeof filters.dateTo === 'string') {
-      const toDate = new Date(filters.dateTo);
-      filteredData = filteredData.filter(production => 
-        new Date(production.date) <= toDate
+    if (filters.endDate && typeof filters.endDate === "string") {
+      const toDate = new Date(filters.endDate);
+      filteredData = filteredData.filter(
+        (production) => new Date(production.date) <= toDate
       );
     }
     if (filters.minEfficiency !== undefined) {
-      filteredData = filteredData.filter(production => 
-        (production.efficiency || 0) >= Number(filters.minEfficiency)
+      filteredData = filteredData.filter(
+        (production) =>
+          (production.efficiency || 0) >= Number(filters.minEfficiency)
       );
     }
     if (filters.maxEfficiency !== undefined) {
-      filteredData = filteredData.filter(production => 
-        (production.efficiency || 0) <= Number(filters.maxEfficiency)
+      filteredData = filteredData.filter(
+        (production) =>
+          (production.efficiency || 0) <= Number(filters.maxEfficiency)
       );
     }
     if (filters.minOutcome !== undefined) {
-      filteredData = filteredData.filter(production => 
-        (production.totalOutcome || 0) >= Number(filters.minOutcome)
+      filteredData = filteredData.filter(
+        (production) =>
+          (production.totalOutcome || 0) >= Number(filters.minOutcome)
       );
     }
     if (filters.maxOutcome !== undefined) {
-      filteredData = filteredData.filter(production => 
-        (production.totalOutcome || 0) <= Number(filters.maxOutcome)
+      filteredData = filteredData.filter(
+        (production) =>
+          (production.totalOutcome || 0) <= Number(filters.maxOutcome)
       );
     }
     if (filters.hasLoss) {
-      filteredData = filteredData.filter(production => 
-        (production.productionLoss || 0) > 0
+      filteredData = filteredData.filter(
+        (production) => (production.productionLoss || 0) > 0
       );
     }
     if (filters.hasByproduct) {
-      filteredData = filteredData.filter(production => 
-        production.outcomes?.some(outcome => outcome.outcomeType === 'byproduct')
+      filteredData = filteredData.filter((production) =>
+        production.outcomes?.some(
+          (outcome) => outcome.outcomeType === "byproduct"
+        )
       );
     }
 
@@ -270,6 +271,18 @@ const ProductionManagement: React.FC = () => {
     []
   );
 
+  const handleExportData = () => {
+    if (!pdfRef.current) return;
+    const options = {
+      margin: 0.5,
+      filename: `productions_${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+    };
+    html2pdf().set(options).from(pdfRef.current).save();
+  };
+
   const applyFilters = useCallback(() => {
     setPage(1);
   }, []);
@@ -280,32 +293,32 @@ const ProductionManagement: React.FC = () => {
   }, []);
 
   const handleAddClick = useCallback(() => {
-    console.log('Add button clicked');
+    console.log("Add button clicked");
     setEditingProduction(null);
     setShowAddForm(true);
   }, []);
 
   const handleEditClick = useCallback((production: Production) => {
-    console.log('Edit button clicked for production:', production);
+    console.log("Edit button clicked for production:", production);
     setEditingProduction(production);
     setShowAddForm(true);
   }, []);
 
   const handleViewClick = useCallback((production: Production) => {
-    console.log('View button clicked for production:', production);
+    console.log("View button clicked for production:", production);
     setSelectedProduction(production);
     setShowViewModal(true);
   }, []);
 
   const handleDeleteConfirm = (productionId: number) => {
-    console.log('Delete button clicked for production ID:', productionId);
+    console.log("Delete button clicked for production ID:", productionId);
     setShowConfirmDelete(productionId);
   };
 
   const handleDeleteProduction = useCallback(
     async (productionId: number) => {
       try {
-        console.log('Deleting production:', productionId);
+        console.log("Deleting production:", productionId);
         setIsSubmitting(true);
         await productionService.deleteProduction(productionId);
         setProductions((prev) => prev.filter((p) => p.id !== productionId));
@@ -332,31 +345,40 @@ const ProductionManagement: React.FC = () => {
 
       try {
         // Ensure production costs have all required fields
-        if (productionData.productionCost && productionData.productionCost.length > 0) {
-          productionData.productionCost = productionData.productionCost.map((cost: any) => {
-            // Ensure all required fields are present and properly formatted
-            const quantity = Number(cost.quantity) || 1;
-            const unitPrice = Number(cost.unitPrice) || 0;
-            const total = Number(cost.total) || (quantity * unitPrice);
+        if (
+          productionData.productionCost &&
+          productionData.productionCost.length > 0
+        ) {
+          productionData.productionCost = productionData.productionCost.map(
+            (cost: any) => {
+              // Ensure all required fields are present and properly formatted
+              const quantity = Number(cost.quantity) || 1;
+              const unitPrice = Number(cost.unitPrice) || 0;
+              const total = Number(cost.total) || quantity * unitPrice;
 
-            // Validate the values
-            if (quantity <= 0) {
-              throw new Error("Production cost quantity must be greater than 0");
-            }
-            if (unitPrice < 0) {
-              throw new Error("Production cost unit price cannot be negative");
-            }
-            if (total < 0) {
-              throw new Error("Production cost total cannot be negative");
-            }
+              // Validate the values
+              if (quantity <= 0) {
+                throw new Error(
+                  "Production cost quantity must be greater than 0"
+                );
+              }
+              if (unitPrice < 0) {
+                throw new Error(
+                  "Production cost unit price cannot be negative"
+                );
+              }
+              if (total < 0) {
+                throw new Error("Production cost total cannot be negative");
+              }
 
-            return {
-              item: cost.item || cost.name || cost.description || "",
-              quantity: quantity,
-              unitPrice: unitPrice,
-              total: total
-            };
-          });
+              return {
+                item: cost.item || cost.name || cost.description || "",
+                quantity: quantity,
+                unitPrice: unitPrice,
+                total: total,
+              };
+            }
+          );
         }
 
         if (editingProduction) {
@@ -394,7 +416,12 @@ const ProductionManagement: React.FC = () => {
   );
 
   const handleViewTypeChange = useCallback(() => {
-    console.log('Toggling view type from', viewType, 'to', viewType === 'table' ? 'cards' : 'table');
+    console.log(
+      "Toggling view type from",
+      viewType,
+      "to",
+      viewType === "table" ? "cards" : "table"
+    );
     setViewType((prev) => (prev === "table" ? "cards" : "table"));
   }, [viewType]);
 
@@ -451,6 +478,7 @@ const ProductionManagement: React.FC = () => {
               onFilterChange={handleFilterChange}
               onApplyFilters={applyFilters}
               onClearFilters={clearFilters}
+              onExport={handleExportData}
             />
 
             {viewType === "table" ? (
@@ -588,7 +616,8 @@ const ProductionManagement: React.FC = () => {
                     Confirm Delete
                   </h3>
                   <p className="text-gray-600 mb-6">
-                    Are you sure you want to delete this production batch? This action cannot be undone.
+                    Are you sure you want to delete this production batch? This
+                    action cannot be undone.
                   </p>
                   <div className="flex justify-end space-x-3">
                     <button
@@ -611,6 +640,13 @@ const ProductionManagement: React.FC = () => {
             )}
           </div>
         </main>
+      </div>
+      <div style={{ display: "none" }}>
+        <ProductionPDFFullReport
+          ref={pdfRef}
+          productions={productions}
+          exportDate={new Date().toLocaleString()}
+        />
       </div>
     </div>
   );

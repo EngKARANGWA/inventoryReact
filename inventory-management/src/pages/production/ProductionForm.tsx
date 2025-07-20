@@ -57,7 +57,13 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     productionCost: (editingProduction?.productionCost ||
       []) as ProductionCostItem[],
     outcomes: editingProduction?.outcomes || [],
-    packagesSummary: editingProduction?.packagesSummary || [],
+    packagesSummary:
+      editingProduction?.packagesSummary?.map((pkg) => ({
+        packageSize: pkg.size,
+        quantity: pkg.quantity,
+        totalWeight: pkg.totalWeight,
+        unit: pkg.unit,
+      })) || [],
     date: editingProduction?.date || new Date().toISOString().split("T")[0],
   });
 
@@ -297,19 +303,29 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
     ) {
       // Fetch average price when product is selected for byproducts only
       fetchAveragePrice(value, "outcome", index);
-    }
 
-    updatedOutcomes[index] = {
-      ...updatedOutcomes[index],
-      [field]:
-        field === "quantity" || field === "unitPrice"
-          ? value
-            ? parseFloat(value)
-            : 0
-          : field === "productId"
-          ? value // Keep productId as string/number, don't parse it
-          : value,
-    };
+      // Set the name to the selected product's name
+      const selectedProduct = products.find(
+        (product) => product.id.toString() === value
+      );
+      updatedOutcomes[index] = {
+        ...updatedOutcomes[index],
+        productId: Number(value),
+        name: selectedProduct ? selectedProduct.name : "",
+      };
+    } else {
+      updatedOutcomes[index] = {
+        ...updatedOutcomes[index],
+        [field]:
+          field === "quantity" || field === "unitPrice"
+            ? value
+              ? parseFloat(value)
+              : 0
+            : field === "productId"
+            ? value
+            : value,
+      };
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -368,12 +384,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
       ...prev,
       packagesSummary: updatedPackages,
     }));
-
-    // Clear package validation error
-    setFormErrors((prev) => ({
-      ...prev,
-      packagesValidation: "",
-    }));
   };
 
   const addPackage = () => {
@@ -382,9 +392,9 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
       packagesSummary: [
         ...prev.packagesSummary,
         {
+          packageSize: "",
           quantity: 0,
           totalWeight: 0,
-          packageSize: "",
           unit: "kg",
         },
       ],
@@ -530,7 +540,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({
         ...(outcome.notes ? { notes: outcome.notes } : {}),
       })),
       packagesSummary: formData.packagesSummary.map((pkg) => ({
-        size: pkg.packageSize, // Backend expects 'size' not 'packageSize'
+        size: pkg.packageSize,
         quantity: parseInt(pkg.quantity.toString()),
         totalWeight: parseFloat(pkg.totalWeight.toString()),
         unit: pkg.unit,

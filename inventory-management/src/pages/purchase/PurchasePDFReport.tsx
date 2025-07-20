@@ -6,21 +6,30 @@ interface Props {
   exportDate: string;
 }
 
-const cellStyle = {
-  border: "1px solid #000",
-  padding: "8px",
-  fontSize: "16px",
-};
-
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse" as const,
-  fontSize: "16px",
-  marginBottom: "16px",
-};
-
 const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
   ({ purchases, exportDate }, ref) => {
+    const formatAmount = (val: number | string | undefined) => {
+      const amount = Number(val) || 0;
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "RWF",
+        minimumFractionDigits: 0,
+      }).format(amount);
+    };
+
+    const formatDate = (dateString?: string) => {
+      if (!dateString) return "N/A";
+      const date = new Date(dateString);
+      return (
+        date.toLocaleDateString() +
+        " " +
+        date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      );
+    };
+
     // Calculate totals
     const totalAmount = purchases.reduce(
       (sum, p) => sum + Number(p.weight || 0) * Number(p.unitPrice || 0),
@@ -32,95 +41,194 @@ const PurchasePDFReport = forwardRef<HTMLDivElement, Props>(
     );
     const totalUnpaid = totalAmount - totalPaid;
 
-    const formatAmount = (val: number | string | undefined) =>
-      Number(val || 0).toLocaleString();
-
-    const formatDate = (dateString?: string) =>
-      dateString ? new Date(dateString).toLocaleDateString() : "N/A";
-
     return (
       <div
         ref={ref}
         style={{
-          padding: "48px",
-          fontFamily: "Arial, sans-serif",
-          fontSize: "18px",
+          padding: "40px",
+          fontSize: "14px",
+          lineHeight: "1.6",
           color: "#000",
-          width: "100%",
-          boxSizing: "border-box",
-          minWidth: "210mm",
-          minHeight: "297mm",
+          fontFamily: "sans-serif",
         }}
       >
         <h1
           style={{
             color: "#16a34a",
             fontWeight: "bold",
-            fontSize: "18px",
-            marginBottom: "4px",
+            fontSize: "28px",
+            marginBottom: "8px",
+            textAlign: "center",
           }}
         >
           IHIRWE TRADING CO. LTD
         </h1>
-        <h2 style={{ fontSize: "16px", fontWeight: "bold" }}>
+        <h2
+          style={{
+            fontSize: "16px",
+            fontWeight: 600,
+            textAlign: "center",
+            marginBottom: "16px",
+          }}
+        >
           Purchases Report
         </h2>
-        <p>Exported on: {exportDate}</p>
-        <hr style={{ margin: "12px 0" }} />
+        <p
+          style={{
+            textAlign: "right",
+            fontSize: "12px",
+            marginBottom: "20px",
+          }}
+        >
+          Exported at: {exportDate}
+        </p>
 
-        <table style={tableStyle}>
+        {/* Purchases Table */}
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            marginBottom: "24px",
+            border: "1px solid #e2e8f0",
+          }}
+        >
           <thead>
-            <tr>
-              <th style={cellStyle}>Reference</th>
-              <th style={cellStyle}>Supplier</th>
-              <th style={cellStyle}>Product</th>
-              <th style={cellStyle}>Weight (kg)</th>
-              <th style={cellStyle}>Unit Price</th>
-              <th style={cellStyle}>Total</th>
-              <th style={cellStyle}>Paid</th>
-              <th style={cellStyle}>Unpaid</th>
-              <th style={cellStyle}>Date</th>
+            <tr
+              style={{
+                backgroundColor: "#f1f5f9",
+                borderBottom: "1px solid #e2e8f0",
+              }}
+            >
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}>
+                Reference
+              </th>
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}>
+                Supplier
+              </th>
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}>
+                Product
+              </th>
+              <th style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>
+                Weight (kg)
+              </th>
+              <th style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>
+                Unit Price
+              </th>
+              <th style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>
+                Total
+              </th>
+              <th style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>
+                Paid
+              </th>
+              <th style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>
+                Unpaid
+              </th>
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}>
+                Status
+              </th>
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600 }}>
+                Date
+              </th>
             </tr>
           </thead>
           <tbody>
-            {purchases.map((p, idx) => {
+            {purchases.map((p) => {
               const total = Number(p.weight || 0) * Number(p.unitPrice || 0);
               const paid = Number(p.totalPaid || 0);
               const unpaid = total - paid;
               return (
-                <tr key={p.id || idx}>
-                  <td style={cellStyle}>{p.purchaseReference}</td>
-                  <td style={cellStyle}>
-                    {p.user?.profile?.names || "Unknown"}
+                <tr
+                  key={p.id}
+                  style={{
+                    borderBottom: "1px solid #e2e8f0",
+                    backgroundColor: "#fff",
+                  }}
+                >
+                  <td style={{ padding: "8px" }}>{p.purchaseReference}</td>
+                  <td style={{ padding: "8px" }}>
+                    {p.user?.profile?.names || "—"}
                   </td>
-                  <td style={cellStyle}>{p.product?.name || "—"}</td>
-                  <td style={cellStyle}>{p.weight}</td>
-                  <td style={cellStyle}>{formatAmount(Number(p.unitPrice))}</td>
-                  <td style={cellStyle}>{formatAmount(total)}</td>
-                  <td style={cellStyle}>{formatAmount(paid)}</td>
-                  <td style={cellStyle}>{formatAmount(unpaid)}</td>
-                  <td style={cellStyle}>{formatDate(p.createdAt)}</td>
+                  <td style={{ padding: "8px" }}>
+                    {p.product?.name || "—"}
+                  </td>
+                  <td style={{ padding: "8px", textAlign: "right" }}>
+                    {p.weight}
+                  </td>
+                  <td style={{ padding: "8px", textAlign: "right" }}>
+                    {formatAmount(Number(p.unitPrice))}
+                  </td>
+                  <td style={{ padding: "8px", textAlign: "right" }}>
+                    {formatAmount(total)}
+                  </td>
+                  <td style={{ padding: "8px", textAlign: "right" }}>
+                    {formatAmount(paid)}
+                  </td>
+                  <td style={{ padding: "8px", textAlign: "right" }}>
+                    {formatAmount(unpaid)}
+                  </td>
+                  <td style={{ padding: "8px" }}>
+                    {p.status || "—"}
+                  </td>
+                  <td style={{ padding: "8px" }}>
+                    {formatDate(p.createdAt)}
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
 
-        <table style={tableStyle}>
+        {/* Summary Section */}
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            marginBottom: "24px",
+            backgroundColor: "#f8fafc",
+            border: "1px solid #e2e8f0",
+          }}
+        >
           <tbody>
             <tr>
-              <td style={cellStyle}>
+              <td style={{ padding: "8px", borderBottom: "1px solid #e2e8f0" }}>
                 <strong>Total Amount:</strong>
               </td>
-              <td style={cellStyle}>{formatAmount(totalAmount)}</td>
-              <td style={cellStyle}>
+              <td
+                style={{
+                  padding: "8px",
+                  borderBottom: "1px solid #e2e8f0",
+                  textAlign: "right",
+                  color: "#16a34a",
+                }}
+              >
+                {formatAmount(totalAmount)}
+              </td>
+              <td style={{ padding: "8px", borderBottom: "1px solid #e2e8f0" }}>
                 <strong>Total Paid:</strong>
               </td>
-              <td style={cellStyle}>{formatAmount(totalPaid)}</td>
-              <td style={cellStyle}>
+              <td
+                style={{
+                  padding: "8px",
+                  borderBottom: "1px solid #e2e8f0",
+                  textAlign: "right",
+                  color: "#2563eb",
+                }}
+              >
+                {formatAmount(totalPaid)}
+              </td>
+              <td style={{ padding: "8px", borderBottom: "1px solid #e2e8f0" }}>
                 <strong>Total Unpaid:</strong>
               </td>
-              <td style={cellStyle}>{formatAmount(totalUnpaid)}</td>
+              <td
+                style={{
+                  padding: "8px",
+                  borderBottom: "1px solid #e2e8f0",
+                  textAlign: "right",
+                  color: "#dc2626",
+                }}
+              >
+                {formatAmount(totalUnpaid)}
+              </td>
             </tr>
           </tbody>
         </table>

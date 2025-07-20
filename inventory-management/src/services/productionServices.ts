@@ -133,8 +133,8 @@ export interface ProductionOutcome {
 }
 
 export interface PackageSummary {
-  size?: string;        // Backend expects 'size'
-  packageSize?: string; // Frontend uses 'packageSize'
+  size?: string;
+  packageSize?: string;
   quantity: number;
   totalWeight: number;
   unit?: string;

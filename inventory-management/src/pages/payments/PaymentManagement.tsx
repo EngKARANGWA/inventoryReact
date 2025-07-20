@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {Sidebar} from "../../components/ui/sidebar";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import {
   Search,
@@ -25,6 +25,9 @@ import PaymentForm from "./PaymentForm";
 import PaymentViewModal from "./PaymentViewModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { formatNumber } from "../../utils/formatUtils";
+import PaymentsPDFReport from "./PaymentsPDFReport";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 
 interface PaymentFilters {
   page: number;
@@ -35,6 +38,7 @@ interface PaymentFilters {
 }
 
 const PaymentManagement: React.FC = () => {
+  const pdfRef = useRef<HTMLDivElement>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalPayments, setTotalPayments] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -57,12 +61,16 @@ const PaymentManagement: React.FC = () => {
     direction: "descending",
   });
 
-  const [filters, setFilters] = useState<PaymentFilters>({
+  const [filters, setFilters] = useState<
+    PaymentFilters & { startDate?: string; endDate?: string }
+  >({
     page: 1,
     pageSize: 10,
     payableType: "",
     status: "",
     includeDeleted: false,
+    startDate: "",
+    endDate: "",
   });
 
   const fetchPayments = useCallback(async () => {
@@ -98,7 +106,7 @@ const PaymentManagement: React.FC = () => {
 
   useEffect(() => {
     fetchPayments();
-  }, [fetchPayments]);
+  }, []);
 
   const handleRefresh = () => {
     fetchPayments();
@@ -140,7 +148,7 @@ const PaymentManagement: React.FC = () => {
       toast.success("Payment deleted successfully");
       setShowConfirmDelete(false);
       setPaymentToDelete(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error deleting payment:", err);
       toast.error(err.message || "Failed to delete payment");
@@ -160,12 +168,13 @@ const PaymentManagement: React.FC = () => {
     }
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFilters((prev) => ({
       ...prev,
-      [name]:
-        name === "payableType" ? (value as "purchase" | "sale" | "") : value,
+      [name]: value,
       page: 1,
     }));
   };
@@ -226,37 +235,68 @@ const PaymentManagement: React.FC = () => {
   }, [payments, sortConfig]);
 
   const filteredPayments = React.useMemo(() => {
-    if (!searchTerm) return sortedPayments;
+    let result = sortedPayments;
 
-    return sortedPayments.filter((payment) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        payment.paymentReference.toLowerCase().includes(searchLower) ||
-        (payment.payableType === "purchase"
-          ? payment.purchase?.supplier?.user?.profile?.names
-              ?.toLowerCase()
-              .includes(searchLower)
-          : payment.sale?.client?.user?.profile?.names
-              ?.toLowerCase()
-              .includes(searchLower)) ||
-        payment.status.toLowerCase().includes(searchLower) ||
-        payment.paymentMethod.toLowerCase().includes(searchLower) ||
-        payment.transactionReference?.toLowerCase().includes(searchLower)
+    // Filter by payableType
+    if (filters.payableType) {
+      result = result.filter((p) => p.payableType === filters.payableType);
+    }
+
+    // Filter by status
+    if (filters.status) {
+      result = result.filter((p) => p.status === filters.status);
+    }
+
+    // Filter by startDate
+    if (filters.startDate) {
+      result = result.filter(
+        (p) => new Date(p.createdAt) >= new Date(filters.startDate!)
       );
-    });
-  }, [sortedPayments, searchTerm]);
+    }
 
-  const inPayments = payments.filter(p => p.payableType === "sale").length;
-  const outPayments = payments.filter(p => p.payableType === "purchase").length;
-  
+    // Filter by endDate
+    if (filters.endDate) {
+      result = result.filter(
+        (p) => new Date(p.createdAt) <= new Date(filters.endDate!)
+      );
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      result = result.filter((payment) => {
+        return (
+          payment.paymentReference.toLowerCase().includes(searchLower) ||
+          (payment.payableType === "purchase"
+            ? payment.purchase?.user?.profile?.names
+                ?.toLowerCase()
+                .includes(searchLower)
+            : payment.sale?.client?.profile?.names
+                ?.toLowerCase()
+                .includes(searchLower)) ||
+          payment.status.toLowerCase().includes(searchLower) ||
+          payment.paymentMethod.toLowerCase().includes(searchLower) ||
+          payment.transactionReference?.toLowerCase().includes(searchLower)
+        );
+      });
+    }
+
+    return result;
+  }, [sortedPayments, filters, searchTerm]);
+
+  const inPayments = payments.filter((p) => p.payableType === "sale").length;
+  const outPayments = payments.filter(
+    (p) => p.payableType === "purchase"
+  ).length;
+
   const inPaymentsAmount = payments
-    .filter(p => p.payableType === "sale")
+    .filter((p) => p.payableType === "sale")
     .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  
+
   const outPaymentsAmount = payments
-    .filter(p => p.payableType === "purchase")
+    .filter((p) => p.payableType === "purchase")
     .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  
+
   const totalAmount = payments.reduce((sum, p) => {
     const amount = Number(p.amount) || 0;
     return sum + amount;
@@ -271,7 +311,15 @@ const PaymentManagement: React.FC = () => {
   );
 
   const handleExportData = () => {
-    toast.info("Data export feature will be implemented soon!");
+    if (!pdfRef.current) return;
+    const options = {
+      margin: 0.5,
+      filename: `payments_${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+    };
+    html2pdf().set(options).from(pdfRef.current).save();
   };
 
   const toggleViewType = () => {
@@ -323,7 +371,9 @@ const PaymentManagement: React.FC = () => {
                       In Payments
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
-                      {loading ? "..." : `${formatNumber(inPaymentsAmount)} RWF`}
+                      {loading
+                        ? "..."
+                        : `${formatNumber(inPaymentsAmount)} RWF`}
                     </p>
                   </div>
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -333,7 +383,9 @@ const PaymentManagement: React.FC = () => {
                 <div className="mt-2 text-xs text-gray-500">
                   {loading
                     ? "..."
-                    : `(${((inPayments / totalPayments) * 100 || 0).toFixed(1)}% of total)`}
+                    : `(${((inPayments / totalPayments) * 100 || 0).toFixed(
+                        1
+                      )}% of total)`}
                 </div>
               </div>
 
@@ -344,7 +396,9 @@ const PaymentManagement: React.FC = () => {
                       Out Payments
                     </p>
                     <p className="text-xl md:text-2xl font-bold text-gray-800">
-                      {loading ? "..." : `${formatNumber(outPaymentsAmount)} RWF`}
+                      {loading
+                        ? "..."
+                        : `${formatNumber(outPaymentsAmount)} RWF`}
                     </p>
                   </div>
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-full flex items-center justify-center">
@@ -354,7 +408,9 @@ const PaymentManagement: React.FC = () => {
                 <div className="mt-2 text-xs text-gray-500">
                   {loading
                     ? "..."
-                    : `(${((outPayments / totalPayments) * 100 || 0).toFixed(1)}% of total)`}
+                    : `(${((outPayments / totalPayments) * 100 || 0).toFixed(
+                        1
+                      )}% of total)`}
                 </div>
               </div>
             </div>
@@ -445,6 +501,7 @@ const PaymentManagement: React.FC = () => {
                     Filters
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Payable Type */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Payable Type
@@ -460,38 +517,31 @@ const PaymentManagement: React.FC = () => {
                         <option value="sale">Sale</option>
                       </select>
                     </div>
+                    {/* Start Date */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
+                        Start Date
                       </label>
-                      <select
-                        name="status"
-                        value={filters.status}
+                      <input
+                        type="date"
+                        name="startDate"
+                        value={filters.startDate || ""}
                         onChange={handleFilterChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      >
-                        <option value="">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="completed">Completed</option>
-                        <option value="failed">Failed</option>
-                        <option value="refunded">Refunded</option>
-                      </select>
+                      />
                     </div>
+                    {/* End Date */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Items per page
+                        End Date
                       </label>
-                      <select
-                        name="pageSize"
-                        value={filters.pageSize}
+                      <input
+                        type="date"
+                        name="endDate"
+                        value={filters.endDate || ""}
                         onChange={handleFilterChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
+                      />
                     </div>
                     <div className="flex items-end">
                       <button
@@ -640,6 +690,14 @@ const PaymentManagement: React.FC = () => {
         onConfirm={handleDeletePayment}
         isSubmitting={isSubmitting}
       />
+
+      <div style={{ display: "none" }}>
+        <PaymentsPDFReport
+          ref={pdfRef}
+          payments={filteredPayments}
+          exportDate={new Date().toLocaleString()}
+        />
+      </div>
 
       <ToastContainer
         position="top-right"

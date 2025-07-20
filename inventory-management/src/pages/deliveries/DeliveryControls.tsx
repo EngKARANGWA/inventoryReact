@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { DeliveryFilters } from "./types"; 
 
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 interface DeliveryControlsProps {
   searchTerm: string;
   handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -42,7 +44,6 @@ const DeliveryControls: React.FC<DeliveryControlsProps> = ({
   filters,
   handleFilterChange,
   handleDateFilterChange,
-  fetchDeliveries,
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
@@ -127,23 +128,7 @@ const DeliveryControls: React.FC<DeliveryControlsProps> = ({
             Filters
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                value={filters.status}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              >
-                <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Direction
@@ -159,22 +144,7 @@ const DeliveryControls: React.FC<DeliveryControlsProps> = ({
                 <option value="out">Outgoing</option>
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Items per page
-              </label>
-              <select
-                name="pageSize"
-                value={filters.pageSize}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 From Date
@@ -199,14 +169,7 @@ const DeliveryControls: React.FC<DeliveryControlsProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
-            <div className="flex items-end">
-              <button
-                onClick={fetchDeliveries}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Apply Filters
-              </button>
-            </div>
+            
           </div>
         </div>
       )}

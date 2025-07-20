@@ -1,9 +1,9 @@
-import  api  from './authService';
+import api from "./authService";
 
 export interface Payment {
   id: number;
   paymentReference: string;
-  amount: number;
+  amount: number | string;
   payableType: "purchase" | "sale";
   paymentMethod: "bank_transfer" | "cheque" | "cash" | "mobile_money";
   status: "pending" | "completed" | "failed" | "refunded";
@@ -18,32 +18,23 @@ export interface Payment {
     id: number;
     purchaseReference: string;
     description: string;
-    supplier?: {
+    user?: {
       id: number;
-      supplierId: string;
-      user?: {
-        profile?: {
-          names: string;
-        };
+      profile?: {
+        names: string;
       };
     };
-  };
+  } | null;
   sale?: {
     id: number;
     saleReference: string;
-    totalAmount: number;
-    totalPaid: number;
-    status: string;
     client?: {
       id: number;
-      user?: {
-        profile?: {
-          names: string;
-        };
+      profile?: {
+        names: string;
       };
     };
-    items?: SaleItem[];
-  };
+  } | null;
 }
 
 export interface Purchase {
@@ -53,12 +44,9 @@ export interface Purchase {
   weight: number;
   status: string;
   totalPaid: number;
-  supplier?: {
-    id: number;
-    user?: {
-      profile?: {
-        names: string;
-      };
+  user?: {
+    profile?: {
+      names: string;
     };
   };
 }
@@ -71,10 +59,8 @@ export interface Sale {
   status: string;
   client?: {
     id: number;
-    user?: {
-      profile?: {
-        names: string;
-      };
+    profile?: {
+      names: string;
     };
   };
   items?: SaleItem[];
@@ -117,7 +103,10 @@ interface PaymentResponse {
 }
 
 export const paymentService = {
-  async createPayment(paymentData: CreatePaymentData, file?: File): Promise<Payment> {
+  async createPayment(
+    paymentData: CreatePaymentData,
+    file?: File
+  ): Promise<Payment> {
     const formData = new FormData();
 
     Object.entries(paymentData).forEach(([key, value]) => {
@@ -131,7 +120,7 @@ export const paymentService = {
     }
 
     try {
-      const response = await api.post('/payments', formData, {
+      const response = await api.post("/payments", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -145,7 +134,7 @@ export const paymentService = {
 
   async getAllPayments(): Promise<PaymentResponse> {
     try {
-      const response = await api.get('/payments');
+      const response = await api.get("/payments");
       return response.data;
     } catch (error) {
       console.error("Error fetching payments:", error);
@@ -162,10 +151,13 @@ export const paymentService = {
     }
   },
 
-  async getPaymentById(id: number, includeDeleted: boolean = false): Promise<Payment | null> {
+  async getPaymentById(
+    id: number,
+    includeDeleted: boolean = false
+  ): Promise<Payment | null> {
     try {
       const response = await api.get(`/payments/${id}`, {
-        params: { includeDeleted }
+        params: { includeDeleted },
       });
       return response.data.data;
     } catch (error) {
@@ -174,7 +166,11 @@ export const paymentService = {
     }
   },
 
-  async updatePayment(id: number, paymentData: UpdatePaymentData, file?: File): Promise<Payment> {
+  async updatePayment(
+    id: number,
+    paymentData: UpdatePaymentData,
+    file?: File
+  ): Promise<Payment> {
     const formData = new FormData();
 
     Object.entries(paymentData).forEach(([key, value]) => {
@@ -222,7 +218,7 @@ export const paymentService = {
 
   async getPurchases(search: string = ""): Promise<Purchase[]> {
     try {
-      const response = await api.get('/purchases', {
+      const response = await api.get("/purchases", {
         params: { search },
       });
       return response.data.data || [];
@@ -234,7 +230,7 @@ export const paymentService = {
 
   async getSales(search: string = ""): Promise<Sale[]> {
     try {
-      const response = await api.get('/sales', {
+      const response = await api.get("/sales", {
         params: { search },
       });
       return response.data.data || [];
@@ -246,10 +242,10 @@ export const paymentService = {
 
   async getSalesWithItems(search: string = ""): Promise<Sale[]> {
     try {
-      const response = await api.get('/sales', {
-        params: { 
+      const response = await api.get("/sales", {
+        params: {
           search,
-          includeItems: "true" 
+          includeItems: "true",
         },
       });
       return response.data.data || [];
