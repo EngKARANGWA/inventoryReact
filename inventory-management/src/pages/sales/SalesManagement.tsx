@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Sidebar } from "../../components/ui/sidebar";
 import { Header } from "../../components/ui/header";
 import { ShoppingCart, Plus } from "lucide-react";
@@ -7,7 +7,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { saleService } from "../../services/saleService";
 import { Product, Saler, Client, Blocker, SortConfig } from "./sale";
 import api from "../../services/authService";
+import SalePDFFullReport from "./SalePDFFullReport";
 
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 // Import the new components
 import { SalesStats } from "./SalesStats";
 import { SalesFilters } from "./SalesFilters";
@@ -19,6 +22,7 @@ import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { SalesPagination } from "./SalesPagination";
 
 const SaleManagement: React.FC = () => {
+  const pdfRef = useRef<HTMLDivElement>(null);
   const [sales, setSales] = useState<any[]>([]);
   const [totalSales, setTotalSales] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -109,7 +113,7 @@ const SaleManagement: React.FC = () => {
 
   useEffect(() => {
     fetchSales();
-  }, [fetchSales]);
+  }, []);
 
   const fetchDropdownOptions = useCallback(async () => {
     try {
@@ -121,13 +125,18 @@ const SaleManagement: React.FC = () => {
           api.get(`/blockers?search=${blockersSearch}`),
         ]);
 
-      // Handle products
+      // Handle products - ensure consistent structure
+      const productsData = productsRes.data.success
+        ? productsRes.data.data
+        : productsRes.data;
       setProducts(
-        (productsRes.data.success ? productsRes.data.data : productsRes.data) ||
-          []
+        (productsData || []).map((product: any) => ({
+          id: product.id,
+          name: product.name || "Unknown Product",
+        }))
       );
 
-      // Updated Salers
+      // Handle salers
       setSalers(
         (salersRes.data.success ? salersRes.data.data : salersRes.data).map(
           (saler: any) => ({
@@ -137,7 +146,7 @@ const SaleManagement: React.FC = () => {
         )
       );
 
-      // Updated Clients
+      // Handle clients
       setClients(
         (clientsRes.data.success ? clientsRes.data.data : clientsRes.data).map(
           (client: any) => ({
@@ -147,7 +156,7 @@ const SaleManagement: React.FC = () => {
         )
       );
 
-      // Updated Blockers
+      // Handle blockers
       setBlockers(
         (blockersRes.data.success
           ? blockersRes.data.data
@@ -164,10 +173,8 @@ const SaleManagement: React.FC = () => {
   }, [productsSearch, salersSearch, clientsSearch, blockersSearch]);
 
   useEffect(() => {
-    if (showAddForm) {
-      fetchDropdownOptions();
-    }
-  }, [showAddForm, fetchDropdownOptions]);
+    fetchDropdownOptions();
+  }, [fetchDropdownOptions]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,16 +233,11 @@ const SaleManagement: React.FC = () => {
     }
   };
 
-  const handleFilterChange = (
-    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
-  ) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-      page: name === "pageSize" ? 1 : prev.page, // Reset to first page if page size changes
-    }));
-  };
+const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+  setFilters((prev) => ({ ...prev, [name]: value }));
+};
+
 
   // const handleRefresh = () => {
   //   fetchSales();
@@ -355,22 +357,27 @@ const SaleManagement: React.FC = () => {
     });
   }, [sales, sortConfig]);
 
-  const filteredSales = React.useMemo(() => {
-    if (!filters.search) return sortedSales;
+  const filteredSales = useMemo(() => {
+    let result = [...sales];
 
-    const searchLower = filters.search.toLowerCase();
-    return sortedSales.filter((sale) => {
-      return (
-        sale.saleReference?.toLowerCase().includes(searchLower) ||
-        sale.product?.name?.toLowerCase().includes(searchLower) ||
-        sale.saler?.user?.profile?.names?.toLowerCase().includes(searchLower) ||
-        sale.client?.user?.profile?.names
-          ?.toLowerCase()
-          .includes(searchLower) ||
-        sale.note?.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [sortedSales, filters.search]);
+    if (filters.startDate || filters.endDate) {
+      const startDate = filters.startDate
+        ? new Date(filters.startDate)
+        : new Date(0);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = filters.endDate
+        ? new Date(filters.endDate)
+        : new Date(8640000000000000);
+      endDate.setHours(23, 59, 59, 999);
+
+      result = result.filter((sale) => {
+        const saleDate = new Date(sale.createdAt);
+        return saleDate >= startDate && saleDate <= endDate;
+      });
+    }
+
+    return result;
+  }, [sales, filters]);
 
   const getStatusBadge = (sale: any) => {
     const unitPrice = sale.unitPrice ? parseFloat(sale.unitPrice) : 0;
@@ -406,9 +413,17 @@ const SaleManagement: React.FC = () => {
     currentPage * pageSize
   );
 
-  // const handleExportData = () => {
-  //   toast.info("Data export feature will be implemented soon!");
-  // };
+  const handleExportData = () => {
+    if (!pdfRef.current) return;
+    const options = {
+      margin: 0.5,
+      filename: `sales_${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+    };
+    html2pdf().set(options).from(pdfRef.current).save();
+  };
 
   const toggleViewType = () => {
     setViewType((prev) => (prev === "table" ? "cards" : "table"));
@@ -482,9 +497,7 @@ const SaleManagement: React.FC = () => {
               viewType={viewType}
               toggleViewType={toggleViewType}
               handleAddClick={handleAddClick}
-              handleExportData={() => {
-                toast.info("Data export feature will be implemented soon!");
-              }}
+              handleExportData={handleExportData}
             />
 
             {/* Empty State */}
@@ -592,6 +605,13 @@ const SaleManagement: React.FC = () => {
         isSubmitting={isSubmitting}
       />
 
+      <div style={{ display: "none" }}>
+        <SalePDFFullReport
+          ref={pdfRef}
+          sales={filteredSales}
+          exportDate={new Date().toLocaleString()}
+        />
+      </div>
       <ToastContainer
         position="top-right"
         autoClose={5000}

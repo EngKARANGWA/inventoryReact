@@ -5,28 +5,38 @@ interface Props {
   exportDate: string;
 }
 
-const cellStyle = {
-  border: "1px solid #000",
-  padding: "4px",
-};
-
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse" as const,
-  fontSize: "12px",
-  marginBottom: "16px",
-};
-
-const formatNumber = (value?: string | number) =>
-  value
-    ? Number(value).toLocaleString(undefined, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      })
-    : "N/A";
-
 const SalePDFReport = forwardRef<HTMLDivElement, Props>(
   ({ sale, exportDate }, ref) => {
+    const formatAmount = (val: number | string | undefined) => {
+      const amount = Number(val) || 0;
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "RWF",
+        minimumFractionDigits: 0,
+      }).format(amount);
+    };
+
+    const formatDate = (dateString?: string) => {
+      if (!dateString) return "N/A";
+      const date = new Date(dateString);
+      return (
+        date.toLocaleDateString() +
+        " " +
+        date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      );
+    };
+
+    const formatNumber = (value?: string | number) =>
+      value
+        ? Number(value).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })
+        : "N/A";
+
     const totalQuantity =
       sale.items?.reduce(
         (sum: number, item: any) => sum + parseFloat(item.quantity || 0),
@@ -44,8 +54,29 @@ const SalePDFReport = forwardRef<HTMLDivElement, Props>(
           parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0),
         0
       ) || 0;
-    // const remainingQuantity = totalQuantity - totalDelivered;
     const remainingPayment = totalValue - parseFloat(sale.totalPaid || 0);
+
+    const tableHeaderStyle = {
+      backgroundColor: "#f1f5f9",
+      borderBottom: "1px solid #e2e8f0",
+      padding: "8px",
+      textAlign: "left" as const,
+      fontWeight: 600,
+    };
+
+    const tableCellStyle = {
+      padding: "8px",
+      borderBottom: "1px solid #e2e8f0",
+      backgroundColor: "#fff",
+    };
+
+    const tableStyle = {
+      width: "100%",
+      borderCollapse: "collapse" as const,
+      marginBottom: "24px",
+      border: "1px solid #e2e8f0",
+      fontSize: "12px",
+    };
 
     return (
       <div
@@ -62,8 +93,9 @@ const SalePDFReport = forwardRef<HTMLDivElement, Props>(
           style={{
             color: "#16a34a",
             fontWeight: "bold",
-            fontSize: "18px",
-            marginBottom: "4px",
+            fontSize: "28px",
+            marginBottom: "8px",
+            textAlign: "center",
           }}
         >
           IHIRWE TRADING CO. LTD
@@ -79,7 +111,11 @@ const SalePDFReport = forwardRef<HTMLDivElement, Props>(
           Sale Report - {sale.saleReference}
         </h2>
         <p
-          style={{ textAlign: "right", fontSize: "12px", marginBottom: "20px" }}
+          style={{
+            textAlign: "right",
+            fontSize: "12px",
+            marginBottom: "20px",
+          }}
         >
           Exported at: {exportDate}
         </p>
@@ -88,20 +124,20 @@ const SalePDFReport = forwardRef<HTMLDivElement, Props>(
         <table style={tableStyle}>
           <tbody>
             <tr>
-              <td style={cellStyle}>
-                <strong>Expected Delivery:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600, width: "30%" }}>
+                Expected Delivery:
               </td>
-              <td style={cellStyle}>
-                {new Date(sale.expectedDeliveryDate).toLocaleDateString()}
+              <td style={tableCellStyle}>
+                {sale.expectedDeliveryDate
+                  ? formatDate(sale.expectedDeliveryDate)
+                  : "N/A"}
               </td>
             </tr>
             <tr>
-              <td style={cellStyle}>
-                <strong>Created At:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600 }}>
+                Created At:
               </td>
-              <td style={cellStyle}>
-                {new Date(sale.createdAt).toLocaleString()}
-              </td>
+              <td style={tableCellStyle}>{formatDate(sale.createdAt)}</td>
             </tr>
           </tbody>
         </table>
@@ -113,22 +149,26 @@ const SalePDFReport = forwardRef<HTMLDivElement, Props>(
         <table style={tableStyle}>
           <tbody>
             <tr>
-              <td style={cellStyle}>
-                <strong>Saler:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600 }}>
+                Saler:
               </td>
-              <td style={cellStyle}>{sale.saler?.profile?.names}</td>
+              <td style={tableCellStyle}>
+                {sale.saler?.profile?.names || "N/A"}
+              </td>
             </tr>
             <tr>
-              <td style={cellStyle}>
-                <strong>Client:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600 }}>
+                Client:
               </td>
-              <td style={cellStyle}>{sale.client?.profile?.names}</td>
+              <td style={tableCellStyle}>
+                {sale.client?.profile?.names || "N/A"}
+              </td>
             </tr>
             <tr>
-              <td style={cellStyle}>
-                <strong>Blocker:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600 }}>
+                Blocker:
               </td>
-              <td style={cellStyle} colSpan={3}>
+              <td style={tableCellStyle}>
                 {sale.blocker?.profile?.names || "N/A"}
               </td>
             </tr>
@@ -142,28 +182,34 @@ const SalePDFReport = forwardRef<HTMLDivElement, Props>(
         <table style={tableStyle}>
           <tbody>
             <tr>
-              <td style={cellStyle}>
-                <strong>Total Amount:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600 }}>
+                Total Amount:
               </td>
-              <td style={cellStyle}>{formatNumber(totalValue)} RWF</td>
+              <td style={{ ...tableCellStyle, textAlign: "right", color: "#16a34a" }}>
+                {formatAmount(totalValue)}
+              </td>
             </tr>
             <tr>
-              <td style={cellStyle}>
-                <strong>Total Paid:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600 }}>
+                Total Paid:
               </td>
-              <td style={cellStyle}>{formatNumber(sale.totalPaid)} RWF</td>
+              <td style={{ ...tableCellStyle, textAlign: "right", color: "#2563eb" }}>
+                {formatAmount(sale.totalPaid)}
+              </td>
             </tr>
             <tr>
-              <td style={cellStyle}>
-                <strong>Remaining Payment:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600 }}>
+                Remaining Payment:
               </td>
-              <td style={cellStyle}>{formatNumber(remainingPayment)} RWF</td>
+              <td style={{ ...tableCellStyle, textAlign: "right", color: "#dc2626" }}>
+                {formatAmount(remainingPayment)}
+              </td>
             </tr>
             <tr>
-              <td style={cellStyle}>
-                <strong>Notes:</strong>
+              <td style={{ ...tableCellStyle, fontWeight: 600 }}>
+                Notes:
               </td>
-              <td style={cellStyle}>{sale.note || "N/A"}</td>
+              <td style={tableCellStyle}>{sale.note || "N/A"}</td>
             </tr>
           </tbody>
         </table>
@@ -172,50 +218,56 @@ const SalePDFReport = forwardRef<HTMLDivElement, Props>(
         <h3 style={{ fontWeight: "bold", marginBottom: "8px" }}>Sale Items</h3>
         <table style={tableStyle}>
           <thead>
-            <tr>
-              <th style={cellStyle}>#</th>
-              <th style={cellStyle}>Product</th>
-              <th style={cellStyle}>Description</th>
-              <th style={cellStyle}>Qty</th>
-              <th style={cellStyle}>Unit Price</th>
-              <th style={cellStyle}>Subtotal</th>
-              <th style={cellStyle}>Delivered</th>
+            <tr style={{ ...tableHeaderStyle }}>
+              <th style={tableHeaderStyle}>#</th>
+              <th style={tableHeaderStyle}>Product</th>
+              <th style={tableHeaderStyle}>Description</th>
+              <th style={tableHeaderStyle}>Qty (Kg)</th>
+              <th style={tableHeaderStyle}>Unit Price</th>
+              <th style={tableHeaderStyle}>Subtotal</th>
+              <th style={tableHeaderStyle}>Delivered (Kg)</th>
             </tr>
           </thead>
           <tbody>
             {sale.items.map((item: any, index: number) => (
               <tr key={item.id}>
-                <td style={cellStyle}>{index + 1}</td>
-                <td style={cellStyle}>{item.product?.name}</td>
-                <td style={cellStyle}>{item.product?.description}</td>
-                <td style={cellStyle}>{formatNumber(item.quantity)} Kg</td>
-                <td style={cellStyle}>{formatNumber(item.unitPrice)} RWF</td>
-                <td style={cellStyle}>
-                  {formatNumber(
-                    parseFloat(item.quantity) * parseFloat(item.unitPrice)
-                  )}{" "}
-                  RWF
+                <td style={tableCellStyle}>{index + 1}</td>
+                <td style={tableCellStyle}>{item.product?.name || "N/A"}</td>
+                <td style={tableCellStyle}>{item.product?.description || "N/A"}</td>
+                <td style={{ ...tableCellStyle, textAlign: "right" }}>
+                  {formatNumber(item.quantity)}
                 </td>
-                <td style={cellStyle}>
-                  {formatNumber(item.totalDelivered)} Kg
+                <td style={{ ...tableCellStyle, textAlign: "right" }}>
+                  {formatAmount(item.unitPrice)}
+                </td>
+                <td style={{ ...tableCellStyle, textAlign: "right" }}>
+                  {formatAmount(
+                    parseFloat(item.quantity) * parseFloat(item.unitPrice)
+                  )}
+                </td>
+                <td style={{ ...tableCellStyle, textAlign: "right" }}>
+                  {formatNumber(item.totalDelivered)}
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr>
-              <td colSpan={3} style={cellStyle}>
-                <strong>Total</strong>
+            <tr style={{ backgroundColor: "#f8fafc" }}>
+              <td 
+                colSpan={3} 
+                style={{ ...tableCellStyle, fontWeight: 600, backgroundColor: "#f8fafc" }}
+              >
+                Total
               </td>
-              <td style={cellStyle}>
-                <strong>{formatNumber(totalQuantity)} Kg</strong>
+              <td style={{ ...tableCellStyle, textAlign: "right", fontWeight: 600, backgroundColor: "#f8fafc" }}>
+                {formatNumber(totalQuantity)}
               </td>
-              <td style={cellStyle}></td>
-              <td style={cellStyle}>
-                <strong>{formatNumber(totalValue)} RWF</strong>
+              <td style={{ ...tableCellStyle, backgroundColor: "#f8fafc" }}></td>
+              <td style={{ ...tableCellStyle, textAlign: "right", fontWeight: 600, backgroundColor: "#f8fafc" }}>
+                {formatAmount(totalValue)}
               </td>
-              <td style={cellStyle}>
-                <strong>{formatNumber(totalDelivered)} Kg</strong>
+              <td style={{ ...tableCellStyle, textAlign: "right", fontWeight: 600, backgroundColor: "#f8fafc" }}>
+                {formatNumber(totalDelivered)}
               </td>
             </tr>
           </tfoot>
@@ -229,38 +281,38 @@ const SalePDFReport = forwardRef<HTMLDivElement, Props>(
             </h3>
             <table style={tableStyle}>
               <thead>
-                <tr>
-                  <th style={cellStyle}>#</th>
-                  <th style={cellStyle}>Reference</th>
-                  <th style={cellStyle}>Product</th>
-                  <th style={cellStyle}>Quantity</th>
-                  <th style={cellStyle}>Unit Price</th>
-                  <th style={cellStyle}>Warehouse</th>
-                  <th style={cellStyle}>Delivered At</th>
-                  <th style={cellStyle}>Driver</th>
+                <tr style={tableHeaderStyle}>
+                  <th style={tableHeaderStyle}>#</th>
+                  <th style={tableHeaderStyle}>Reference</th>
+                  <th style={tableHeaderStyle}>Product</th>
+                  <th style={tableHeaderStyle}>Quantity (Kg)</th>
+                  <th style={tableHeaderStyle}>Unit Price</th>
+                  <th style={tableHeaderStyle}>Warehouse</th>
+                  <th style={tableHeaderStyle}>Delivered At</th>
+                  <th style={tableHeaderStyle}>Driver</th>
                 </tr>
               </thead>
               <tbody>
                 {sale.deliveries.map((delivery: any, index: number) => (
                   <tr key={delivery.id}>
-                    <td style={cellStyle}>{index + 1}</td>
-                    <td style={cellStyle}>{delivery.deliveryReference}</td>
-                    <td style={cellStyle}>{delivery.product?.name || "N/A"}</td>
-                    <td style={cellStyle}>
-                      {formatNumber(delivery.quantity)} Kg
+                    <td style={tableCellStyle}>{index + 1}</td>
+                    <td style={tableCellStyle}>{delivery.deliveryReference}</td>
+                    <td style={tableCellStyle}>{delivery.product?.name || "N/A"}</td>
+                    <td style={{ ...tableCellStyle, textAlign: "right" }}>
+                      {formatNumber(delivery.quantity)}
                     </td>
-                    <td style={cellStyle}>
-                      {formatNumber(delivery.unitPrice)} RWF
+                    <td style={{ ...tableCellStyle, textAlign: "right" }}>
+                      {formatAmount(delivery.unitPrice)}
                     </td>
-                    <td style={cellStyle}>
+                    <td style={tableCellStyle}>
                       {delivery.warehouse?.name || "N/A"}
                     </td>
-                    <td style={cellStyle}>
+                    <td style={tableCellStyle}>
                       {delivery.deliveredAt
-                        ? new Date(delivery.deliveredAt).toLocaleString()
+                        ? formatDate(delivery.deliveredAt)
                         : "Pending"}
                     </td>
-                    <td style={cellStyle}>
+                    <td style={tableCellStyle}>
                       {delivery.driver?.profile?.names ||
                         delivery.driver?.username ||
                         "N/A"}

@@ -44,7 +44,6 @@ export const SalesFilters: React.FC<SalesFiltersProps> = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            fetchSales();
           }}
           className="relative flex-1 w-full max-w-md"
         >
@@ -153,46 +152,12 @@ export const SalesFilters: React.FC<SalesFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Client
-              </label>
-              <select
-                name="clientId"
-                value={filters.clientId || ""}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              >
-                <option value="">All Clients</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                value={filters.status || ""}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              >
-                <option value="">All Statuses</option>
-                <option value="paid">Paid</option>
-                <option value="partial">Partial</option>
-                <option value="unpaid">Unpaid</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Start Date
               </label>
               <input
                 type="date"
                 name="startDate"
-                value={filters.startDate || ""}
+                value={filters.startDate}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
@@ -204,34 +169,12 @@ export const SalesFilters: React.FC<SalesFiltersProps> = ({
               <input
                 type="date"
                 name="endDate"
-                value={filters.endDate || ""}
+                value={filters.endDate}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Items per page
-              </label>
-              <select
-                name="pageSize"
-                value={filters.pageSize || 10}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
             <div className="flex items-end">
-              <button
-                onClick={fetchSales}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Apply Filters
-              </button>
             </div>
           </div>
         </div>
